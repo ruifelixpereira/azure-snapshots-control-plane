@@ -26,6 +26,8 @@ Additionally, for running the function app locally and access other Azure resour
 
 ## Create a local functions project
 
+### Step 1. Create the required assets
+
 ```bash
 func init --typescript
 
@@ -35,6 +37,8 @@ func new --name hello --template "HTTP trigger" --authlevel "anonymous"
 # Add a function to your project 
 func new --name collectHealth --template "Timer trigger" --authlevel "anonymous"
 ```
+
+### Step 2. Configure local settings
 
 Add Azure Storage connection information in `local.settings.json` and adjust the settings of your Storage account:
 
@@ -48,7 +52,10 @@ Add Azure Storage connection information in `local.settings.json` and adjust the
 }
 ```
 
-Run the function locally
+If you used the script `prep-dev-local.sh`, the `local.settings.json` file should already be configured with the correct values.
+
+
+## Run the function locally for testing
 
 ```bash
 npm start

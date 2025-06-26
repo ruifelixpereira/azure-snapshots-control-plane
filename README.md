@@ -34,7 +34,6 @@ The solution is built using **Azure Functions** and **Azure Storage**, enabling 
 This modular and asynchronous design ensures reliable execution, scalability, and clear separation of concerns between scheduling, orchestration, and snapshot lifecycle management.
 
 ![alt text](docs/images/arch.png)
-![alt text](image.png)
 
 1. The snapshots creation process runs periodically (e.g., daily), triggered by a scheduler. All the disks belonging to a VM tagged with "smcp-backup=on" are considered for snapshot creation.
 
