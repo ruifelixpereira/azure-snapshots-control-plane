@@ -14,7 +14,7 @@ export class ResourceGraphManager {
         this.clientGraph = new ResourceGraphClient(credential);
     }
 
-    // Get all azure disks to backup using snapshots (tag backup=on)
+    // Get all azure disks to backup using snapshots (tag smcp-backup=on)
     public async getDisksToBackup(): Promise<Array<SnapshotSource>> {
 
         try {
@@ -22,7 +22,7 @@ export class ResourceGraphManager {
                 {
                     query: `resources
                     | where type =~ 'microsoft.compute/virtualMachines'
-                    | where tags["backup"] =~ "on"
+                    | where tags["smcp-backup"] =~ "on"
                     | project vmName=name, resourceGroup, vmId = id, vmSize = properties.hardwareProfile.vmSize, location, subscriptionId
                     | join (
                         resources

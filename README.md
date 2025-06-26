@@ -24,7 +24,7 @@ Older snapshots are automatically purged to optimize storage costs and comply wi
 
 The solution is built using **Azure Functions** and **Azure Storage**, enabling a scalable and event-driven approach to managing VM disk snapshots.
 
-- A **primary Azure Function**, triggered by a **daily timer**, scans all Azure Virtual Machines for a specific **backup tag**. For each VM identified, it enqueues a message in an **Azure Storage Queue**, signaling the need to initiate a **snapshot job**.
+- A **primary Azure Function**, triggered by a **daily timer**, scans all Azure Virtual Machines for a specific **smcp-backup tag**. For each VM identified, it enqueues a message in an **Azure Storage Queue**, signaling the need to initiate a **snapshot job**.
 
 - A **secondary Azure Function**, triggered by the queue message, performs the following tasks:
   - Creates a **new incremental snapshot** of the VM's disk.
@@ -34,8 +34,9 @@ The solution is built using **Azure Functions** and **Azure Storage**, enabling 
 This modular and asynchronous design ensures reliable execution, scalability, and clear separation of concerns between scheduling, orchestration, and snapshot lifecycle management.
 
 ![alt text](docs/images/arch.png)
+![alt text](image.png)
 
-1. The snapshots creation process runs periodically (e.g., daily), triggered by a scheduler. All the disks belonging to a VM tagged with “backup=on” are considered for snapshot creation.
+1. The snapshots creation process runs periodically (e.g., daily), triggered by a scheduler. All the disks belonging to a VM tagged with "smcp-backup=on" are considered for snapshot creation.
 
 2. For tagged VM disks, a snapshot job creation message is sent to the snapshot-jobs storage queue.
 
@@ -159,3 +160,4 @@ You can check the guidelines for development in the [DEVELOPMENT](docs/developme
 ## References
 
 - [Azure Snapshots Insights Workbook](https://github.com/dolevshor/Azure-Snapshots-Insights)
+- [Azure Snapshots: Simplify Management and Monitoring](https://techcommunity.microsoft.com/blog/azureforisvandstartupstechnicalblog/azure-snapshots-simplify-management-and-monitoring/4255837)

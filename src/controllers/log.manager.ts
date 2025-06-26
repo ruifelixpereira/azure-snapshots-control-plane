@@ -3,7 +3,7 @@ import { ILogger } from '../common/logger';
 import { LogsIngestionClient, isAggregateLogsUploadError } from "@azure/monitor-ingestion";
 import { DefaultAzureCredential } from "@azure/identity";
 import { LogIngestionError, LogIngestionAggregateError, _getString } from "../common/apperror";
-import { LogEntry } from "../common/interfaces";
+import { JobLogEntry } from "../common/interfaces";
 
 
 export class LogManager {
@@ -15,7 +15,7 @@ export class LogManager {
         this.logClient = new LogsIngestionClient(process.env.LOGS_INGESTION_ENDPOINT, credential);
     }
 
-    public async uploadLog(log: LogEntry) {
+    public async uploadLog(log: JobLogEntry) {
 
         try {
             if (!process.env.LOGS_INGESTION_ENDPOINT || !process.env.LOGS_INGESTION_RULE_ID || !process.env.LOGS_INGESTION_STREAM_NAME) {

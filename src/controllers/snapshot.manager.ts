@@ -26,7 +26,10 @@ export class SnapshotManager {
                     createOption: "Copy",
                     sourceResourceId: source.diskId,
                 },
-                incremental: true // Set to true for incremental snapshot
+                incremental: true, // Set to true for incremental snapshot
+                tags: { 
+                    "smcp-location-type": "primary"
+                }
             };
 
             // New snapshot name
@@ -75,7 +78,10 @@ export class SnapshotManager {
                     createOption: "CopyStart",
                     sourceResourceId: source.id, // Use the source snapshot ID
                 },
-                incremental: true // Set to true for incremental snapshot
+                incremental: true, // Set to true for incremental snapshot
+                tags: { 
+                    "smcp-location-type": "secondary"
+                }
             };
 
             const result = await computeClient.snapshots.beginCreateOrUpdate(
@@ -126,7 +132,10 @@ export class SnapshotManager {
                 if (
                     snapshot.timeCreated &&
                     new Date(snapshot.timeCreated) < cutoff &&
+                    snapshot.creationData &&
+                    snapshot.creationData.sourceResourceId &&
                     snapshot.creationData?.sourceResourceId?.toLowerCase() === diskId.toLowerCase() &&
+                    snapshot.location &&
                     snapshot.location?.toLowerCase() === location.toLowerCase()
                 ) {
                     this.logger.info(
@@ -166,6 +175,9 @@ export class SnapshotManager {
                 if (
                     snapshot.timeCreated &&
                     new Date(snapshot.timeCreated) < cutoff &&
+                    snapshot.creationData &&
+                    snapshot.creationData.sourceResourceId &&
+                    sourceSnapshotName &&
                     sourceSnapshotName.toLowerCase().includes(`-${diskName.toLowerCase()}`) &&
                     snapshot.location?.toLowerCase() === location.toLowerCase()
                 ) {

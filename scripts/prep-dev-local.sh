@@ -10,7 +10,9 @@ required_vars=(
     "resourceGroupName"
     "storageAccountName"
     "funcAppName"
-    "githubDeploymentAppName"
+    "localDevelopmentAppName"
+    "dcrName"
+    "dceName"
 )
 
 # Set the current directory to where the script lives.
@@ -65,7 +67,7 @@ SUBSCRIPTION_ID=$(az account show --query id -o tsv)
 
 # Create the application
 appId=$(az ad app create \
-  --display-name "$githubDeploymentAppName" \
+  --display-name "$localDevelopmentAppName" \
   --query appId -o tsv)
 
 echo "Application created with App ID: $appId"
@@ -83,11 +85,54 @@ secret=$(az ad app credential reset \
 
 # Output credentials
 echo "=============================="
-echo "App Name: $githubDeploymentAppName"
+echo "App Name: $localDevelopmentAppName"
 echo "App ID: $appId"
 echo "Service Principal ID: $spId"
 echo "Client Secret: $secret"
 echo "=============================="
 
+# Assign Storage Blob and Queue roles to the new app on Storage Account
+STORAGE_ACCOUNT_ID=$(az storage account show --name $storageAccountName --resource-group $resourceGroupName --query id -o tsv)
+az role assignment create --assignee $spId --role "Storage Blob Data Owner" --scope $STORAGE_ACCOUNT_ID
+az role assignment create --assignee $spId --role "Storage Queue Data Contributor" --scope $STORAGE_ACCOUNT_ID
+
+# Grant the "Monitoring Metrics Publisher" role on the DCR (or at the Resource Group/Subscription level if needed).
+az role assignment create --assignee $spId --role "Monitoring Metrics Publisher" --scope /subscriptions/${SUBSCRIPTION_ID}/resourceGroups/${resourceGroupName}
+
 # Grant Contributor on the resource group
 az role assignment create --assignee $spId --role "Contributor" --scope /subscriptions/${SUBSCRIPTION_ID}/resourceGroups/${resourceGroupName}
+
+# Get Storage account connection string
+STORAGE_CONNECTION_STRING=$(az storage account show-connection-string --name $storageAccountName --resource-group $resourceGroupName --query connectionString -o tsv)
+
+# Get log ingestion values
+LOG_INGESTION_RULE_ID=$(az monitor data-collection rule show --name $dcrName --resource-group $resourceGroupName --query "immutableId" --output tsv)
+LOG_INGESTION_STREAM_NAME=$(az monitor data-collection rule show --name $dcrName --resource-group $resourceGroupName --query "streamDeclarations | keys(@)[0]" --output tsv)
+LOGS_INGESTION_ENDPOINT=$(az monitor data-collection endpoint show --name $dceName --resource-group $resourceGroupName --query "logsIngestion.endpoint" --output tsv)
+
+# Get tenant ID
+TENANT_ID=$(az account show --query tenantId -o tsv)
+
+#
+# Generate example local.settings.json payload
+#
+cat > local.settings.dev.json <<EOF
+{
+  "IsEncrypted": false,
+  "Values": {
+    "FUNCTIONS_WORKER_RUNTIME": "node",
+    "AzureWebJobsStorage": "$STORAGE_CONNECTION_STRING",
+    "AZURE_TENANT_ID": "$TENANT_ID",
+    "AZURE_CLIENT_ID": "$appId",
+    "AZURE_CLIENT_SECRET": "$secret",
+    "LOGS_INGESTION_ENDPOINT": "$LOG_INGESTION_ENDPOINT",
+    "LOGS_INGESTION_RULE_ID": "$LOG_INGESTION_RULE_ID",
+    "LOGS_INGESTION_STREAM_NAME": "$LOG_INGESTION_STREAM_NAME",
+    "SNAPSHOT_SECONDARY_LOCATION": "westeurope",
+    "SNAPSHOT_RETRY_CONTROL_COPY_MINUTES": 15,
+    "SNAPSHOT_RETRY_CONTROL_PURGE_MINUTES": 15,
+    "SNAPSHOT_PURGE_PRIMARY_LOCATION_NUMBER_OF_DAYS": 2,
+    "SNAPSHOT_PURGE_SECONDARY_LOCATION_NUMBER_OF_DAYS": 30
+  }
+}
+EOF

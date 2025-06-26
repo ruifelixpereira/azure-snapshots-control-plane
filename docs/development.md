@@ -18,6 +18,11 @@ In the end you should have the following resources created:
 
 ![alt text](images/resources.png)
 
+Additionally, for running the function app locally and access other Azure resources, you need to have a service principal, give the proper role assignements to the service principal and configure it locally in the `local.settings.json` file. The provided script `scripts\pre-dev-local.sh` helps to automate all these steps.
+
+```bash
+./prep-dev-local.sh
+```
 
 ## Create a local functions project
 
