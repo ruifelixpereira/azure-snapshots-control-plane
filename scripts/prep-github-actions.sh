@@ -8,7 +8,6 @@ set -a && source .env && set +a
 # Required variables
 required_vars=(
     "resourceGroupName"
-    "storageAccountName"
     "funcAppName"
     "githubDeploymentAppName"
 )
@@ -54,40 +53,14 @@ SUBSCRIPTION_ID=$(az account show --query id -o tsv)
 #
 # Create Service principal to be used by GitHub Actions in deployments
 #
-#az ad sp create-for-rbac \
-#    --name ${githubDeploymentAppName} \
-#    --role contributor \
-#    --scopes /subscriptions/${SUBSCRIPTION_ID}/resourceGroups/${resourceGroupName}/providers/Microsoft.Web/sites/${funcAppName} \
-#    --sdk-auth
+az ad sp create-for-rbac \
+    --name ${githubDeploymentAppName} \
+    --role "Website Contributor" \
+    --scopes /subscriptions/${SUBSCRIPTION_ID}/resourceGroups/${resourceGroupName}/providers/Microsoft.Web/sites/${funcAppName} \
+    --json-auth
 
-# Variables
-#appName="my-app-$(date +%s)"  # Unique app name using timestamp
 
-# Create the application
-appId=$(az ad app create \
-  --display-name "$githubDeploymentAppName" \
-  --query appId -o tsv)
-
-echo "Application created with App ID: $appId"
-
-# Create the service principal
-spId=$(az ad sp create --id "$appId" --query id -o tsv)
-echo "Service Principal created with Object ID: $spId"
-
-# Generate a client secret (Azure will create it)
-secret=$(az ad app credential reset \
-  --id "$appId" \
-  --append \
-  --end-date "$(date -u -d '1 month' +%Y-%m-%dT%H:%M:%SZ)" \
-  --query password -o tsv)
-
-# Output credentials
-echo "=============================="
-echo "App Name: $githubDeploymentAppName"
-echo "App ID: $appId"
-echo "Service Principal ID: $spId"
-echo "Client Secret: $secret"
-echo "=============================="
-
-# Grant Contributor on the resource group
-az role assignment create --assignee $spId --role "Contributor" --scope /subscriptions/${SUBSCRIPTION_ID}/resourceGroups/${resourceGroupName}
+# Output
+echo "============================================================================="
+echo "Add the above JSON into a GitHub Actions secret named AZURE_RBAC_CREDENTIALS."
+echo "============================================================================="

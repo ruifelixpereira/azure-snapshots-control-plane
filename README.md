@@ -97,7 +97,10 @@ Run the provided script `scripts/prep-github-actions.sh` to create a Service Pri
     (...)
   }
 ```
-Copy and paste the json response from above Azure CLI to your GitHub Repository > Settings > Secrets > Add a new secret > `AZURE_RBAC_CREDENTIALS`.
+Copy and paste the json response from above Azure CLI to your GitHub Repository > Settings > Secrets > Actions > Manage Environment secrets > Choose Environment `dev` > Environment secrets > Add environment secret > `AZURE_RBAC_CREDENTIALS`.
+
+![alt text](docs/images/action-secrets.png)
+
 
 ### 2.2. Customize GitHub Action
 
@@ -153,7 +156,14 @@ If you used the provided script `scripts/create-azure-env.sh`, these settings ar
 
 ## Development
 
-You can check the guidelines for development in the [DEVELOPMENT](docs/development.md) file.
+You can check the guidelines for development in the [DEVELOPMENT](docs/development.md).
+
+
+## Control Plane Monitoring
+
+To monitor the control plane operations and help managing snapshots, an Azure Monitor workbook is provided to simplify the process. This workbook leverages the original [Azure Snapshots Insights Workbook](https://github.com/dolevshor/Azure-Snapshots-Insights) (credits to the authors) and adds some additional capabilities to bring visibility about the state of the daily snapshot actions like creation and copy to the secondary region. The goal is to make it simple to monitor the snapshots operations and to provide insights about the snapshot jobs.
+
+You can check the monitoring guidelines at [MONITORING](docs/monitoring.md).
 
 
 ## References
