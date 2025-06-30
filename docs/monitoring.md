@@ -4,23 +4,44 @@
 
 Monitoring is a critical aspect of managing Azure Disk Snapshots. It helps ensure that snapshot operations are completed successfully and provides insights into the health and performance of the backup process.
 
-## Key Metrics
+## Azure Snapshots Insights Workbook
 
-When monitoring snapshots, consider the following key metrics:
+The solution provides a workbook that you can access in the Azure Portal by selecting `Resource Group > Monitoring > Workbooks`:
 
-- **Snapshot Creation Time**: Measure the time taken to create snapshots. This helps identify any performance bottlenecks.
-- **Snapshot Copy Status**: Monitor the status of snapshot copies to the secondary region. Ensure that copies are completed successfully.
-- **Error Rates**: Track any errors that occur during snapshot creation or copying. This helps in proactive issue resolution.
+![alt text](image-3.png)
 
-## Monitoring Tools
+The Azure Snapshots Insights Workbook is designed to give you a comprehensive view of your snapshot operations. It includes various sections that allow you to monitor the entire Azure Disk Snapshots Management lifecycle.
 
-Azure provides several tools for monitoring snapshots:
+![alt text](image-4.png)
 
-- **Azure Monitor**: Use Azure Monitor to set up alerts and dashboards for snapshot-related metrics.
-- **Log Analytics**: Leverage Log Analytics to query and analyze snapshot logs for deeper insights.
+The workbook provides insights into the following areas:
 
-## Best Practices
+- **Summary**: Overview of the Virtual Machines with Backup protection, how the Snapshot Backup and Purge Jobs are performing and some high level metrics for existing Snapshots.
 
-- Set up alerts for critical snapshot metrics to ensure timely responses to issues.
-- Regularly review snapshot logs to identify trends and potential problems.
-- Use the Azure Monitor workbook for a consolidated view of snapshot operations.
+    ![alt text](image-5.png)
+
+- **Virtual Machines**: Detailed view of the existing Virtual Machines, the ones protected by Backup, and for the ones protected, which Snapshots are available to be restored.
+
+    ![alt text](image.png)
+
+- **Snapshots**: View of existing Snapshots and their properties.
+
+    ![alt text](image-6.png)
+
+- **Inventory**: Metrics for all the existing Snapshots.
+
+    ![alt text](image-2.png)
+
+- **Backup Jobs**: Detailed view of Snapshots Backup Jobs and for the selected Job, the detail of the Job Operations.
+
+    ![alt text](image-7.png)
+    ![alt text](image-9.png)
+
+- **Purge Jobs**: Detailed view of Snapshots Purge Jobs and for the selected Job, the detail of the Job Operations.
+
+    ![alt text](image-8.png)
+
+
+### Workbook Parameters
+
+The workbook includes parameters that allow you to filter the data displayed. You can select specific Subscription, Resource Groups, Snapshots, and Time range to focus on the information that is most relevant to you.

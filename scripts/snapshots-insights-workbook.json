@@ -80,17 +80,20 @@
               "showDefault": false
             },
             "queryType": 1,
-            "resourceType": "microsoft.resourcegraph/resources"
+            "resourceType": "microsoft.resourcegraph/resources",
+            "value": [
+              "value::all"
+            ]
           },
           {
             "id": "029a03e0-bbe8-49ab-929f-c1026d1b8e40",
             "version": "KqlParameterItem/1.0",
             "name": "SnapshotAge",
-            "label": "Snapshot Age",
+            "label": "Time Range",
             "type": 2,
             "description": "This allow you to filter snapshot by time created.",
             "isRequired": true,
-            "query": "{\"version\":\"1.0.0\",\"content\":\"[\\r\\n    { \\\"value\\\":\\\"0d\\\", \\\"label\\\":\\\"All Snapshots\\\", \\\"selected\\\":true},\\r\\n\\t{ \\\"value\\\":\\\"1d\\\", \\\"label\\\":\\\"1 day ago\\\" },\\r\\n    { \\\"value\\\":\\\"2d\\\", \\\"label\\\":\\\"2 days ago\\\" },\\r\\n    { \\\"value\\\":\\\"3d\\\", \\\"label\\\":\\\"3 days ago\\\"},\\r\\n\\t{ \\\"value\\\":\\\"4d\\\", \\\"label\\\":\\\"4 days ago\\\" },\\r\\n\\t{ \\\"value\\\":\\\"5d\\\", \\\"label\\\":\\\"5 days ago\\\" },\\r\\n\\t{ \\\"value\\\":\\\"6d\\\", \\\"label\\\":\\\"6 days ago\\\" },\\r\\n\\t{ \\\"value\\\":\\\"7d\\\", \\\"label\\\":\\\"7 days ago\\\" },\\r\\n\\t{ \\\"value\\\":\\\"14d\\\", \\\"label\\\":\\\"14 days ago\\\" },\\r\\n\\t{ \\\"value\\\":\\\"30d\\\", \\\"label\\\":\\\"30 days ago\\\" },\\r\\n\\t{ \\\"value\\\":\\\"60d\\\", \\\"label\\\":\\\"60 days ago\\\" },\\r\\n\\t{ \\\"value\\\":\\\"90d\\\", \\\"label\\\":\\\"90 days ago\\\" }\\t\\t\\t\\r\\n]\",\"transformers\":null}",
+            "query": "{\"version\":\"1.0.0\",\"content\":\"[\\r\\n    { \\\"value\\\":\\\"0d\\\", \\\"label\\\":\\\"All\\\", \\\"selected\\\":true},\\r\\n\\t{ \\\"value\\\":\\\"1d\\\", \\\"label\\\":\\\"1 day ago\\\" },\\r\\n    { \\\"value\\\":\\\"2d\\\", \\\"label\\\":\\\"2 days ago\\\" },\\r\\n    { \\\"value\\\":\\\"3d\\\", \\\"label\\\":\\\"3 days ago\\\"},\\r\\n\\t{ \\\"value\\\":\\\"4d\\\", \\\"label\\\":\\\"4 days ago\\\" },\\r\\n\\t{ \\\"value\\\":\\\"5d\\\", \\\"label\\\":\\\"5 days ago\\\" },\\r\\n\\t{ \\\"value\\\":\\\"6d\\\", \\\"label\\\":\\\"6 days ago\\\" },\\r\\n\\t{ \\\"value\\\":\\\"7d\\\", \\\"label\\\":\\\"7 days ago\\\" },\\r\\n\\t{ \\\"value\\\":\\\"14d\\\", \\\"label\\\":\\\"14 days ago\\\" },\\r\\n\\t{ \\\"value\\\":\\\"30d\\\", \\\"label\\\":\\\"30 days ago\\\" },\\r\\n\\t{ \\\"value\\\":\\\"60d\\\", \\\"label\\\":\\\"60 days ago\\\" },\\r\\n\\t{ \\\"value\\\":\\\"90d\\\", \\\"label\\\":\\\"90 days ago\\\" }\\t\\t\\t\\r\\n]\",\"transformers\":null}",
             "typeSettings": {
               "additionalResourceOptions": [],
               "showDefault": false
@@ -111,10 +114,35 @@
               "showDefault": false
             },
             "queryType": 8
+          },
+          {
+            "id": "ca79f268-3857-4ac7-a7ae-a0dd21e309a2",
+            "version": "KqlParameterItem/1.0",
+            "name": "LogAnalyticsWorkspace",
+            "label": "Log Analytics Workspace",
+            "type": 5,
+            "description": "All Log Analytics Workspaces",
+            "isRequired": true,
+            "multiSelect": true,
+            "quote": "'",
+            "delimiter": ",",
+            "query": "where type == 'microsoft.operationalinsights/workspaces'\r\n| summarize Count = count() by id\r\n| order by Count desc\r\n| extend Rank = row_number()\r\n| project value = id, label = id, selected = Rank == 1",
+            "typeSettings": {
+              "additionalResourceOptions": [
+                "value::all"
+              ],
+              "showDefault": false
+            },
+            "queryType": 1,
+            "resourceType": "microsoft.resourcegraph/resources",
+            "value": [
+              "/subscriptions/e8460393-3aeb-4161-a310-a46849221365/resourceGroups/snapshots-management/providers/Microsoft.OperationalInsights/workspaces/snmd2snapmng-law01"
+            ]
           }
         ],
         "style": "above",
-        "queryType": 8
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces"
       },
       "name": "Workbook Parameters",
       "styleSettings": {
@@ -149,11 +177,27 @@
               "style": "tabs",
               "links": [
                 {
+                  "id": "311bebc4-f846-40e2-92a7-6e6e28ad5ba4",
+                  "cellValue": "selectedTab",
+                  "linkTarget": "parameter",
+                  "linkLabel": "Summary",
+                  "subTarget": "Summary",
+                  "style": "link"
+                },
+                {
+                  "id": "8eeff79e-c814-4bed-9994-86dd43352688",
+                  "cellValue": "selectedTab",
+                  "linkTarget": "parameter",
+                  "linkLabel": "Virtual Machines",
+                  "subTarget": "VirtualMachines",
+                  "style": "link"
+                },
+                {
                   "id": "8f323073-4275-4c81-823c-1d9e2a55c55f",
                   "cellValue": "selectedTab",
                   "linkTarget": "parameter",
-                  "linkLabel": "Overview",
-                  "subTarget": "Overview",
+                  "linkLabel": "Snapshots",
+                  "subTarget": "Snapshots",
                   "style": "link"
                 },
                 {
@@ -162,6 +206,22 @@
                   "linkTarget": "parameter",
                   "linkLabel": "Inventory",
                   "subTarget": "Inventory",
+                  "style": "link"
+                },
+                {
+                  "id": "ed01c8a5-bc00-4244-984c-f269936d4001",
+                  "cellValue": "selectedTab",
+                  "linkTarget": "parameter",
+                  "linkLabel": "Backup Jobs",
+                  "subTarget": "BackupJobs",
+                  "style": "link"
+                },
+                {
+                  "id": "d83d2537-d434-4347-ad73-fccb68d04b90",
+                  "cellValue": "selectedTab",
+                  "linkTarget": "parameter",
+                  "linkLabel": "Purge Jobs",
+                  "subTarget": "PurgeJobs",
                   "style": "link"
                 }
               ]
@@ -172,6 +232,15 @@
             }
           },
           {
+            "type": 11,
+            "content": {
+              "version": "LinkItem/1.0",
+              "style": "bullets",
+              "links": []
+            },
+            "name": "links - 3"
+          },
+          {
             "type": 12,
             "content": {
               "version": "NotebookGroup/1.0",
@@ -180,7 +249,7 @@
                 {
                   "type": 1,
                   "content": {
-                    "json": "### Azure Snapshots Insights Workbook\r\n\r\nThe purpose of this workbook is to provide an overview of your Azure Snapshots resources.\r\n\r\n<svg xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" width=\"19px\" height=\"19px\" viewBox=\"0 0 19 18\" version=\"1.1\"><g id=\"surface1\"><path style=\" stroke:none;fill-rule:evenodd;fill:rgb(14.117647%,16.078431%,18.431373%);fill-opacity:1;\" d=\"M 9.472656 0 C 4.234375 0 0 4.125 0 9.226562 C 0 13.308594 2.714844 16.761719 6.476562 17.984375 C 6.945312 18.074219 7.121094 17.785156 7.121094 17.539062 C 7.121094 17.324219 7.105469 16.59375 7.105469 15.828125 C 4.46875 16.378906 3.921875 14.726562 3.921875 14.726562 C 3.496094 13.660156 2.871094 13.382812 2.871094 13.382812 C 2.007812 12.820312 2.933594 12.820312 2.933594 12.820312 C 3.890625 12.878906 4.390625 13.765625 4.390625 13.765625 C 5.238281 15.171875 6.601562 14.773438 7.152344 14.53125 C 7.230469 13.933594 7.480469 13.519531 7.746094 13.292969 C 5.644531 13.078125 3.433594 12.285156 3.433594 8.738281 C 3.433594 7.730469 3.808594 6.90625 4.40625 6.265625 C 4.3125 6.035156 3.984375 5.085938 4.5 3.820312 C 4.5 3.820312 5.300781 3.574219 7.105469 4.765625 C 7.875 4.566406 8.671875 4.460938 9.472656 4.460938 C 10.269531 4.460938 11.085938 4.566406 11.839844 4.765625 C 13.644531 3.574219 14.441406 3.820312 14.441406 3.820312 C 14.960938 5.085938 14.628906 6.035156 14.535156 6.265625 C 15.148438 6.90625 15.507812 7.730469 15.507812 8.738281 C 15.507812 12.285156 13.296875 13.0625 11.179688 13.292969 C 11.527344 13.582031 11.824219 14.132812 11.824219 15.003906 C 11.824219 16.242188 11.808594 17.234375 11.808594 17.539062 C 11.808594 17.785156 11.980469 18.074219 12.453125 17.984375 C 16.214844 16.761719 18.925781 13.308594 18.925781 9.226562 C 18.941406 4.125 14.695312 0 9.472656 0 Z M 9.472656 0 \"/></g></svg>\r\n&nbsp;[<span style=\"font-family: Open Sans; font-weight: 620; font-size: 14px;margin:-10px 0px 0px 0px;position: relative;top:-3px;left:-4px;\">Please submit any issues </span>](https://github.com/dolevshor/Azure-Snapshots-Insights/issues) <span style=\"font-family: Open Sans; font-weight: 620; font-size: 14px;margin:-10px 0px 0px 0px;position: relative;top:-3px;left:-4px;\"> with the workbook template to GitHub.</span>",
+                    "json": "### Azure Snapshots Dashboard\r\n\r\nOverview dashboard for Azure Snaphots.\r\n",
                     "style": "upsell"
                   },
                   "name": "text - Main Title"
@@ -191,7 +260,6 @@
                     "version": "KqlItem/1.0",
                     "query": "resources \r\n| where type == \"microsoft.compute/snapshots\"\r\n| where resourceGroup in~ ({ResourceGroup:value})\r\n| where name in~ (split(\"{Snapshots:label}\", \", \"))\r\n| extend TimeCreated = properties.timeCreated\r\n| extend snapshotType = case(properties.incremental == true, \"Incremental\", properties.incremental == false, \"Full\", \"\")\r\n| where TimeCreated < ago({SnapshotAge})\r\n| extend Details = pack_all()\r\n| project id, sourceDisk = properties.creationData.sourceResourceId, diskSizeGB = properties.diskSizeGB, resourceGroup, location, apiVersion, sku = sku.name, snapshotType, TimeCreated, publicNetworkAccess = properties.publicNetworkAccess, networkAccessPolicy = properties.networkAccessPolicy, subscriptionId, tags, Details",
                     "size": 3,
-                    "showExportToExcel": true,
                     "exportMultipleValues": true,
                     "exportedParameters": [
                       {
@@ -200,6 +268,7 @@
                         "parameterType": 5
                       }
                     ],
+                    "showExportToExcel": true,
                     "queryType": 1,
                     "resourceType": "microsoft.resourcegraph/resources",
                     "crossComponentResources": [
@@ -433,7 +502,7 @@
                       }
                     ]
                   },
-                  "name": "query - All App Service Plans"
+                  "name": "query - All Snaps"
                 },
                 {
                   "type": 12,
@@ -498,9 +567,282 @@
             "conditionalVisibility": {
               "parameterName": "selectedTab",
               "comparison": "isEqualTo",
-              "value": "Overview"
+              "value": "Snapshots"
             },
-            "name": "group - Overview Group"
+            "name": "group - Snapshots Group"
+          },
+          {
+            "type": 12,
+            "content": {
+              "version": "NotebookGroup/1.0",
+              "groupType": "editable",
+              "items": [
+                {
+                  "type": 1,
+                  "content": {
+                    "json": "### Virtual Machines Dashboard\r\n\r\nOverview of Virtual Machines and the level of snapshots backup protection.\r\n",
+                    "style": "upsell"
+                  },
+                  "name": "text - Main Title"
+                },
+                {
+                  "type": 3,
+                  "content": {
+                    "version": "KqlItem/1.0",
+                    "query": "resources\r\n| where type == 'microsoft.compute/virtualmachines'\r\n| where resourceGroup in~ ({ResourceGroup:value})\r\n| extend backupActive = coalesce(tolower(tostring(tags[\"smcp-backup\"])), \"off\")\r\n| extend osDiskId = tolower(tostring(properties.storageProfile.osDisk.managedDisk.id))\r\n| extend vmSize = tostring(properties.hardwareProfile.vmSize)\r\n| join kind=inner (\r\n    resources\r\n    | where type == \"microsoft.compute/disks\"\r\n    | extend diskId = tolower(id)\r\n    | extend diskSku = tostring(sku.name)\r\n    | extend diskSizeGB = tostring(properties.diskSizeGB)\r\n) on $left.osDiskId == $right.diskId\r\n| project id, name, location, resourceGroup, subscriptionId, vmSize, osDiskId, diskName = name1, diskSku, diskSizeGB, backupActive",
+                    "size": 3,
+                    "exportFieldName": "diskName",
+                    "exportParameterName": "SelectedDisk",
+                    "showExportToExcel": true,
+                    "queryType": 1,
+                    "resourceType": "microsoft.resourcegraph/resources",
+                    "crossComponentResources": [
+                      "{LogAnalyticsWorkspace}"
+                    ],
+                    "visualization": "table",
+                    "gridSettings": {
+                      "formatters": [
+                        {
+                          "columnMatch": "name",
+                          "formatter": 5
+                        },
+                        {
+                          "columnMatch": "subscriptionId",
+                          "formatter": 5
+                        },
+                        {
+                          "columnMatch": "diskName",
+                          "formatter": 5
+                        },
+                        {
+                          "columnMatch": "TimeGenerated",
+                          "formatter": 6,
+                          "dateFormat": {
+                            "showUtcTime": null,
+                            "formatName": "shortDateTimeNoMsPattern"
+                          }
+                        },
+                        {
+                          "columnMatch": "jobStatus",
+                          "formatter": 18,
+                          "formatOptions": {
+                            "thresholdsOptions": "icons",
+                            "thresholdsGrid": [
+                              {
+                                "operator": "==",
+                                "thresholdValue": "Purge Completed",
+                                "representation": "success",
+                                "text": "{0}{1}"
+                              },
+                              {
+                                "operator": "==",
+                                "thresholdValue": "Purge In Progress",
+                                "representation": "pending",
+                                "text": "{0}{1}"
+                              },
+                              {
+                                "operator": "==",
+                                "thresholdValue": "Purge Failed",
+                                "representation": "3",
+                                "text": "{0}{1}"
+                              },
+                              {
+                                "operator": "Default",
+                                "thresholdValue": null,
+                                "representation": "unknown",
+                                "text": "{0}{1}"
+                              }
+                            ]
+                          }
+                        },
+                        {
+                          "columnMatch": "DurationMinutes",
+                          "formatter": 0,
+                          "numberFormat": {
+                            "unit": 25,
+                            "options": {
+                              "style": "decimal",
+                              "maximumFractionDigits": 1
+                            }
+                          }
+                        }
+                      ],
+                      "rowLimit": 100,
+                      "filter": true,
+                      "labelSettings": [
+                        {
+                          "columnId": "id",
+                          "label": "Virtual Machine"
+                        },
+                        {
+                          "columnId": "location",
+                          "label": "Location"
+                        },
+                        {
+                          "columnId": "resourceGroup",
+                          "label": "Resource Group"
+                        },
+                        {
+                          "columnId": "vmSize",
+                          "label": "Size"
+                        },
+                        {
+                          "columnId": "osDiskId",
+                          "label": "OS Disk"
+                        },
+                        {
+                          "columnId": "diskName",
+                          "label": "Disk Name"
+                        },
+                        {
+                          "columnId": "diskSku",
+                          "label": "Disk Sku"
+                        },
+                        {
+                          "columnId": "diskSizeGB",
+                          "label": "Disk Size GB"
+                        },
+                        {
+                          "columnId": "backupActive",
+                          "label": "Backup Active"
+                        }
+                      ]
+                    },
+                    "sortBy": []
+                  },
+                  "name": "query - All Purge Jobs"
+                },
+                {
+                  "type": 3,
+                  "content": {
+                    "version": "KqlItem/1.0",
+                    "query": "resources \r\n| where type == \"microsoft.compute/snapshots\"\r\n| extend expectedSnapshotName = strcat(\"-\", \"{SelectedDisk}\")\r\n| where name contains expectedSnapshotName\r\n| where resourceGroup in~ ({ResourceGroup:value})\r\n| extend TimeCreated = todatetime(properties.timeCreated)\r\n| extend snapshotType = case(properties.incremental == true, \"Incremental\", properties.incremental == false, \"Full\", \"\")\r\n| extend snapshotType2 = case(name endswith \"-sec\", \"Backup\", \"Temporary\")\r\n| where TimeCreated < ago({SnapshotAge})\r\n| extend Details = pack_all()\r\n| project TimeCreated, id, name, sourceDisk = properties.creationData.sourceResourceId, diskSizeGB = properties.diskSizeGB, resourceGroup, location, apiVersion, sku = sku.name, snapshotType, snapshotType2, publicNetworkAccess = properties.publicNetworkAccess, networkAccessPolicy = properties.networkAccessPolicy, subscriptionId, tags, Details\r\n| sort by TimeCreated",
+                    "size": 0,
+                    "title": "Virtual Machine OS Disk Snapshots",
+                    "queryType": 1,
+                    "resourceType": "microsoft.resourcegraph/resources",
+                    "crossComponentResources": [
+                      "{LogAnalyticsWorkspace}"
+                    ],
+                    "gridSettings": {
+                      "formatters": [
+                        {
+                          "columnMatch": "$gen_group",
+                          "formatter": 17,
+                          "formatOptions": {
+                            "customColumnWidthSetting": "120px"
+                          }
+                        },
+                        {
+                          "columnMatch": "TimeCreated",
+                          "formatter": 6,
+                          "dateFormat": {
+                            "showUtcTime": null,
+                            "formatName": "shortDateTimeNoMsPattern"
+                          }
+                        },
+                        {
+                          "columnMatch": "name",
+                          "formatter": 5
+                        },
+                        {
+                          "columnMatch": "sourceDisk",
+                          "formatter": 5
+                        },
+                        {
+                          "columnMatch": "diskSizeGB",
+                          "formatter": 2
+                        },
+                        {
+                          "columnMatch": "resourceGroup",
+                          "formatter": 5
+                        },
+                        {
+                          "columnMatch": "location",
+                          "formatter": 5
+                        },
+                        {
+                          "columnMatch": "apiVersion",
+                          "formatter": 5
+                        },
+                        {
+                          "columnMatch": "snapshotType2",
+                          "formatter": 5
+                        },
+                        {
+                          "columnMatch": "publicNetworkAccess",
+                          "formatter": 5
+                        },
+                        {
+                          "columnMatch": "networkAccessPolicy",
+                          "formatter": 5
+                        },
+                        {
+                          "columnMatch": "subscriptionId",
+                          "formatter": 5
+                        },
+                        {
+                          "columnMatch": "tags",
+                          "formatter": 5
+                        },
+                        {
+                          "columnMatch": "Details",
+                          "formatter": 7,
+                          "formatOptions": {
+                            "linkTarget": "CellDetails",
+                            "linkLabel": "🔍 View Details",
+                            "linkIsContextBlade": true
+                          }
+                        }
+                      ],
+                      "rowLimit": 50,
+                      "hierarchySettings": {
+                        "treeType": 1,
+                        "groupBy": [
+                          "location"
+                        ],
+                        "expandTopLevel": true,
+                        "finalBy": "snapshotType2"
+                      },
+                      "labelSettings": [
+                        {
+                          "columnId": "id",
+                          "label": "Snapshot"
+                        },
+                        {
+                          "columnId": "diskSizeGB",
+                          "label": "Disk Size GB"
+                        },
+                        {
+                          "columnId": "location",
+                          "label": "Location"
+                        },
+                        {
+                          "columnId": "sku",
+                          "label": "Sku"
+                        },
+                        {
+                          "columnId": "snapshotType",
+                          "label": "Type"
+                        },
+                        {
+                          "columnId": "snapshotType2",
+                          "label": "Category"
+                        }
+                      ]
+                    },
+                    "sortBy": []
+                  },
+                  "name": "query - Snapshots for VM"
+                }
+              ]
+            },
+            "conditionalVisibility": {
+              "parameterName": "selectedTab",
+              "comparison": "isEqualTo",
+              "value": "VirtualMachines"
+            },
+            "name": "group - VMs Group"
           },
           {
             "type": 12,
@@ -839,6 +1181,1281 @@
               "value": "Inventory"
             },
             "name": "group - Inventory Group"
+          },
+          {
+            "type": 12,
+            "content": {
+              "version": "NotebookGroup/1.0",
+              "groupType": "editable",
+              "items": [
+                {
+                  "type": 1,
+                  "content": {
+                    "json": "### Azure Snapshots Insights Workbook\r\n\r\nThe purpose of this workbook is to provide an overview of your Azure Snapshots resources.",
+                    "style": "upsell"
+                  },
+                  "name": "text - Summary -Main Title"
+                },
+                {
+                  "type": 1,
+                  "content": {
+                    "json": "### Virtual Machines vs Snapshots"
+                  },
+                  "name": "text - 15"
+                },
+                {
+                  "type": 3,
+                  "content": {
+                    "version": "KqlItem/1.0",
+                    "query": "resources\r\n| where type == 'microsoft.compute/virtualmachines'\r\n| where resourceGroup in~ ({ResourceGroup:value})\r\n| extend title2 = 'Virtual machines'\r\n| summarize count() by title2",
+                    "size": 3,
+                    "noDataMessage": "No resources found",
+                    "queryType": 1,
+                    "resourceType": "microsoft.resourcegraph/resources",
+                    "crossComponentResources": [
+                      "{Subscription}"
+                    ],
+                    "visualization": "tiles",
+                    "tileSettings": {
+                      "titleContent": {
+                        "columnMatch": "title2",
+                        "formatter": 1
+                      },
+                      "leftContent": {
+                        "columnMatch": "count_",
+                        "formatter": 12,
+                        "formatOptions": {
+                          "palette": "auto"
+                        },
+                        "numberFormat": {
+                          "unit": 17,
+                          "options": {
+                            "maximumSignificantDigits": 3,
+                            "maximumFractionDigits": 2
+                          }
+                        }
+                      },
+                      "showBorder": true,
+                      "sortCriteriaField": "count_",
+                      "sortOrderField": 2
+                    }
+                  },
+                  "customWidth": "25",
+                  "name": "query - Summary - Virtual Machines"
+                },
+                {
+                  "type": 3,
+                  "content": {
+                    "version": "KqlItem/1.0",
+                    "query": "resources\r\n| where type == 'microsoft.compute/virtualmachines'\r\n| where resourceGroup in~ ({ResourceGroup:value})\r\n| where tags['smcp-backup'] == \"on\"\r\n| extend title2 = 'VMs with backup on'\r\n| summarize count() by title2",
+                    "size": 3,
+                    "noDataMessage": "No resources found",
+                    "queryType": 1,
+                    "resourceType": "microsoft.resourcegraph/resources",
+                    "crossComponentResources": [
+                      "{Subscription}"
+                    ],
+                    "visualization": "tiles",
+                    "tileSettings": {
+                      "titleContent": {
+                        "columnMatch": "title2",
+                        "formatter": 1
+                      },
+                      "leftContent": {
+                        "columnMatch": "count_",
+                        "formatter": 12,
+                        "formatOptions": {
+                          "min": 0,
+                          "palette": "green"
+                        },
+                        "numberFormat": {
+                          "unit": 17,
+                          "options": {
+                            "style": "decimal",
+                            "maximumFractionDigits": 2,
+                            "maximumSignificantDigits": 3
+                          }
+                        }
+                      },
+                      "showBorder": true,
+                      "sortCriteriaField": "count_",
+                      "sortOrderField": 2
+                    }
+                  },
+                  "customWidth": "25",
+                  "name": "query - Summary - Virtual Machines with backup"
+                },
+                {
+                  "type": 3,
+                  "content": {
+                    "version": "KqlItem/1.0",
+                    "query": "resources\r\n| where type == 'microsoft.compute/snapshots'\r\n| where tags[\"smcp-location-type\"] == \"secondary\"\r\n| where resourceGroup in~ ({ResourceGroup:value})\r\n| where name in~ (split(\"{Snapshots:label}\", \", \"))\r\n| extend TimeCreated = properties.timeCreated\r\n| where TimeCreated < ago({SnapshotAge})\r\n| extend title2 = 'Backup Snapshots'\r\n| summarize count() by title2",
+                    "size": 3,
+                    "noDataMessage": "No resources found",
+                    "queryType": 1,
+                    "resourceType": "microsoft.resourcegraph/resources",
+                    "crossComponentResources": [
+                      "{Subscription}"
+                    ],
+                    "visualization": "tiles",
+                    "tileSettings": {
+                      "titleContent": {
+                        "columnMatch": "title2",
+                        "formatter": 1
+                      },
+                      "leftContent": {
+                        "columnMatch": "count_",
+                        "formatter": 12,
+                        "formatOptions": {
+                          "min": 0,
+                          "palette": "magenta"
+                        },
+                        "numberFormat": {
+                          "unit": 17,
+                          "options": {
+                            "style": "decimal",
+                            "maximumFractionDigits": 2,
+                            "maximumSignificantDigits": 3
+                          }
+                        }
+                      },
+                      "showBorder": true,
+                      "sortCriteriaField": "count_",
+                      "sortOrderField": 2
+                    }
+                  },
+                  "customWidth": "25",
+                  "name": "query - Summary - Snapshots secondary"
+                },
+                {
+                  "type": 3,
+                  "content": {
+                    "version": "KqlItem/1.0",
+                    "query": "resources\r\n| where type == 'microsoft.compute/snapshots'\r\n| where tags[\"smcp-location-type\"] == \"primary\"\r\n| where resourceGroup in~ ({ResourceGroup:value})\r\n| where name in~ (split(\"{Snapshots:label}\", \", \"))\r\n| extend TimeCreated = properties.timeCreated\r\n| where TimeCreated < ago({SnapshotAge})\r\n| extend title2 = 'Temporary snapshots'\r\n| summarize count() by title2",
+                    "size": 3,
+                    "noDataMessage": "No resources found",
+                    "queryType": 1,
+                    "resourceType": "microsoft.resourcegraph/resources",
+                    "crossComponentResources": [
+                      "{Subscription}"
+                    ],
+                    "visualization": "tiles",
+                    "tileSettings": {
+                      "titleContent": {
+                        "columnMatch": "title2",
+                        "formatter": 1
+                      },
+                      "leftContent": {
+                        "columnMatch": "count_",
+                        "formatter": 12,
+                        "formatOptions": {
+                          "min": 0,
+                          "palette": "brown"
+                        },
+                        "numberFormat": {
+                          "unit": 17,
+                          "options": {
+                            "style": "decimal",
+                            "maximumFractionDigits": 2,
+                            "maximumSignificantDigits": 3
+                          }
+                        }
+                      },
+                      "showBorder": true,
+                      "sortCriteriaField": "count_",
+                      "sortOrderField": 2
+                    }
+                  },
+                  "customWidth": "25",
+                  "name": "query - Summary - Snapshots primary"
+                },
+                {
+                  "type": 1,
+                  "content": {
+                    "json": "### Snapshots Backup Jobs"
+                  },
+                  "name": "text - 16"
+                },
+                {
+                  "type": 3,
+                  "content": {
+                    "version": "KqlItem/1.0",
+                    "query": "SnapshotsOperations_CL\r\n| where jobType == \"Snapshot\"\r\n| extend resourceGroup = extract(@\"/resourceGroups/([^/]+)\", 1, sourceVmId)\r\n| where resourceGroup in~ ({ResourceGroup:value})\r\n| where TimeGenerated < ago({SnapshotAge})\r\n| summarize Operations = make_set(jobStatus) by jobId\r\n| extend \r\n    IsCompleted = Operations has \"Snapshot Completed\" and not(Operations has \"Snapshot Failed\"),\r\n    IsInProgress = Operations has \"Snapshot In Progress\" and not(Operations has \"Snapshot Completed\") and not(Operations has \"Snapshot Failed\"),\r\n    IsFailed = Operations has \"Snapshot Failed\"\r\n| summarize \r\n    AllJobs = countif(IsCompleted) + countif(IsInProgress) + countif(IsFailed)\r\n| extend type = 'All backup jobs'",
+                    "size": 3,
+                    "noDataMessage": "No resources found",
+                    "queryType": 0,
+                    "resourceType": "microsoft.operationalinsights/workspaces",
+                    "crossComponentResources": [
+                      "{LogAnalyticsWorkspace}"
+                    ],
+                    "visualization": "tiles",
+                    "tileSettings": {
+                      "titleContent": {
+                        "columnMatch": "type",
+                        "formatter": 1
+                      },
+                      "leftContent": {
+                        "columnMatch": "AllJobs",
+                        "formatter": 12,
+                        "formatOptions": {
+                          "palette": "auto"
+                        },
+                        "numberFormat": {
+                          "unit": 17,
+                          "options": {
+                            "style": "decimal",
+                            "maximumFractionDigits": 2,
+                            "maximumSignificantDigits": 3
+                          }
+                        }
+                      },
+                      "showBorder": true,
+                      "sortCriteriaField": "count_",
+                      "sortOrderField": 2
+                    }
+                  },
+                  "customWidth": "25",
+                  "name": "query - Summary - Backup Jobs"
+                },
+                {
+                  "type": 3,
+                  "content": {
+                    "version": "KqlItem/1.0",
+                    "query": "SnapshotsOperations_CL\r\n| where jobType == \"Snapshot\"\r\n| extend resourceGroup = extract(@\"/resourceGroups/([^/]+)\", 1, sourceVmId)\r\n| where resourceGroup in~ ({ResourceGroup:value})\r\n| where TimeGenerated < ago({SnapshotAge})\r\n| summarize Operations = make_set(jobStatus) by jobId\r\n| extend \r\n    IsCompleted = Operations has \"Snapshot Completed\" and not(Operations has \"Snapshot Failed\"),\r\n    IsInProgress = Operations has \"Snapshot In Progress\" and not(Operations has \"Snapshot Completed\") and not(Operations has \"Snapshot Failed\"),\r\n    IsFailed = Operations has \"Snapshot Failed\"\r\n| summarize \r\n    CompletedJobs = countif(IsCompleted),\r\n    InProgressJobs = countif(IsInProgress),\r\n    FailedJobs = countif(IsFailed)\r\n| extend type = 'Backup completed jobs'",
+                    "size": 3,
+                    "noDataMessage": "No resources found",
+                    "queryType": 0,
+                    "resourceType": "microsoft.operationalinsights/workspaces",
+                    "crossComponentResources": [
+                      "{LogAnalyticsWorkspace}"
+                    ],
+                    "visualization": "tiles",
+                    "tileSettings": {
+                      "titleContent": {
+                        "columnMatch": "type",
+                        "formatter": 1
+                      },
+                      "leftContent": {
+                        "columnMatch": "CompletedJobs",
+                        "formatter": 12,
+                        "formatOptions": {
+                          "min": 0,
+                          "palette": "green"
+                        },
+                        "numberFormat": {
+                          "unit": 17,
+                          "options": {
+                            "style": "decimal",
+                            "maximumFractionDigits": 2,
+                            "maximumSignificantDigits": 3
+                          }
+                        }
+                      },
+                      "showBorder": true,
+                      "sortCriteriaField": "count_",
+                      "sortOrderField": 2
+                    }
+                  },
+                  "customWidth": "25",
+                  "name": "query - Summary - Backup Completed Jobs"
+                },
+                {
+                  "type": 3,
+                  "content": {
+                    "version": "KqlItem/1.0",
+                    "query": "SnapshotsOperations_CL\r\n| where jobType == \"Snapshot\"\r\n| extend resourceGroup = extract(@\"/resourceGroups/([^/]+)\", 1, sourceVmId)\r\n| where resourceGroup in~ ({ResourceGroup:value})\r\n| where TimeGenerated < ago({SnapshotAge})\r\n| summarize Operations = make_set(jobStatus) by jobId\r\n| extend \r\n    IsCompleted = Operations has \"Snapshot Completed\" and not(Operations has \"Snapshot Failed\"),\r\n    IsInProgress = Operations has \"Snapshot In Progress\" and not(Operations has \"Snapshot Completed\") and not(Operations has \"Snapshot Failed\"),\r\n    IsFailed = Operations has \"Snapshot Failed\"\r\n| summarize \r\n    CompletedJobs = countif(IsCompleted),\r\n    InProgressJobs = countif(IsInProgress),\r\n    FailedJobs = countif(IsFailed)\r\n| extend type = 'Backup failed jobs'",
+                    "size": 3,
+                    "noDataMessage": "No resources found",
+                    "queryType": 0,
+                    "resourceType": "microsoft.operationalinsights/workspaces",
+                    "crossComponentResources": [
+                      "{LogAnalyticsWorkspace}"
+                    ],
+                    "visualization": "tiles",
+                    "tileSettings": {
+                      "titleContent": {
+                        "columnMatch": "type",
+                        "formatter": 1
+                      },
+                      "leftContent": {
+                        "columnMatch": "FailedJobs",
+                        "formatter": 12,
+                        "formatOptions": {
+                          "min": 0,
+                          "palette": "red"
+                        },
+                        "numberFormat": {
+                          "unit": 17,
+                          "options": {
+                            "style": "decimal",
+                            "maximumFractionDigits": 2,
+                            "maximumSignificantDigits": 3
+                          }
+                        }
+                      },
+                      "showBorder": true,
+                      "sortCriteriaField": "count_",
+                      "sortOrderField": 2
+                    }
+                  },
+                  "customWidth": "25",
+                  "name": "query - Summary - Backup Failed Jobs"
+                },
+                {
+                  "type": 3,
+                  "content": {
+                    "version": "KqlItem/1.0",
+                    "query": "SnapshotsOperations_CL\r\n| where jobType == \"Snapshot\"\r\n| extend resourceGroup = extract(@\"/resourceGroups/([^/]+)\", 1, sourceVmId)\r\n| where resourceGroup in~ ({ResourceGroup:value})\r\n| where TimeGenerated < ago({SnapshotAge})\r\n| summarize Operations = make_set(jobStatus) by jobId\r\n| extend \r\n    IsCompleted = Operations has \"Snapshot Completed\" and not(Operations has \"Snapshot Failed\"),\r\n    IsInProgress = Operations has \"Snapshot In Progress\" and not(Operations has \"Snapshot Completed\") and not(Operations has \"Snapshot Failed\"),\r\n    IsFailed = Operations has \"Snapshot Failed\"\r\n| summarize \r\n    CompletedJobs = countif(IsCompleted),\r\n    InProgressJobs = countif(IsInProgress),\r\n    FailedJobs = countif(IsFailed)\r\n| extend type = 'Backup in progress jobs'",
+                    "size": 3,
+                    "noDataMessage": "No resources found",
+                    "queryType": 0,
+                    "resourceType": "microsoft.operationalinsights/workspaces",
+                    "crossComponentResources": [
+                      "{LogAnalyticsWorkspace}"
+                    ],
+                    "visualization": "tiles",
+                    "tileSettings": {
+                      "titleContent": {
+                        "columnMatch": "type",
+                        "formatter": 1
+                      },
+                      "leftContent": {
+                        "columnMatch": "InProgressJobs",
+                        "formatter": 12,
+                        "formatOptions": {
+                          "min": 0,
+                          "palette": "yellow"
+                        },
+                        "numberFormat": {
+                          "unit": 17,
+                          "options": {
+                            "style": "decimal",
+                            "maximumFractionDigits": 2,
+                            "maximumSignificantDigits": 3
+                          }
+                        }
+                      },
+                      "showBorder": true,
+                      "sortCriteriaField": "count_",
+                      "sortOrderField": 2
+                    }
+                  },
+                  "customWidth": "25",
+                  "name": "query - Summary - Backup In Progress Jobs"
+                },
+                {
+                  "type": 1,
+                  "content": {
+                    "json": "### Snapshots Purge Jobs"
+                  },
+                  "name": "text - 17"
+                },
+                {
+                  "type": 3,
+                  "content": {
+                    "version": "KqlItem/1.0",
+                    "query": "SnapshotsOperations_CL\r\n| where jobType == \"Purge\"\r\n| extend resourceGroup = extract(@\"/resourceGroups/([^/]+)\", 1, sourceVmId)\r\n| where resourceGroup in~ ({ResourceGroup:value})\r\n| where TimeGenerated < ago({SnapshotAge})\r\n| summarize Operations = make_set(jobStatus) by jobId\r\n| extend \r\n    IsCompleted = Operations has \"Purge Completed\" and not(Operations has \"Purge Failed\"),\r\n    IsInProgress = Operations has \"Purge In Progress\" and not(Operations has \"Purge Completed\") and not(Operations has \"Purge Failed\"),\r\n    IsFailed = Operations has \"Purge Failed\"\r\n| summarize \r\n    AllJobs = countif(IsCompleted) + countif(IsInProgress) + countif(IsFailed)\r\n| extend type = 'All purge jobs'",
+                    "size": 3,
+                    "noDataMessage": "No resources found",
+                    "queryType": 0,
+                    "resourceType": "microsoft.operationalinsights/workspaces",
+                    "crossComponentResources": [
+                      "{LogAnalyticsWorkspace}"
+                    ],
+                    "visualization": "tiles",
+                    "tileSettings": {
+                      "titleContent": {
+                        "columnMatch": "type",
+                        "formatter": 1
+                      },
+                      "leftContent": {
+                        "columnMatch": "AllJobs",
+                        "formatter": 12,
+                        "formatOptions": {
+                          "palette": "auto"
+                        },
+                        "numberFormat": {
+                          "unit": 17,
+                          "options": {
+                            "style": "decimal",
+                            "maximumFractionDigits": 2,
+                            "maximumSignificantDigits": 3
+                          }
+                        }
+                      },
+                      "showBorder": true,
+                      "sortCriteriaField": "count_",
+                      "sortOrderField": 2
+                    }
+                  },
+                  "customWidth": "25",
+                  "name": "query - Summary - Purge Jobs"
+                },
+                {
+                  "type": 3,
+                  "content": {
+                    "version": "KqlItem/1.0",
+                    "query": "SnapshotsOperations_CL\r\n| where jobType == \"Purge\"\r\n| extend resourceGroup = extract(@\"/resourceGroups/([^/]+)\", 1, sourceVmId)\r\n| where resourceGroup in~ ({ResourceGroup:value})\r\n| where TimeGenerated < ago({SnapshotAge})\r\n| summarize Operations = make_set(jobStatus) by jobId\r\n| extend \r\n    IsCompleted = Operations has \"Purge Completed\" and not(Operations has \"Purge Failed\"),\r\n    IsInProgress = Operations has \"Purge In Progress\" and not(Operations has \"Purge Completed\") and not(Operations has \"Purge Failed\"),\r\n    IsFailed = Operations has \"Purge Failed\"\r\n| summarize \r\n    CompletedJobs = countif(IsCompleted),\r\n    InProgressJobs = countif(IsInProgress),\r\n    FailedJobs = countif(IsFailed)\r\n| extend type = 'Purge completed jobs'",
+                    "size": 3,
+                    "noDataMessage": "No resources found",
+                    "queryType": 0,
+                    "resourceType": "microsoft.operationalinsights/workspaces",
+                    "crossComponentResources": [
+                      "{LogAnalyticsWorkspace}"
+                    ],
+                    "visualization": "tiles",
+                    "tileSettings": {
+                      "titleContent": {
+                        "columnMatch": "type",
+                        "formatter": 1
+                      },
+                      "leftContent": {
+                        "columnMatch": "CompletedJobs",
+                        "formatter": 12,
+                        "formatOptions": {
+                          "min": 0,
+                          "palette": "green"
+                        },
+                        "numberFormat": {
+                          "unit": 17,
+                          "options": {
+                            "style": "decimal",
+                            "maximumFractionDigits": 2,
+                            "maximumSignificantDigits": 3
+                          }
+                        }
+                      },
+                      "showBorder": true,
+                      "sortCriteriaField": "count_",
+                      "sortOrderField": 2
+                    }
+                  },
+                  "customWidth": "25",
+                  "name": "query - Summary - Purge Completed Jobs"
+                },
+                {
+                  "type": 3,
+                  "content": {
+                    "version": "KqlItem/1.0",
+                    "query": "SnapshotsOperations_CL\r\n| where jobType == \"Purge\"\r\n| extend resourceGroup = extract(@\"/resourceGroups/([^/]+)\", 1, sourceVmId)\r\n| where resourceGroup in~ ({ResourceGroup:value})\r\n| where TimeGenerated < ago({SnapshotAge})\r\n| summarize Operations = make_set(jobStatus) by jobId\r\n| extend \r\n    IsCompleted = Operations has \"Purge Completed\" and not(Operations has \"Purge Failed\"),\r\n    IsInProgress = Operations has \"Purge In Progress\" and not(Operations has \"Purge Completed\") and not(Operations has \"Purge Failed\"),\r\n    IsFailed = Operations has \"Purge Failed\"\r\n| summarize \r\n    CompletedJobs = countif(IsCompleted),\r\n    InProgressJobs = countif(IsInProgress),\r\n    FailedJobs = countif(IsFailed)\r\n| extend type = 'Purge failed jobs'",
+                    "size": 3,
+                    "noDataMessage": "No resources found",
+                    "queryType": 0,
+                    "resourceType": "microsoft.operationalinsights/workspaces",
+                    "crossComponentResources": [
+                      "{LogAnalyticsWorkspace}"
+                    ],
+                    "visualization": "tiles",
+                    "tileSettings": {
+                      "titleContent": {
+                        "columnMatch": "type",
+                        "formatter": 1
+                      },
+                      "leftContent": {
+                        "columnMatch": "FailedJobs",
+                        "formatter": 12,
+                        "formatOptions": {
+                          "min": 0,
+                          "palette": "red"
+                        },
+                        "numberFormat": {
+                          "unit": 17,
+                          "options": {
+                            "style": "decimal",
+                            "maximumFractionDigits": 2,
+                            "maximumSignificantDigits": 3
+                          }
+                        }
+                      },
+                      "showBorder": true,
+                      "sortCriteriaField": "count_",
+                      "sortOrderField": 2
+                    }
+                  },
+                  "customWidth": "25",
+                  "name": "query - Summary - Purge Failed Jobs"
+                },
+                {
+                  "type": 3,
+                  "content": {
+                    "version": "KqlItem/1.0",
+                    "query": "SnapshotsOperations_CL\r\n| where jobType == \"Purge\"\r\n| extend resourceGroup = extract(@\"/resourceGroups/([^/]+)\", 1, sourceVmId)\r\n| where resourceGroup in~ ({ResourceGroup:value})\r\n| where TimeGenerated < ago({SnapshotAge})\r\n| summarize Operations = make_set(jobStatus) by jobId\r\n| extend \r\n    IsCompleted = Operations has \"Purge Completed\" and not(Operations has \"Purge Failed\"),\r\n    IsInProgress = Operations has \"Purge In Progress\" and not(Operations has \"Purge Completed\") and not(Operations has \"Purge Failed\"),\r\n    IsFailed = Operations has \"Purge Failed\"\r\n| summarize \r\n    CompletedJobs = countif(IsCompleted),\r\n    InProgressJobs = countif(IsInProgress),\r\n    FailedJobs = countif(IsFailed)\r\n| extend type = 'Purge in progress jobs'",
+                    "size": 3,
+                    "noDataMessage": "No resources found",
+                    "queryType": 0,
+                    "resourceType": "microsoft.operationalinsights/workspaces",
+                    "crossComponentResources": [
+                      "{LogAnalyticsWorkspace}"
+                    ],
+                    "visualization": "tiles",
+                    "tileSettings": {
+                      "titleContent": {
+                        "columnMatch": "type",
+                        "formatter": 1
+                      },
+                      "leftContent": {
+                        "columnMatch": "InProgressJobs",
+                        "formatter": 12,
+                        "formatOptions": {
+                          "min": 0,
+                          "palette": "yellow"
+                        },
+                        "numberFormat": {
+                          "unit": 17,
+                          "options": {
+                            "style": "decimal",
+                            "maximumFractionDigits": 2,
+                            "maximumSignificantDigits": 3
+                          }
+                        }
+                      },
+                      "showBorder": true,
+                      "sortCriteriaField": "count_",
+                      "sortOrderField": 2
+                    }
+                  },
+                  "customWidth": "25",
+                  "name": "query - Summary - Purge In Progress Jobs"
+                },
+                {
+                  "type": 1,
+                  "content": {
+                    "json": "### Snapshots per Location and Disk Size"
+                  },
+                  "name": "text - 18"
+                },
+                {
+                  "type": 3,
+                  "content": {
+                    "version": "KqlItem/1.0",
+                    "query": "resources \r\n| where type == \"microsoft.compute/snapshots\"\r\n| where resourceGroup in~ ({ResourceGroup:value})\r\n| where name in~ (split(\"{Snapshots:label}\", \", \"))\r\n| extend TimeCreated = properties.timeCreated\r\n| where TimeCreated < ago({SnapshotAge})\r\n| summarize count(type) by location",
+                    "size": 3,
+                    "title": "Snapshots Count by Location",
+                    "queryType": 1,
+                    "resourceType": "microsoft.resourcegraph/resources",
+                    "crossComponentResources": [
+                      "{Subscription}"
+                    ],
+                    "visualization": "piechart",
+                    "tileSettings": {
+                      "showBorder": false,
+                      "titleContent": {
+                        "columnMatch": "location",
+                        "formatter": 1
+                      },
+                      "leftContent": {
+                        "columnMatch": "count_type",
+                        "formatter": 12,
+                        "formatOptions": {
+                          "palette": "auto"
+                        },
+                        "numberFormat": {
+                          "unit": 17,
+                          "options": {
+                            "maximumSignificantDigits": 3,
+                            "maximumFractionDigits": 2
+                          }
+                        }
+                      }
+                    },
+                    "chartSettings": {
+                      "showMetrics": false,
+                      "showLegend": true
+                    }
+                  },
+                  "customWidth": "50",
+                  "name": "query - Inventory - Snapshots by Location"
+                },
+                {
+                  "type": 3,
+                  "content": {
+                    "version": "KqlItem/1.0",
+                    "query": "resources \r\n| where type == \"microsoft.compute/snapshots\"\r\n| where resourceGroup in~ ({ResourceGroup:value})\r\n| where name in~ (split(\"{Snapshots:label}\", \", \"))\r\n| extend TimeCreated = properties.timeCreated\r\n| where TimeCreated < ago({SnapshotAge})\r\n| extend diskSizeGB = properties.diskSizeGB\r\n| summarize count(diskSizeGB) by tostring(diskSizeGB)",
+                    "size": 3,
+                    "title": "Snapshots Count by Source disk size (GiB)",
+                    "queryType": 1,
+                    "resourceType": "microsoft.resourcegraph/resources",
+                    "crossComponentResources": [
+                      "{Subscription}"
+                    ],
+                    "visualization": "piechart",
+                    "chartSettings": {
+                      "showMetrics": false,
+                      "showLegend": true
+                    }
+                  },
+                  "customWidth": "50",
+                  "name": "query - Inventory - Snapshots by diskSizeGB"
+                }
+              ]
+            },
+            "conditionalVisibility": {
+              "parameterName": "selectedTab",
+              "comparison": "isEqualTo",
+              "value": "Summary"
+            },
+            "name": "group - Summary Group"
+          },
+          {
+            "type": 12,
+            "content": {
+              "version": "NotebookGroup/1.0",
+              "groupType": "editable",
+              "items": [
+                {
+                  "type": 1,
+                  "content": {
+                    "json": "### Azure Snapshots Purge Jobs\r\n\r\nOverview dashboard for Azure Snaphots Purge Jobs.\r\n",
+                    "style": "upsell"
+                  },
+                  "name": "text - Main Title"
+                },
+                {
+                  "type": 3,
+                  "content": {
+                    "version": "KqlItem/1.0",
+                    "query": "let FirstOps = SnapshotsOperations_CL\r\n| where jobType == \"Purge\" \r\n| where TimeGenerated < ago({SnapshotAge})\r\n| summarize arg_min(TimeGenerated, *) by jobId;\r\n\r\nSnapshotsOperations_CL\r\n| join kind=inner (FirstOps) on jobId\r\n| where jobType == \"Purge\" \r\n| where TimeGenerated < ago({SnapshotAge})\r\n| summarize arg_max(TimeGenerated, *) by jobId\r\n| extend DurationMinutes = todouble(TimeGenerated - TimeGenerated1) / 600000000.0\r\n| project TimeGenerated, jobId, jobStatus, DurationMinutes, sourceVm = sourceVmId, sourceDisk = sourceDiskId, temporarySnapshot = primarySnapshotId, backupSnapshot = secondarySnapshotId, sourceLocation = primaryLocation, backupLocation = secondaryLocation\r\n| sort by TimeGenerated desc",
+                    "size": 3,
+                    "exportFieldName": "jobId",
+                    "exportParameterName": "SelectedJob",
+                    "showExportToExcel": true,
+                    "queryType": 0,
+                    "resourceType": "microsoft.operationalinsights/workspaces",
+                    "crossComponentResources": [
+                      "{LogAnalyticsWorkspace}"
+                    ],
+                    "visualization": "table",
+                    "gridSettings": {
+                      "formatters": [
+                        {
+                          "columnMatch": "TimeGenerated",
+                          "formatter": 6,
+                          "dateFormat": {
+                            "showUtcTime": null,
+                            "formatName": "shortDateTimeNoMsPattern"
+                          }
+                        },
+                        {
+                          "columnMatch": "jobStatus",
+                          "formatter": 18,
+                          "formatOptions": {
+                            "thresholdsOptions": "icons",
+                            "thresholdsGrid": [
+                              {
+                                "operator": "==",
+                                "thresholdValue": "Purge Completed",
+                                "representation": "success",
+                                "text": "{0}{1}"
+                              },
+                              {
+                                "operator": "==",
+                                "thresholdValue": "Purge In Progress",
+                                "representation": "pending",
+                                "text": "{0}{1}"
+                              },
+                              {
+                                "operator": "==",
+                                "thresholdValue": "Purge Failed",
+                                "representation": "3",
+                                "text": "{0}{1}"
+                              },
+                              {
+                                "operator": "Default",
+                                "thresholdValue": null,
+                                "representation": "unknown",
+                                "text": "{0}{1}"
+                              }
+                            ]
+                          }
+                        },
+                        {
+                          "columnMatch": "DurationMinutes",
+                          "formatter": 0,
+                          "numberFormat": {
+                            "unit": 25,
+                            "options": {
+                              "style": "decimal",
+                              "maximumFractionDigits": 1
+                            }
+                          }
+                        }
+                      ],
+                      "rowLimit": 100,
+                      "filter": true,
+                      "sortBy": [
+                        {
+                          "itemKey": "$gen_date_TimeGenerated_0",
+                          "sortOrder": 2
+                        }
+                      ],
+                      "labelSettings": [
+                        {
+                          "columnId": "TimeGenerated",
+                          "label": "Date Time"
+                        },
+                        {
+                          "columnId": "jobId",
+                          "label": "Job ID"
+                        },
+                        {
+                          "columnId": "jobStatus",
+                          "label": "Job Status"
+                        },
+                        {
+                          "columnId": "DurationMinutes",
+                          "label": "Duration"
+                        },
+                        {
+                          "columnId": "sourceVm",
+                          "label": "Source VM"
+                        },
+                        {
+                          "columnId": "sourceDisk",
+                          "label": "Source Disk"
+                        },
+                        {
+                          "columnId": "temporarySnapshot",
+                          "label": "Temporary Snapshot"
+                        },
+                        {
+                          "columnId": "backupSnapshot",
+                          "label": "Backup Snapshot"
+                        },
+                        {
+                          "columnId": "sourceLocation",
+                          "label": "Source Location"
+                        },
+                        {
+                          "columnId": "backupLocation",
+                          "label": "Backup Location"
+                        }
+                      ]
+                    },
+                    "sortBy": [
+                      {
+                        "itemKey": "$gen_date_TimeGenerated_0",
+                        "sortOrder": 2
+                      }
+                    ]
+                  },
+                  "name": "query - All Purge Jobs"
+                },
+                {
+                  "type": 3,
+                  "content": {
+                    "version": "KqlItem/1.0",
+                    "query": "SnapshotsOperations_CL\r\n| where jobId == \"{SelectedJob}\"\r\n| where jobType == \"Purge\"\r\n| extend Details = pack_all()\r\n| project TimeGenerated, jobId, jobOperation, jobStatus, message, sourceVm = sourceVmId, sourceDisk = sourceDiskId, temporarySnapshot = primarySnapshotId, backupSnapshot = secondarySnapshotId, sourceLocation = primaryLocation, backupLocation = secondaryLocation, Details\r\n| sort by TimeGenerated desc",
+                    "size": 0,
+                    "title": "Job Operations Details",
+                    "queryType": 0,
+                    "resourceType": "microsoft.operationalinsights/workspaces",
+                    "crossComponentResources": [
+                      "{LogAnalyticsWorkspace}"
+                    ],
+                    "gridSettings": {
+                      "formatters": [
+                        {
+                          "columnMatch": "$gen_group",
+                          "formatter": 6,
+                          "dateFormat": {
+                            "formatName": "shortDateTimeNoMsPattern"
+                          }
+                        },
+                        {
+                          "columnMatch": "TimeGenerated",
+                          "formatter": 5
+                        },
+                        {
+                          "columnMatch": "jobId",
+                          "formatter": 5
+                        },
+                        {
+                          "columnMatch": "jobOperation",
+                          "formatter": 18,
+                          "formatOptions": {
+                            "thresholdsOptions": "icons",
+                            "thresholdsGrid": [
+                              {
+                                "operator": "==",
+                                "thresholdValue": "Secondary Snapshot Purge End",
+                                "representation": "Stop",
+                                "text": "{0}{1}"
+                              },
+                              {
+                                "operator": "==",
+                                "thresholdValue": "Primary Snapshot Purge Start",
+                                "representation": "Start",
+                                "text": "{0}{1}"
+                              },
+                              {
+                                "operator": "==",
+                                "thresholdValue": "Secondary Snapshot Purge Start",
+                                "representation": "Start",
+                                "text": "{0}{1}"
+                              },
+                              {
+                                "operator": "==",
+                                "thresholdValue": "Primary Snapshot Purge End",
+                                "representation": "Stop",
+                                "text": "{0}{1}"
+                              },
+                              {
+                                "operator": "==",
+                                "thresholdValue": "Error",
+                                "representation": "cancelled",
+                                "text": "{0}{1}"
+                              },
+                              {
+                                "operator": "Default",
+                                "thresholdValue": null,
+                                "representation": "unknown",
+                                "text": "{0}{1}"
+                              }
+                            ]
+                          }
+                        },
+                        {
+                          "columnMatch": "jobStatus",
+                          "formatter": 18,
+                          "formatOptions": {
+                            "thresholdsOptions": "icons",
+                            "thresholdsGrid": [
+                              {
+                                "operator": "==",
+                                "thresholdValue": "Purge Completed",
+                                "representation": "success",
+                                "text": "{0}{1}"
+                              },
+                              {
+                                "operator": "==",
+                                "thresholdValue": "Purge Failed",
+                                "representation": "3",
+                                "text": "{0}{1}"
+                              },
+                              {
+                                "operator": "==",
+                                "thresholdValue": "Purge In Progress",
+                                "representation": "pending",
+                                "text": "{0}{1}"
+                              },
+                              {
+                                "operator": "Default",
+                                "thresholdValue": null,
+                                "representation": "unknown",
+                                "text": "{0}{1}"
+                              }
+                            ]
+                          }
+                        },
+                        {
+                          "columnMatch": "sourceVm",
+                          "formatter": 5
+                        },
+                        {
+                          "columnMatch": "sourceDisk",
+                          "formatter": 5
+                        },
+                        {
+                          "columnMatch": "temporarySnapshot",
+                          "formatter": 5
+                        },
+                        {
+                          "columnMatch": "backupSnapshot",
+                          "formatter": 5
+                        },
+                        {
+                          "columnMatch": "sourceLocation",
+                          "formatter": 5
+                        },
+                        {
+                          "columnMatch": "backupLocation",
+                          "formatter": 5
+                        },
+                        {
+                          "columnMatch": "Details",
+                          "formatter": 7,
+                          "formatOptions": {
+                            "linkTarget": "CellDetails",
+                            "linkLabel": "🔍 View Details",
+                            "linkIsContextBlade": true
+                          }
+                        }
+                      ],
+                      "rowLimit": 50,
+                      "hierarchySettings": {
+                        "treeType": 1,
+                        "groupBy": [
+                          "jobId"
+                        ],
+                        "expandTopLevel": true,
+                        "finalBy": "TimeGenerated"
+                      },
+                      "labelSettings": [
+                        {
+                          "columnId": "TimeGenerated",
+                          "label": "Date time"
+                        },
+                        {
+                          "columnId": "jobId",
+                          "label": "Job ID"
+                        },
+                        {
+                          "columnId": "jobOperation",
+                          "label": "Operation"
+                        },
+                        {
+                          "columnId": "jobStatus",
+                          "label": "Status"
+                        },
+                        {
+                          "columnId": "message",
+                          "label": "Message"
+                        }
+                      ]
+                    },
+                    "sortBy": []
+                  },
+                  "name": "query - Job Operations"
+                }
+              ]
+            },
+            "conditionalVisibility": {
+              "parameterName": "selectedTab",
+              "comparison": "isEqualTo",
+              "value": "PurgeJobs"
+            },
+            "name": "group - Purge Group"
+          },
+          {
+            "type": 12,
+            "content": {
+              "version": "NotebookGroup/1.0",
+              "groupType": "editable",
+              "items": [
+                {
+                  "type": 1,
+                  "content": {
+                    "json": "### Azure Snapshots Backup Jobs\r\n\r\nOverview dashboard for Azure Snaphots Backup Jobs.\r\n",
+                    "style": "upsell"
+                  },
+                  "name": "text - Main Title"
+                },
+                {
+                  "type": 3,
+                  "content": {
+                    "version": "KqlItem/1.0",
+                    "query": "let FirstOps = SnapshotsOperations_CL\r\n| where jobType == \"Snapshot\" \r\n| where TimeGenerated < ago({SnapshotAge})\r\n| summarize arg_min(TimeGenerated, *) by jobId;\r\n\r\nSnapshotsOperations_CL\r\n| join kind=inner (FirstOps) on jobId\r\n| where jobType == \"Snapshot\" \r\n| where TimeGenerated < ago({SnapshotAge})\r\n| summarize arg_max(TimeGenerated, *) by jobId\r\n| extend DurationMinutes = todouble(TimeGenerated - TimeGenerated1) / 600000000.0\r\n| project TimeGenerated, jobId, jobStatus, DurationMinutes, sourceVm = sourceVmId, sourceDisk = sourceDiskId, temporarySnapshot = primarySnapshotId, backupSnapshot = secondarySnapshotId, sourceLocation = primaryLocation, backupLocation = secondaryLocation\r\n| sort by TimeGenerated desc",
+                    "size": 3,
+                    "exportFieldName": "jobId",
+                    "exportParameterName": "SelectedJob",
+                    "showExportToExcel": true,
+                    "exportToExcelOptions": "all",
+                    "queryType": 0,
+                    "resourceType": "microsoft.operationalinsights/workspaces",
+                    "crossComponentResources": [
+                      "{LogAnalyticsWorkspace}"
+                    ],
+                    "visualization": "table",
+                    "gridSettings": {
+                      "formatters": [
+                        {
+                          "columnMatch": "TimeGenerated",
+                          "formatter": 6,
+                          "dateFormat": {
+                            "showUtcTime": null,
+                            "formatName": "shortDateTimeNoMsPattern"
+                          }
+                        },
+                        {
+                          "columnMatch": "jobStatus",
+                          "formatter": 18,
+                          "formatOptions": {
+                            "thresholdsOptions": "icons",
+                            "thresholdsGrid": [
+                              {
+                                "operator": "==",
+                                "thresholdValue": "Snapshot Completed",
+                                "representation": "success",
+                                "text": "{0}{1}"
+                              },
+                              {
+                                "operator": "==",
+                                "thresholdValue": "Snapshot In Progress",
+                                "representation": "pending",
+                                "text": "{0}{1}"
+                              },
+                              {
+                                "operator": "==",
+                                "thresholdValue": "Snapshot Failed",
+                                "representation": "3",
+                                "text": "{0}{1}"
+                              },
+                              {
+                                "operator": "Default",
+                                "thresholdValue": null,
+                                "representation": "unknown",
+                                "text": "{0}{1}"
+                              }
+                            ]
+                          }
+                        },
+                        {
+                          "columnMatch": "DurationMinutes",
+                          "formatter": 0,
+                          "numberFormat": {
+                            "unit": 25,
+                            "options": {
+                              "style": "decimal",
+                              "maximumFractionDigits": 1
+                            }
+                          }
+                        }
+                      ],
+                      "rowLimit": 50,
+                      "filter": true,
+                      "sortBy": [
+                        {
+                          "itemKey": "$gen_date_TimeGenerated_0",
+                          "sortOrder": 2
+                        }
+                      ],
+                      "labelSettings": [
+                        {
+                          "columnId": "TimeGenerated",
+                          "label": "Date Time"
+                        },
+                        {
+                          "columnId": "jobId",
+                          "label": "Job ID"
+                        },
+                        {
+                          "columnId": "jobStatus",
+                          "label": "Job Status"
+                        },
+                        {
+                          "columnId": "DurationMinutes",
+                          "label": "Duration"
+                        },
+                        {
+                          "columnId": "sourceVm",
+                          "label": "Source VM"
+                        },
+                        {
+                          "columnId": "sourceDisk",
+                          "label": "Source Disk"
+                        },
+                        {
+                          "columnId": "temporarySnapshot",
+                          "label": "Temporary Snapshot"
+                        },
+                        {
+                          "columnId": "backupSnapshot",
+                          "label": "Backup Snapshot"
+                        },
+                        {
+                          "columnId": "sourceLocation",
+                          "label": "Source Location"
+                        },
+                        {
+                          "columnId": "backupLocation",
+                          "label": "Backup Location"
+                        }
+                      ]
+                    },
+                    "sortBy": [
+                      {
+                        "itemKey": "$gen_date_TimeGenerated_0",
+                        "sortOrder": 2
+                      }
+                    ]
+                  },
+                  "name": "query - All Backup Jobs"
+                },
+                {
+                  "type": 3,
+                  "content": {
+                    "version": "KqlItem/1.0",
+                    "query": "SnapshotsOperations_CL\r\n| where jobId == \"{SelectedJob}\"\r\n| where jobType == \"Snapshot\"\r\n| extend Details = pack_all()\r\n| project TimeGenerated, jobId, jobOperation, jobStatus, message, sourceVm = sourceVmId, sourceDisk = sourceDiskId, temporarySnapshot = primarySnapshotId, backupSnapshot = secondarySnapshotId, sourceLocation = primaryLocation, backupLocation = secondaryLocation, Details\r\n| sort by TimeGenerated desc",
+                    "size": 0,
+                    "title": "Job Operations Details",
+                    "queryType": 0,
+                    "resourceType": "microsoft.operationalinsights/workspaces",
+                    "crossComponentResources": [
+                      "{LogAnalyticsWorkspace}"
+                    ],
+                    "gridSettings": {
+                      "formatters": [
+                        {
+                          "columnMatch": "$gen_group",
+                          "formatter": 6,
+                          "dateFormat": {
+                            "formatName": "shortDateTimeNoMsPattern"
+                          }
+                        },
+                        {
+                          "columnMatch": "TimeGenerated",
+                          "formatter": 5
+                        },
+                        {
+                          "columnMatch": "jobId",
+                          "formatter": 5
+                        },
+                        {
+                          "columnMatch": "jobOperation",
+                          "formatter": 18,
+                          "formatOptions": {
+                            "thresholdsOptions": "icons",
+                            "thresholdsGrid": [
+                              {
+                                "operator": "==",
+                                "thresholdValue": "Start",
+                                "representation": "Start",
+                                "text": "{0}{1}"
+                              },
+                              {
+                                "operator": "==",
+                                "thresholdValue": "Snapshot Create",
+                                "representation": "Save",
+                                "text": "{0}{1}"
+                              },
+                              {
+                                "operator": "==",
+                                "thresholdValue": "Error",
+                                "representation": "cancelled",
+                                "text": "{0}{1}"
+                              },
+                              {
+                                "operator": "==",
+                                "thresholdValue": "Snapshot Copy Start",
+                                "representation": "Start",
+                                "text": "{0}{1}"
+                              },
+                              {
+                                "operator": "==",
+                                "thresholdValue": "Snapshot Copy End",
+                                "representation": "Stop",
+                                "text": "{0}{1}"
+                              },
+                              {
+                                "operator": "Default",
+                                "thresholdValue": null,
+                                "representation": "unknown",
+                                "text": "{0}{1}"
+                              }
+                            ]
+                          }
+                        },
+                        {
+                          "columnMatch": "jobStatus",
+                          "formatter": 18,
+                          "formatOptions": {
+                            "thresholdsOptions": "icons",
+                            "thresholdsGrid": [
+                              {
+                                "operator": "==",
+                                "thresholdValue": "Snapshot In Progress",
+                                "representation": "pending",
+                                "text": "{0}{1}"
+                              },
+                              {
+                                "operator": "==",
+                                "thresholdValue": "Snapshot Completed",
+                                "representation": "success",
+                                "text": "{0}{1}"
+                              },
+                              {
+                                "operator": "==",
+                                "thresholdValue": "Snapshot Failed",
+                                "representation": "3",
+                                "text": "{0}{1}"
+                              },
+                              {
+                                "operator": "Default",
+                                "thresholdValue": null,
+                                "representation": "unknown",
+                                "text": "{0}{1}"
+                              }
+                            ]
+                          }
+                        },
+                        {
+                          "columnMatch": "sourceVm",
+                          "formatter": 5
+                        },
+                        {
+                          "columnMatch": "sourceDisk",
+                          "formatter": 5
+                        },
+                        {
+                          "columnMatch": "temporarySnapshot",
+                          "formatter": 5
+                        },
+                        {
+                          "columnMatch": "backupSnapshot",
+                          "formatter": 5
+                        },
+                        {
+                          "columnMatch": "sourceLocation",
+                          "formatter": 5
+                        },
+                        {
+                          "columnMatch": "backupLocation",
+                          "formatter": 5
+                        },
+                        {
+                          "columnMatch": "Details",
+                          "formatter": 7,
+                          "formatOptions": {
+                            "linkTarget": "CellDetails",
+                            "linkLabel": "🔍 View Details",
+                            "linkIsContextBlade": true
+                          }
+                        }
+                      ],
+                      "rowLimit": 50,
+                      "hierarchySettings": {
+                        "treeType": 1,
+                        "groupBy": [
+                          "jobId"
+                        ],
+                        "expandTopLevel": true,
+                        "finalBy": "TimeGenerated"
+                      },
+                      "labelSettings": [
+                        {
+                          "columnId": "TimeGenerated",
+                          "label": "Date time"
+                        },
+                        {
+                          "columnId": "jobId",
+                          "label": "Job ID"
+                        },
+                        {
+                          "columnId": "jobOperation",
+                          "label": "Operation"
+                        },
+                        {
+                          "columnId": "jobStatus",
+                          "label": "Status"
+                        },
+                        {
+                          "columnId": "message",
+                          "label": "Message"
+                        }
+                      ]
+                    },
+                    "sortBy": []
+                  },
+                  "name": "query - Backup Job Operations"
+                }
+              ]
+            },
+            "conditionalVisibility": {
+              "parameterName": "selectedTab",
+              "comparison": "isEqualTo",
+              "value": "BackupJobs"
+            },
+            "name": "group - Backup Group"
           }
         ]
       },
@@ -850,7 +2467,7 @@
     }
   ],
   "fallbackResourceIds": [
-    "Azure Monitor"
+    "/subscriptions/e8460393-3aeb-4161-a310-a46849221365/resourceGroups/snapshots-management"
   ],
   "$schema": "https://github.com/Microsoft/Application-Insights-Workbooks/blob/master/schema/workbook.json"
 }
