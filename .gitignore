@@ -50,4 +50,4 @@ __azurite_db*__.json
 
 MYLOG.md
 local.settings.json.old
-
+recovery-metadata.json

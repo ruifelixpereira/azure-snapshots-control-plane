@@ -22,6 +22,9 @@ export class SnapshotManager {
             // Define the snapshot parameters
             const snapshotParams = {
                 location: source.location,
+                sku: {
+                    name: "Standard_LRS"
+                },
                 creationData: {
                     createOption: "Copy",
                     sourceResourceId: source.diskId,
@@ -74,6 +77,9 @@ export class SnapshotManager {
             // Create the snapshot in the target region
             const targetSnapshotParams = {
                 location: targetLocation,
+                sku: {
+                    name: "Standard_LRS"
+                },
                 creationData: {
                     createOption: "CopyStart",
                     sourceResourceId: source.id, // Use the source snapshot ID
