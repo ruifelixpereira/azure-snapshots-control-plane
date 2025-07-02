@@ -1,0 +1,6 @@
+{
+  "S":   { "diskSku": "Standard_LRS",      "vmSize": "Standard_B2als_v2" },
+  "M":   { "diskSku": "StandardSSD_LRS",   "vmSize": "Standard_B2als_v2" },
+  "L":   { "diskSku": "StandardSSD_LRS",   "vmSize": "Standard_B2as_v2" },
+  "XL":  { "diskSku": "Premium_LRS",       "vmSize": "Standard_D4as_v5" }
+}
