@@ -166,11 +166,11 @@ To monitor the control plane operations and help managing snapshots, an Azure Mo
 You can check the monitoring guidelines at [MONITORING](docs/monitoring.md).
 
 
-## Recovery of Virtual Machines Using Snapshots
+## Recovery of Virtual Machines using Snapshots
 
 You can use the provided Bash script (`recovery/recover-cli.sh`) to manage Azure Virtual Machines and their snapshots, supporting restore and automation scenarios. The script is designed for sysadmins and DevOps engineers who need to automate VM recovery, snapshot management, and batch operations in Azure.
 
-Check all the details on how to use this CLI in the [documentation](recovery/README.md)
+Check all the details on how to use this CLI at [RECOVERY](recovery/README.md)
 
 
 ## References
