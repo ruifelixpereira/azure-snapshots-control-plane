@@ -4,7 +4,7 @@ This repository provides a Bash script (`recovery/recover-cli.sh`) to manage Azu
 
 ## Features
 
-- **List VMs**: Show all VMs and their backup protection state.
+- **List All VMs**: Show all VMs and their backup protection state.
 - **List Protected VMs**: Show only VMs with active backup tags.
 - **List Snapshots**: List all snapshots for a specific VM.
 - **Export Metadata**: Export VM and snapshot metadata to a JSON file.
@@ -74,17 +74,17 @@ cd recovery
 
 - Restore VM from most recent snapshot:
     ```bash
-    ./recover-cli.sh --operation restore-vm --original-vm-name <ORIGINAL_VM_NAME> --subnet-id <SUBNET_ID> [--custom-metadata-file <CUSTOM_METADATA_FILE>]
+    ./recover-cli.sh --operation restore-vm --original-vm-name <ORIGINAL_VM_NAME> --resource-group <RESOURCE_GROUP> --subnet-id <SUBNET_ID> [--restore-primary-region] [--custom-metadata-file <CUSTOM_METADATA_FILE>]
     ```
 
 - Restore group of VMs:
     ```bash
-    ./recover-cli.sh --operation restore-vm-group --original-vm-group "vm1,vm2,vm3" --subnet-id <SUBNET_ID> [--custom-metadata-file <CUSTOM_METADATA_FILE>]
+    ./recover-cli.sh --operation restore-vm-group --original-vm-group "vm1,vm2,vm3" --resource-group <RESOURCE_GROUP> --subnet-id <SUBNET_ID> [--restore-primary-region] [--custom-metadata-file <CUSTOM_METADATA_FILE>]
     ```
 
 - Restore all VMs:
     ```bash
-    ./recover-cli.sh --operation restore-all-vms --subnet-id <SUBNET_ID> [--custom-metadata-file <CUSTOM_METADATA_FILE>]
+    ./recover-cli.sh --operation restore-all-vms --subnet-id <SUBNET_ID> [--restore-primary-region] [--custom-metadata-file <CUSTOM_METADATA_FILE>]
     ```
 
 - Help:
