@@ -69,7 +69,7 @@ npm start
 ```bash
 npm install
 npm run prestart
-func azure functionapp publish <the name of your function app Azure resource>
+func azure functionapp publish <the name of your function app Azure resource> --typescript
 ```
 
 
@@ -90,5 +90,35 @@ curl --request POST -H "Content-Type:application/json" -H "x-functions-key:xxxxx
 ## Install Node and Functions Core Tools
 
 These are pre-requisites to run the environment locally:
-- [Node version 20](https://nodejs.org/en/)
+- [Node version >=20.18.1](https://nodejs.org/en/)
 - [Azure Function Core Tools](https://learn.microsoft.com/en-us/azure/azure-functions/functions-run-local?tabs=linux%2Cisolated-process%2Cnode-v4%2Cpython-v2%2Chttp-trigger%2Ccontainer-apps&pivots=programming-language-typescript#install-the-azure-functions-core-tools)
+
+If using Azure Cloud Shell these tools are already installed.
+
+### Upgrade Node version
+
+If required you can upgrade the node version using `nvm`. Follow these steps:
+
+```bash
+# Install nvm
+curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
+
+# Activate it
+export NVM_DIR="$HOME/.nvm"
+[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+
+# List available versions
+nvm list
+
+# Install desired version
+# nvm install --lts
+nvm install v20.19.2
+
+# Make it the default one
+nvm alias default v20.19.2
+
+# Verifiy installation
+
+node -v
+npm -v
+```
