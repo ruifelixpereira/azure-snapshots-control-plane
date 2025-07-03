@@ -143,7 +143,6 @@ export_metadata() {
     fi
 
     # Get VM metadata
-    #VMS=$(az vm list --query "[].{name:name, resourceGroup:resourceGroup, vmSize:hardwareProfile.vmSize}" -o json)
     VMS=$(az vm list --output json | jq '[.[] | select(.tags["smcp-backup"] == "on") | {name, resourceGroup, vmSize: .hardwareProfile.vmSize}]')
     echo "[" > $outputMetadataFile
     first=true
