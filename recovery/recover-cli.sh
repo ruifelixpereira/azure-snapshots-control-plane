@@ -132,6 +132,9 @@ get_vm_metadata() {
 
 # Function to export metadata for all VMs with active backup protection (including snapshots available) in JSON format
 export_metadata() {
+
+    export_metadata_start_date=$(date +%s)
+
     log_info "--- Exporting metadata for all VMs with active backup protection (including snapshots available) in JSON format... ---"
 
     local outputMetadataFile=$CUSTOM_METADATA_FILE
@@ -161,7 +164,14 @@ export_metadata() {
         echo "$VM_INFO" >> $outputMetadataFile
     done
     echo "]" >> $outputMetadataFile
-    log_info "--- Snapshots exported to $outputMetadataFile ---"
+
+    # Duration calculation
+    export_metadata_end_date=$(date +%s)
+    export_metadata_elapsed=$((export_metadata_end_date - export_metadata_start_date))
+    export_metadata_minutes=$((export_metadata_elapsed / 60))
+    export_metadata_seconds=$((export_metadata_elapsed % 60))
+
+    log_info "--- Snapshots exported to $outputMetadataFile in ${export_metadata_minutes} minutes and ${export_metadata_seconds} seconds.---"
 }
 
 # Function to create a VM from a snapshot
@@ -226,6 +236,8 @@ create_vm_from_snapshot() {
 # Function to create a VM from a snapshot
 create_vm() {
 
+    create_vm_start_date=$(date +%s)
+
     ## Validate parameters
     if [ -z "$RESOURCE_GROUP" ] || [ -z "$VM_NAME" ] || [ -z "$SNAPSHOT_NAME" ] || [ -z "$TSHIRT_SIZE" ] || [ -z "$SUBNET_ID" ]; then
         echo "Usage: $0 --operation create-vm --vm-name <VM_NAME> --resource-group <RESOURCE_GROUP> --snapshot-name <SNAPSHOT_NAME> --tshirt-size <TSHIRT_SIZE> --subnet-id <SUBNET_ID>"
@@ -240,12 +252,20 @@ create_vm() {
     # Create vm from snapshot
     create_vm_from_snapshot "$VM_NAME" "$RESOURCE_GROUP" "$SNAPSHOT_NAME" "$VM_SIZE" "$DISK_SKU" "$SUBNET_ID"
 
-    log_info "--- Completed creating VM '$VM_NAME' from snapshot '$SNAPSHOT_NAME'... ---"
+    # Duration calculation
+    create_vm_end_date=$(date +%s)
+    create_vm_elapsed=$((create_vm_end_date - create_vm_start_date))
+    create_vm_minutes=$((create_vm_elapsed / 60))
+    create_vm_seconds=$((create_vm_elapsed % 60))
+
+    log_info "--- Completed creating VM '$VM_NAME' from snapshot '$SNAPSHOT_NAME' in ${create_vm_minutes} minutes and ${create_vm_seconds} seconds. ---"
 }
 
 # Creates a VM using the information in the metadata file and using the most recent snaphsot in the metadata file
 # This function assumes that the metadata file contains the necessary information to create the VM.
 restore_vm() {
+
+    restore_vm_start_date=$(date +%s)
 
     ## Validate parameters
     if [ -z "$RESOURCE_GROUP" ] || [ -z "$ORIGINAL_VM_NAME" ] || [ -z "$SUBNET_ID" ]; then
@@ -292,12 +312,20 @@ restore_vm() {
     UNIQUE_STR=$(tr -dc 'a-z0-9' </dev/urandom | head -c5)
     create_vm_from_snapshot $ORIGINAL_VM_NAME-$UNIQUE_STR $RESOURCE_GROUP $SNAPSHOT_TO_USE $VM_SIZE $DISK_SKU $SUBNET_ID
 
-    log_info "--- Completed creating clone from original VM '$ORIGINAL_VM_NAME' using the last snapshot from metadata... ---"
+    # Duration calculation
+    restore_vm_end_date=$(date +%s)
+    restore_vm_elapsed=$((restore_vm_end_date - restore_vm_start_date))
+    restore_vm_minutes=$((restore_vm_elapsed / 60))
+    restore_vm_seconds=$((restore_vm_elapsed % 60))
+
+    log_info "--- Completed creating clone from original VM '$ORIGINAL_VM_NAME' using the last snapshot from metadata in ${restore_vm_minutes} minutes and ${restore_vm_seconds} seconds. ---"
 }
 
 
 # Function to create group of VMs from most recent snapshots
 restore_vm_group() {
+
+    restore_vm_group_start_date=$(date +%s)
 
     ## Validate parameters
     if [ -z "$RESOURCE_GROUP" ] || [ -z "$ORIGINAL_VM_GROUP" ] || [ -z "$SUBNET_ID" ]; then
@@ -372,11 +400,19 @@ restore_vm_group() {
         wait "$pid"
     done
 
-    log_info "--- Completed creating clones from original group of VMs '$ORIGINAL_VM_GROUP' using the last snapshots from metadata... ---"
+    # Duration calculation
+    restore_vm_group_end_date=$(date +%s)
+    restore_vm_group_elapsed=$((restore_vm_group_end_date - restore_vm_group_start_date))
+    restore_vm_group_minutes=$((restore_vm_group_elapsed / 60))
+    restore_vm_group_seconds=$((restore_vm_group_elapsed % 60))
+
+    log_info "--- Completed creating clones from original group of VMs '$ORIGINAL_VM_GROUP' using the last snapshots from metadata in ${restore_vm_group_minutes} minutes and ${restore_vm_group_seconds} seconds. ---"
 }
 
 # Function to create all VMs from most recent snapshots
 restore_all_vms() {
+
+    restore_all_vms_start_date=$(date +%s)
 
     ## Validate parameters
     if [ -z "$SUBNET_ID" ]; then
@@ -448,10 +484,15 @@ restore_all_vms() {
     for pid in "${PIDS[@]}"; do
         wait "$pid"
     done
+    
+    # Duration calculation
+    restore_all_vms_end_date=$(date +%s)
+    restore_all_vms_elapsed=$((restore_all_vms_end_date - restore_all_vms_start_date))
+    restore_all_vms_minutes=$((restore_all_vms_elapsed / 60))
+    restore_all_vms_seconds=$((restore_all_vms_elapsed % 60))
 
-    log_info "--- Completed creating clones for all original VMs using the last snapshots from metadata... ---"
+    log_info "--- Completed creating clones for all original VMs using the last snapshots from metadata in ${restore_all_vms_minutes} minutes and ${restore_all_vms_seconds} seconds. ---"
 }
-
 
 print_help() {
   echo "Usage: $0 --operation <operation> [parameters]"
