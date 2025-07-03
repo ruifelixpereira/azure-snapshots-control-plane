@@ -67,6 +67,7 @@ npm start
 ## Deploy Function app manually
 
 ```bash
+npm install
 npm run prestart
 func azure functionapp publish <the name of your function app Azure resource>
 ```
@@ -84,3 +85,10 @@ curl --request POST -H "Content-Type:application/json" -H "x-functions-key:xxxxx
 # Test http functions locally
 curl --request POST -H "Content-Type:application/json" -H "x-functions-key:xxxxxxxxxxxxx" --data '{"input":""}'  http://localhost:7071/api/hello
 ```
+
+
+## Install Node and Functions Core Tools
+
+These are pre-requisites to run the environment locally:
+- [Node version 20](https://nodejs.org/en/)
+- [Azure Function Core Tools](https://learn.microsoft.com/en-us/azure/azure-functions/functions-run-local?tabs=linux%2Cisolated-process%2Cnode-v4%2Cpython-v2%2Chttp-trigger%2Ccontainer-apps&pivots=programming-language-typescript#install-the-azure-functions-core-tools)
