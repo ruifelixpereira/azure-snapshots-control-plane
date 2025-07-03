@@ -72,6 +72,64 @@ list_vm_snapshots() {
     az snapshot list --query "[?contains(name, '$DISK_NAME')].[name, resourceGroup, location]" -o tsv
 }
 
+# Function to get a VM metadata
+get_vm_metadata() {
+
+    local vmName=$1
+    local resourceGroup=$2
+
+    ## Validate parameters
+    if [ -z "$resourceGroup" ] || [ -z "$vmName" ]; then
+        echo "Usage: $0 --operation get-vm-metadata --vm-name <VM_NAME> --resource-group <RESOURCE_GROUP>"
+        exit 1
+    fi
+
+    # Get VM metadata
+    VM_METADATA=$(az vm show --name "$vmName" --resource-group "$resourceGroup" --query "{vmSize:hardwareProfile.vmSize, osDiskName:storageProfile.osDisk.name}" -o json)
+    VM_SIZE=$(echo "$VM_METADATA" | jq -r '.vmSize')
+    DISK_NAME=$(echo "$VM_METADATA" | jq -r '.osDiskName')
+
+    # Get disk metadata
+    DISK_METADATA=$(az disk show --name "$DISK_NAME" --resource-group "$resourceGroup" --query "{name:name, resourceGroup:resourceGroup, sku:sku.name, diskSizeGB:diskSizeGB}" -o json)
+    DISK_SKU=$(echo "$DISK_METADATA" | jq -r '.sku')
+    DISK_SIZE=$(echo "$DISK_METADATA" | jq -r '.diskSizeGB')
+
+    # Get list of snapshots
+    SNAPSHOTS=$(az snapshot list --query "[?contains(name, '$DISK_NAME')].{name:name, resourceGroup:resourceGroup, location:location}" -o json)
+
+    # Get the most recent snapshots
+    MOST_RECENT_SECONDARY_SNAPSHOT=$(echo "$SNAPSHOTS" | jq -r -c 'sort_by(.name) | map(select(.name | endswith("-sec"))) | last // ""')
+    MOST_RECENT_PRIMARY_SNAPSHOT=$(echo "$SNAPSHOTS" | jq -r -c 'sort_by(.name) | map(select(.name | endswith("-sec") | not)) | last // ""')
+
+    # Format the output
+    # Create a new JSON object
+    #TEMP_VM_INFO=$(jq -n -r -c \
+    #--arg vmName "$vmName" \
+    #--arg resourceGroup "$resourceGroup" \
+    #--arg vmSize "$VM_SIZE" \
+    #--arg diskSku "$DISK_SKU" \
+    #--arg diskSizeGB "$DISK_SIZE" \
+    #--arg lastTemporarySnapshot "$MOST_RECENT_PRIMARY_SNAPSHOT" \
+    #--arg lastBackupSnapshot "$MOST_RECENT_SECONDARY_SNAPSHOT" \
+    #--argjson snapshots "$SNAPSHOTS" \
+    #'{
+    #    vmName: $vmName,
+    #    resourceGroup: $resourceGroup,
+    #    vmSize: $vmSize,
+    #    diskSku: $diskSku,
+    #    diskSizeGB: $diskSizeGB,
+    #    lastTemporarySnapshot: $lastTemporarySnapshot,
+    #    lastBackupSnapshot: $lastBackupSnapshot,
+    #    snapshots: $snapshots
+    #}')
+
+    #echo "$TEMP_VM_INFO"
+
+    echo "{\"vmName\": \"$vmName\", \"resourceGroup\": \"$resourceGroup\", \"vmSize\": \"$VM_SIZE\", \"diskSku\": \"$DISK_SKU\", \"diskSizeGB\": \"$DISK_SIZE\", \"lastTemporarySnapshot\": $MOST_RECENT_PRIMARY_SNAPSHOT, \"lastBackupSnapshot\": $MOST_RECENT_SECONDARY_SNAPSHOT, \"snapshots\": $SNAPSHOTS}"
+}
+
+
+
 # Function to export metadata for all VMs with active backup protection (including snapshots available) in JSON format
 export_metadata() {
     log_info "--- Exporting metadata for all VMs with active backup protection (including snapshots available) in JSON format... ---"
@@ -92,23 +150,16 @@ export_metadata() {
     echo "$VMS" | jq -c '.[]' | while read vm; do
         VM_NAME=$(echo "$vm" | jq -r '.name')
         RESOURCE_GROUP=$(echo "$vm" | jq -r '.resourceGroup')
-        VM_SIZE=$(echo "$vm" | jq -r '.vmSize')
 
-        # Get disk metadata
-        DISK_NAME=$(az vm show --name "$VM_NAME" --resource-group "$RESOURCE_GROUP" --query "storageProfile.osDisk.name" -o tsv)
-        DISK_METADATA=$(az disk show --name "$DISK_NAME" --resource-group "$RESOURCE_GROUP" --query "{name:name, resourceGroup:resourceGroup, sku:sku.name, diskSizeGB:diskSizeGB}" -o json)
-        DISK_SKU=$(echo "$DISK_METADATA" | jq -r '.sku')
-        DISK_SIZE=$(echo "$DISK_METADATA" | jq -r '.diskSizeGB')
-
-        # Get Snapshots metdata
-        #SNAPSHOTS=$(az snapshot list --query "[?contains(name, '$DISK_NAME')].[name, resourceGroup, location]" -o json)
-        SNAPSHOTS=$(az snapshot list --query "[?contains(name, '$DISK_NAME')].{name:name, resourceGroup:resourceGroup, location:location}" -o json)
+        VM_INFO=$(get_vm_metadata "$VM_NAME" "$RESOURCE_GROUP")
+        
         if [ "$first" = true ]; then
             first=false
         else
             echo "," >> $outputMetadataFile
         fi
-        echo "{\"vmName\": \"$VM_NAME\", \"resourceGroup\": \"$RESOURCE_GROUP\", \"vmSize\": \"$VM_SIZE\", \"diskSku\": \"$DISK_SKU\", \"diskSizeGB\": \"$DISK_SIZE\", \"snapshots\": $SNAPSHOTS}" >> $outputMetadataFile
+
+        echo "$VM_INFO" >> $outputMetadataFile
     done
     echo "]" >> $outputMetadataFile
     log_info "--- Snapshots exported to $outputMetadataFile ---"
@@ -198,52 +249,49 @@ create_vm() {
 restore_vm() {
 
     ## Validate parameters
-    if [ -z "$ORIGINAL_VM_NAME" ] || [ -z "$SUBNET_ID" ]; then
-        echo "Usage: $0 --operation restore-vm original-vm-name <ORIGINAL_VM_NAME> --subnet-id <SUBNET_ID> [--custom-metadata-file <CUSTOM_METADATA_FILE>]"
+    if [ -z "$RESOURCE_GROUP" ] || [ -z "$ORIGINAL_VM_NAME" ] || [ -z "$SUBNET_ID" ]; then
+        echo "Usage: $0 --operation restore-vm --original-vm-name <ORIGINAL_VM_NAME> --resource-group <RESOURCE_GROUP> --subnet-id <SUBNET_ID> [--restore-primary-region] [--custom-metadata-file <CUSTOM_METADATA_FILE>]"
         exit 1
     fi
 
-    # Get which metadata file to use (custom or default)
-    # Check if overriding custom metadata parameter was provided
-    local referenceMetadataFile=$CUSTOM_METADATA_FILE
-
-    if [ -z "$referenceMetadataFile" ]; then
-        # Use the default name"
-        referenceMetadataFile="$DEFAULT_METADATA_FILE"
-
-        if [ ! -f $referenceMetadataFile ]; then
-            # Generate metadata
-            export_metadata
+    if [ -z "$CUSTOM_METADATA_FILE" ]; then
+        # No custom data
+        VM_INFO=$(get_vm_metadata "$ORIGINAL_VM_NAME" "$RESOURCE_GROUP")
+    else
+        # Custom metadata file provided
+        if [ ! -f "$CUSTOM_METADATA_FILE" ]; then
+            log_error "Custom metadata file '$CUSTOM_METADATA_FILE' not found!"
+            exit 1
         fi
-    fi
 
-    # Check if metadata file exists
-    if [ ! -f $referenceMetadataFile ]; then
-        log_error "Reference metadata file '$referenceMetadataFile' not found!"
-        exit 1
+        VM_INFO=$(jq -c --arg vm "$ORIGINAL_VM_NAME" '.[] | select(.vmName == $vm)' "$CUSTOM_METADATA_FILE")
     fi
 
     log_info "--- Creating clone from original VM '$ORIGINAL_VM_NAME' using the last snapshot from metadata... ---"
 
     # Get VM info from metadata
-    VM_INFO=$(jq -c --arg vm "$ORIGINAL_VM_NAME" '.[] | select(.vmName == $vm)' $referenceMetadataFile)
-    RESOURCE_GROUP=$(echo "$VM_INFO" | jq -r -c '.resourceGroup')
-    VM_SIZE=$(echo "$VM_INFO" | jq -r -c '.vmSize')
-    DISK_SKU=$(echo "$VM_INFO" | jq -r -c '.diskSku')
-
-    # Get all snapshots for VM
-    SNAPSHOTS_INFO=$(echo "$VM_INFO" | jq -c '.snapshots')
+    VM_SIZE=$(echo "$VM_INFO" | jq -r '.vmSize')
+    DISK_SKU=$(echo "$VM_INFO" | jq -r '.diskSku')
 
     # Get the most recent snapshot
-    MOST_RECENT_SNAPSHOT=$(echo "$SNAPSHOTS_INFO" | jq -r '.[].name' | sort -r | head -n 1)
+    if [ "$RESTORE_TYPE" = "backup" ]; then
+        # If RESTORE_TYPE is "backup", we want the last backup snapshot
+        MOST_RECENT_SNAPSHOT=$(echo "$VM_INFO" | jq -c '.lastBackupSnapshot')
+    else
+        # If RESTORE_TYPE is "temporary", we want the last temporary snapshot
+        MOST_RECENT_SNAPSHOT=$(echo "$VM_INFO" | jq -c '.lastTemporarySnapshot')
+    fi
+
     if [ -z "$MOST_RECENT_SNAPSHOT" ]; then
         log_warn "No snapshots are available for VM '$ORIGINAL_VM_NAME'."
         exit 1
     fi
 
+    SNAPSHOT_TO_USE=$(echo "$MOST_RECENT_SNAPSHOT" | jq -r -c '.name')
+
     # Create vm from snapshot
     UNIQUE_STR=$(tr -dc 'a-z0-9' </dev/urandom | head -c5)
-    create_vm_from_snapshot $ORIGINAL_VM_NAME-$UNIQUE_STR $RESOURCE_GROUP $MOST_RECENT_SNAPSHOT $VM_SIZE $DISK_SKU $SUBNET_ID
+    create_vm_from_snapshot $ORIGINAL_VM_NAME-$UNIQUE_STR $RESOURCE_GROUP $SNAPSHOT_TO_USE $VM_SIZE $DISK_SKU $SUBNET_ID
 
     log_info "--- Completed creating clone from original VM '$ORIGINAL_VM_NAME' using the last snapshot from metadata... ---"
 }
@@ -253,65 +301,72 @@ restore_vm() {
 restore_vm_group() {
 
     ## Validate parameters
-    if [ -z "$ORIGINAL_VM_GROUP" ] || [ -z "$SUBNET_ID" ]; then
-        echo "Usage: $0 --operation restore-vm-group --original-vm-group <ORIGINAL_VM_GROUP> --subnet-id <SUBNET_ID> [--custom-metadata-file <CUSTOM_METADATA_FILE>]"
+    if [ -z "$RESOURCE_GROUP" ] || [ -z "$ORIGINAL_VM_GROUP" ] || [ -z "$SUBNET_ID" ]; then
+        echo "Usage: $0 --operation restore-vm-group --original-vm-group <ORIGINAL_VM_GROUP> --resource-group <RESOURCE_GROUP> --subnet-id <SUBNET_ID> [--restore-primary-region] [--custom-metadata-file <CUSTOM_METADATA_FILE>]"
         exit 1
     fi
 
-    # Get which metadata file to use (custom or default)
-    # Check if overriding custom metadata parameter was provided
-    local referenceMetadataFile=$CUSTOM_METADATA_FILE
+    if [ -n "$CUSTOM_METADATA_FILE" ]; then
 
-    if [ -z "$referenceMetadataFile" ]; then
-        # Use the default name"
-        referenceMetadataFile="$DEFAULT_METADATA_FILE"
-
-        if [ ! -f $referenceMetadataFile ]; then
-            # Generate metadata
-            export_metadata
+        # Custom metadata file provided
+        if [ ! -f "$CUSTOM_METADATA_FILE" ]; then
+            log_error "Custom metadata file '$CUSTOM_METADATA_FILE' not found!"
+            exit 1
         fi
-    fi
 
-    # Check if metadata file exists
-    if [ ! -f $referenceMetadataFile ]; then
-        log_error "Reference metadata file '$referenceMetadataFile' not found!"
-        exit 1
+        # No custom data
     fi
 
     log_info "--- Creating clones from original group of VMs '$ORIGINAL_VM_GROUP' using the last snapshots from metadata... ---"
 
-    # Suppose VM_NAMES="vm1,vm2,vm3"
-    IFS=',' read -r -a VM_NAMES_ARRAY <<< "$ORIGINAL_VM_GROUP"
-    VM_NAMES_JSON=$(printf '%s\n' "${VM_NAMES_ARRAY[@]}" | jq -R . | jq -s .)
-
     # Array to hold PIDs
     PIDS=()
 
-    while read -r vm_json; do
-        # Extract VM information
-        VM_NAME=$(echo "$vm_json" | jq -r '.vmName')
-        RESOURCE_GROUP=$(echo "$vm_json" | jq -r '.resourceGroup')
-        VM_SIZE=$(echo "$vm_json" | jq -r '.vmSize')
-        DISK_SKU=$(echo "$vm_json" | jq -r '.diskSku')
+    # Suppose VM_NAMES="vm1,vm2,vm3"
+    IFS=',' read -ra VMS <<< "$ORIGINAL_VM_GROUP"
+    for vm in "${VMS[@]}"; do
+        echo "Processing $vm"
 
-        # Get all snapshots for VM
-        SNAPSHOTS_INFO=$(echo "$vm_json" | jq -c '.snapshots')
+        # Get vm metadata
+        if [ -n "$CUSTOM_METADATA_FILE" ]; then
+            VM_INFO=$(jq -c --arg vm "$vm" '.[] | select(.vmName == $vm)' "$CUSTOM_METADATA_FILE")
+        else
+            VM_INFO=$(get_vm_metadata "$vm" "$RESOURCE_GROUP")
+        fi
 
-        # Get the most recent snapshot
-        MOST_RECENT_SNAPSHOT=$(echo "$SNAPSHOTS_INFO" | jq -r '.[].name' | sort -r | head -n 1)
-        if [ -z "$MOST_RECENT_SNAPSHOT" ]; then
-            log_warn "No snapshots are available for VM '$VM_NAME'."
+        if [ -z "$VM_INFO" ]; then
+            log_warn "No metadata is available for VM '$vm'."
             continue
         fi
+        
+        # Get VM info from metadata
+        VM_SIZE=$(echo "$VM_INFO" | jq -r '.vmSize')
+        DISK_SKU=$(echo "$VM_INFO" | jq -r '.diskSku')
+
+        # Get the most recent snapshot
+        if [ "$RESTORE_TYPE" = "backup" ]; then
+            # If RESTORE_TYPE is "backup", we want the last backup snapshot
+            MOST_RECENT_SNAPSHOT=$(echo "$VM_INFO" | jq -c '.lastBackupSnapshot')
+        else
+            # If RESTORE_TYPE is "temporary", we want the last temporary snapshot
+            MOST_RECENT_SNAPSHOT=$(echo "$VM_INFO" | jq -c '.lastTemporarySnapshot')
+        fi
+
+        if [ -z "$MOST_RECENT_SNAPSHOT" ]; then
+            log_warn "No snapshots are available for VM '$vm'."
+            continue
+        fi
+
+        SNAPSHOT_TO_USE=$(echo "$MOST_RECENT_SNAPSHOT" | jq -r -c '.name')
 
         # Create vm from snapshot
         UNIQUE_STR=$(tr -dc 'a-z0-9' </dev/urandom | head -c5)
 
         # Launch in background and collect PID
-        log_info "=== Launching parallel process to create VM '$VM_NAME-$UNIQUE_STR' from snapshot '$MOST_RECENT_SNAPSHOT'... ==="
-        create_vm_from_snapshot $VM_NAME-$UNIQUE_STR $RESOURCE_GROUP $MOST_RECENT_SNAPSHOT $VM_SIZE $DISK_SKU $SUBNET_ID &
+        log_info "=== Launching parallel process to create VM '$vm-$UNIQUE_STR' from snapshot '$SNAPSHOT_TO_USE'... ==="
+        create_vm_from_snapshot $vm-$UNIQUE_STR $RESOURCE_GROUP $SNAPSHOT_TO_USE $VM_SIZE $DISK_SKU $SUBNET_ID &
         PIDS+=($!)
-    done < <(jq --argjson names "$VM_NAMES_JSON" -c '[.[] | select(.vmName | IN($names[]))][]' "$referenceMetadataFile")
+    done
 
     # Wait for all background jobs to finish
     for pid in "${PIDS[@]}"; do
@@ -326,7 +381,7 @@ restore_all_vms() {
 
     ## Validate parameters
     if [ -z "$SUBNET_ID" ]; then
-        echo "Usage: $0 --operation restore-all-vms --subnet-id <SUBNET_ID> [--custom-metadata-file <CUSTOM_METADATA_FILE>]"
+        echo "Usage: $0 --operation restore-all-vms --subnet-id <SUBNET_ID> [--restore-primary-region] [--custom-metadata-file <CUSTOM_METADATA_FILE>]"
         exit 1
     fi
 
@@ -355,6 +410,7 @@ restore_all_vms() {
     # Array to hold PIDs
     PIDS=()
 
+
     while read -r vm_json; do
         # Extract VM information
         VM_NAME=$(echo "$vm_json" | jq -r '.vmName')
@@ -362,22 +418,30 @@ restore_all_vms() {
         VM_SIZE=$(echo "$vm_json" | jq -r '.vmSize')
         DISK_SKU=$(echo "$vm_json" | jq -r '.diskSku')
 
-        # Get all snapshots for VM
-        SNAPSHOTS_INFO=$(echo "$vm_json" | jq -c '.snapshots')
-
         # Get the most recent snapshot
-        MOST_RECENT_SNAPSHOT=$(echo "$SNAPSHOTS_INFO" | jq -r '.[].name' | sort -r | head -n 1)
+        if [ "$RESTORE_TYPE" = "backup" ]; then
+            # If RESTORE_TYPE is "backup", we want the last backup snapshot
+            MOST_RECENT_SNAPSHOT=$(echo "$vm_json" | jq -c '.lastBackupSnapshot')
+        else
+            # If RESTORE_TYPE is "temporary", we want the last temporary snapshot
+            MOST_RECENT_SNAPSHOT=$(echo "$vm_json" | jq -c '.lastTemporarySnapshot')
+        fi
+
         if [ -z "$MOST_RECENT_SNAPSHOT" ]; then
             log_warn "No snapshots are available for VM '$VM_NAME'."
-            continue
+            exit 1
         fi
+
+        SNAPSHOT_TO_USE=$(echo "$MOST_RECENT_SNAPSHOT" | jq -r -c '.name')
+
+        echo "$SNAPSHOT_TO_USE"
 
         # Create vm from snapshot
         UNIQUE_STR=$(tr -dc 'a-z0-9' </dev/urandom | head -c5)
 
         # Launch in background and collect PID
-        log_info "=== Launching parallel process to create VM '$VM_NAME-$UNIQUE_STR' from snapshot '$MOST_RECENT_SNAPSHOT'... ==="
-        create_vm_from_snapshot $VM_NAME-$UNIQUE_STR $RESOURCE_GROUP $MOST_RECENT_SNAPSHOT $VM_SIZE $DISK_SKU $SUBNET_ID &
+        log_info "=== Launching parallel process to create VM '$VM_NAME-$UNIQUE_STR' from snapshot '$SNAPSHOT_TO_USE'... ==="
+        create_vm_from_snapshot $VM_NAME-$UNIQUE_STR $RESOURCE_GROUP $SNAPSHOT_TO_USE $VM_SIZE $DISK_SKU $SUBNET_ID &
         PIDS+=($!)
     done < <(jq -c '[.[] ][]' "$referenceMetadataFile")
 
@@ -409,13 +473,13 @@ print_help() {
   echo "  --operation create-vm --vm-name <VM_NAME> --resource-group <RESOURCE_GROUP> --snapshot-name <SNAPSHOT_NAME> --tshirt-size <TSHIRT_SIZE> --subnet-id <SUBNET_ID>"
   echo "      Creates a VM from a specified snapshot."
   echo ""
-  echo "  --operation restore-vm --original-vm-name <ORIGINAL_VM_NAME> --subnet-id <SUBNET_ID> [--custom-metadata-file <CUSTOM_METADATA_FILE>]"
+  echo "  --operation restore-vm --original-vm-name <ORIGINAL_VM_NAME> --resource-group <RESOURCE_GROUP> --subnet-id <SUBNET_ID> [--restore-primary-region] [--custom-metadata-file <CUSTOM_METADATA_FILE>]"
   echo "      Creates a VM from the most recent snapshot of the original VM in the metadata file. If a custom metadata file is not specified the default one is used."
   echo ""
-  echo "  --operation restore-vm-group --original-vm-group <ORIGINAL_VM_GROUP> --subnet-id <SUBNET_ID> [--custom-metadata-file <CUSTOM_METADATA_FILE>]"
+  echo "  --operation restore-vm-group --original-vm-group <ORIGINAL_VM_GROUP> --resource-group <RESOURCE_GROUP> --subnet-id <SUBNET_ID> [--restore-primary-region] [--custom-metadata-file <CUSTOM_METADATA_FILE>]"
   echo "      Creates a group of VMs from the most recent snapshots of the original VMs in the metadata file. If a custom metadata file is not specified the default one is used."
   echo ""
-  echo "  --operation restore-all-vms --subnet-id <SUBNET_ID> [--custom-metadata-file <CUSTOM_METADATA_FILE>]"
+  echo "  --operation restore-all-vms --subnet-id <SUBNET_ID> [--restore-primary-region] [--custom-metadata-file <CUSTOM_METADATA_FILE>]"
   echo "      Creates all VMs from the most recent snapshots of the original VMs in the metadata file. If a custom metadata file is not specified the default one is used."
   echo ""
   echo "  --help"
@@ -423,6 +487,7 @@ print_help() {
 }
 
 # Parse command-line arguments
+RESTORE_TYPE="backup"
 while [[ "$#" -gt 0 ]]; do
     case $1 in
         --operation) OPERATION="$2"; shift ;;
@@ -434,6 +499,7 @@ while [[ "$#" -gt 0 ]]; do
         --original-vm-name) ORIGINAL_VM_NAME="$2"; shift ;;
         --original-vm-group) ORIGINAL_VM_GROUP="$2"; shift ;;
         --tshirt-size) TSHIRT_SIZE="$2"; shift ;;
+        --restore-primary-region) RESTORE_TYPE="temporary" ;;
         --help) print_help; exit 0 ;;
         *) echo "Unknown parameter passed: $1"; exit 1 ;;
     esac

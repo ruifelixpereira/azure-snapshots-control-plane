@@ -1,0 +1,29 @@
+{
+    "vmName": "test-01-75zhe",
+    "resourceGroup": "SNAPSHOTS-MANAGEMENT",
+    "vmSize": "Standard_B2als_v2",
+    "diskSku": "StandardSSD_LRS",
+    "diskSizeGB": "30",
+    "lastTemporarySnapshot": {
+        "location": "westeurope",
+        "name": "s20250702T2231-test-01-75zhe_osdisk",
+        "resourceGroup": "SNAPSHOTS-MANAGEMENT"
+    },
+    "lastBackupSnapshot": {
+        "location": "westeurope",
+        "name": "s20250702T2231-test-01-75zhe_osdisk-sec",
+        "resourceGroup": "SNAPSHOTS-MANAGEMENT"
+    },
+    "snapshots": [
+        {
+            "location": "westeurope",
+            "name": "s20250702T2231-test-01-75zhe_osdisk",
+            "resourceGroup": "SNAPSHOTS-MANAGEMENT"
+        },
+        {
+            "location": "westeurope",
+            "name": "s20250702T2231-test-01-75zhe_osdisk-sec",
+            "resourceGroup": "SNAPSHOTS-MANAGEMENT"
+        }
+    ]
+}

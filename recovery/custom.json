@@ -1,0 +1,24 @@
+[
+  {
+    "vmName": "test-for-cloning",
+    "resourceGroup": "SNAPSHOTS-MANAGEMENT",
+    "vmSize": "Standard_B2als_v2",
+    "diskSku": "StandardSSD_LRS",
+    "diskSizeGB": "30",
+    "snapshots": [
+      {
+        "location": "westeurope",
+        "name": "s20250630T2230-test-for-cloning_OsDisk_1_bd47a1e4d67b48ce907309f46a3034b8-sec",
+        "resourceGroup": "SNAPSHOTS-MANAGEMENT"
+      }
+    ]
+  },
+  {
+    "vmName": "test-01-75zhe",
+    "resourceGroup": "SNAPSHOTS-MANAGEMENT",
+    "vmSize": "Standard_B2als_v2",
+    "diskSku": "StandardSSD_LRS",
+    "diskSizeGB": "30",
+    "snapshots": []
+  }
+]
