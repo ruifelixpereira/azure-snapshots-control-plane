@@ -1,0 +1,6 @@
+{
+  "S":   { "diskSku": "Standard_LRS",      "vmSize": "Standard_B2als_v2", "snapshotName": "s20250706T2230-test-01-75zhe_osdisk" },
+  "M":   { "diskSku": "StandardSSD_LRS",   "vmSize": "Standard_B2als_v2", "snapshotName": "s20250706T2230-test-01-75zhe_osdisk" },
+  "L":   { "diskSku": "StandardSSD_LRS",   "vmSize": "Standard_B2as_v2", "snapshotName": "s20250706T2230-test-01-75zhe_osdisk" },
+  "XL":  { "diskSku": "Premium_LRS",       "vmSize": "Standard_D4as_v5", "snapshotName": "s20250706T2230-test-01-75zhe_osdisk" }
+}
