@@ -173,6 +173,13 @@ You can use the provided Bash script (`recovery/recover-cli.sh`) to manage Azure
 Check all the details on how to use this CLI at [RECOVERY](recovery/README.md)
 
 
+## Create New Virtual Machines from Snapshots
+
+You can use the provided Bash script (`new-vm/create-vm-cli.sh`) to create new Azure Virtual Machines from existing snapshots. The script is designed for sysadmins and DevOps engineers who need to automate the creation of new VMs in Azure.
+
+Check all the details on how to use this CLI at [NEW VM](new-vm/README.md)
+
+
 ## References
 
 - [Azure Snapshots Insights Workbook](https://github.com/dolevshor/Azure-Snapshots-Insights)
