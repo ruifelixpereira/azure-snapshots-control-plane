@@ -1,4 +1,4 @@
-# Azure VM & Snapshot Recovery CLI
+# Azure VM Creation from Snapshots CLI
 
 This repository provides a Bash script (`new-vm/create-vm-cli.sh`) to create new Azure Virtual Machines from existing snapshots. The script is designed for sysadmins and DevOps engineers who need to automate the creation of new VMs in Azure.
 
