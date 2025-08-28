@@ -258,7 +258,7 @@
                   "type": 3,
                   "content": {
                     "version": "KqlItem/1.0",
-                    "query": "resources \r\n| where type == \"microsoft.compute/snapshots\"\r\n| where resourceGroup in~ ({ResourceGroup:value})\r\n| where name in~ (split(\"{Snapshots:label}\", \", \"))\r\n| extend TimeCreated = properties.timeCreated\r\n| extend snapshotType = case(properties.incremental == true, \"Incremental\", properties.incremental == false, \"Full\", \"\")\r\n| where TimeCreated < ago({SnapshotAge})\r\n| extend Details = pack_all()\r\n| project id, sourceDisk = properties.creationData.sourceResourceId, diskSizeGB = properties.diskSizeGB, resourceGroup, location, apiVersion, sku = sku.name, snapshotType, TimeCreated, publicNetworkAccess = properties.publicNetworkAccess, networkAccessPolicy = properties.networkAccessPolicy, subscriptionId, tags, Details",
+                    "query": "resources \r\n| where type == \"microsoft.compute/snapshots\"\r\n| where resourceGroup in~ ({ResourceGroup:value})\r\n| where name in~ (split(\"{Snapshots:label}\", \", \"))\r\n| extend TimeCreated = properties.timeCreated\r\n| extend snapshotType = case(properties.incremental == true, \"Incremental\", properties.incremental == false, \"Full\", \"\")\r\n| where TimeCreated >= {SnapshotAge:start} and TimeCreated <= {SnapshotAge:end}\r\n| extend Details = pack_all()\r\n| project id, sourceDisk = properties.creationData.sourceResourceId, diskSizeGB = properties.diskSizeGB, resourceGroup, location, apiVersion, sku = sku.name, snapshotType, TimeCreated, publicNetworkAccess = properties.publicNetworkAccess, networkAccessPolicy = properties.networkAccessPolicy, subscriptionId, tags, Details",
                     "size": 3,
                     "exportMultipleValues": true,
                     "exportedParameters": [
@@ -443,11 +443,11 @@
                         },
                         {
                           "columnId": "sourceDisk",
-                          "label": "Source disk"
+                          "label": "Source"
                         },
                         {
                           "columnId": "diskSizeGB",
-                          "label": "Source disk size (GiB)"
+                          "label": "Source size (GiB)"
                         },
                         {
                           "columnId": "resourceGroup",
@@ -716,7 +716,7 @@
                   "type": 3,
                   "content": {
                     "version": "KqlItem/1.0",
-                    "query": "resources \r\n| where type == \"microsoft.compute/snapshots\"\r\n| extend expectedSnapshotName = strcat(\"-\", \"{SelectedDisk}\")\r\n| where name contains expectedSnapshotName\r\n| where resourceGroup in~ ({ResourceGroup:value})\r\n| extend TimeCreated = todatetime(properties.timeCreated)\r\n| extend snapshotType = case(properties.incremental == true, \"Incremental\", properties.incremental == false, \"Full\", \"\")\r\n| extend snapshotType2 = case(name endswith \"-sec\", \"Backup\", \"Temporary\")\r\n| where TimeCreated < ago({SnapshotAge})\r\n| extend Details = pack_all()\r\n| project TimeCreated, id, name, sourceDisk = properties.creationData.sourceResourceId, diskSizeGB = properties.diskSizeGB, resourceGroup, location, apiVersion, sku = sku.name, snapshotType, snapshotType2, publicNetworkAccess = properties.publicNetworkAccess, networkAccessPolicy = properties.networkAccessPolicy, subscriptionId, tags, Details\r\n| sort by TimeCreated",
+                    "query": "resources \r\n| where type == \"microsoft.compute/snapshots\"\r\n| extend expectedSnapshotName = strcat(\"-\", \"{SelectedDisk}\")\r\n| where name contains expectedSnapshotName\r\n| where resourceGroup in~ ({ResourceGroup:value})\r\n| extend TimeCreated = todatetime(properties.timeCreated)\r\n| extend snapshotType = case(properties.incremental == true, \"Incremental\", properties.incremental == false, \"Full\", \"\")\r\n| extend snapshotType2 = case(name endswith \"-sec\", \"Backup\", \"Temporary\")\r\n| where TimeCreated >= {SnapshotAge:start} and TimeCreated <= {SnapshotAge:end}\r\n| extend Details = pack_all()\r\n| project TimeCreated, id, name, sourceDisk = properties.creationData.sourceResourceId, diskSizeGB = properties.diskSizeGB, resourceGroup, location, apiVersion, sku = sku.name, snapshotType, snapshotType2, publicNetworkAccess = properties.publicNetworkAccess, networkAccessPolicy = properties.networkAccessPolicy, subscriptionId, tags, Details\r\n| sort by TimeCreated",
                     "size": 0,
                     "title": "Virtual Machine OS Disk Snapshots",
                     "queryType": 1,
@@ -862,7 +862,7 @@
                   "type": 3,
                   "content": {
                     "version": "KqlItem/1.0",
-                    "query": "resources\r\n| where type == 'microsoft.compute/snapshots'\r\n| where resourceGroup in~ ({ResourceGroup:value})\r\n| where name in~ (split(\"{Snapshots:label}\", \", \"))\r\n| extend TimeCreated = properties.timeCreated\r\n| where TimeCreated < ago({SnapshotAge})\r\n| summarize count() by type",
+                    "query": "resources\r\n| where type == 'microsoft.compute/snapshots'\r\n| where resourceGroup in~ ({ResourceGroup:value})\r\n| where name in~ (split(\"{Snapshots:label}\", \", \"))\r\n| extend TimeCreated = properties.timeCreated\r\n| where TimeCreated >= {SnapshotAge:start} and TimeCreated <= {SnapshotAge:end}\r\n| summarize count() by type",
                     "size": 3,
                     "noDataMessage": "No resources found",
                     "queryType": 1,
@@ -904,7 +904,7 @@
                   "type": 3,
                   "content": {
                     "version": "KqlItem/1.0",
-                    "query": "resources \r\n| where type == \"microsoft.compute/snapshots\"\r\n| where resourceGroup in~ ({ResourceGroup:value})\r\n| where name in~ (split(\"{Snapshots:label}\", \", \"))\r\n| extend TimeCreated = properties.timeCreated\r\n| where TimeCreated < ago({SnapshotAge})\r\n| summarize count(type) by subscriptionId",
+                    "query": "resources \r\n| where type == \"microsoft.compute/snapshots\"\r\n| where resourceGroup in~ ({ResourceGroup:value})\r\n| where name in~ (split(\"{Snapshots:label}\", \", \"))\r\n| extend TimeCreated = properties.timeCreated\r\n| where TimeCreated >= {SnapshotAge:start} and TimeCreated <= {SnapshotAge:end}\r\n| summarize count(type) by subscriptionId",
                     "size": 3,
                     "title": "Count by Subscription Id",
                     "queryType": 1,
@@ -925,7 +925,7 @@
                   "type": 3,
                   "content": {
                     "version": "KqlItem/1.0",
-                    "query": "resources \r\n| where type == \"microsoft.compute/snapshots\"\r\n| where resourceGroup in~ ({ResourceGroup:value})\r\n| where name in~ (split(\"{Snapshots:label}\", \", \"))\r\n| extend TimeCreated = properties.timeCreated\r\n| where TimeCreated < ago({SnapshotAge})\r\n| summarize count(type) by resourceGroup",
+                    "query": "resources \r\n| where type == \"microsoft.compute/snapshots\"\r\n| where resourceGroup in~ ({ResourceGroup:value})\r\n| where name in~ (split(\"{Snapshots:label}\", \", \"))\r\n| extend TimeCreated = properties.timeCreated\r\n| where TimeCreated >= {SnapshotAge:start} and TimeCreated <= {SnapshotAge:end}\r\n| summarize count(type) by resourceGroup",
                     "size": 3,
                     "title": "Count by Resource Group",
                     "queryType": 1,
@@ -946,7 +946,7 @@
                   "type": 3,
                   "content": {
                     "version": "KqlItem/1.0",
-                    "query": "resources \r\n| where type == \"microsoft.compute/snapshots\"\r\n| where resourceGroup in~ ({ResourceGroup:value})\r\n| where name in~ (split(\"{Snapshots:label}\", \", \"))\r\n| extend TimeCreated = properties.timeCreated\r\n| where TimeCreated < ago({SnapshotAge})\r\n| summarize count(type) by location",
+                    "query": "resources \r\n| where type == \"microsoft.compute/snapshots\"\r\n| where resourceGroup in~ ({ResourceGroup:value})\r\n| where name in~ (split(\"{Snapshots:label}\", \", \"))\r\n| extend TimeCreated = properties.timeCreated\r\n| where TimeCreated >= {SnapshotAge:start} and TimeCreated <= {SnapshotAge:end}\r\n| summarize count(type) by location",
                     "size": 3,
                     "title": "Count by Location",
                     "queryType": 1,
@@ -988,7 +988,7 @@
                   "type": 3,
                   "content": {
                     "version": "KqlItem/1.0",
-                    "query": "resources \r\n| where type == \"microsoft.compute/snapshots\"\r\n| where resourceGroup in~ ({ResourceGroup:value})\r\n| where name in~ (split(\"{Snapshots:label}\", \", \"))\r\n| extend TimeCreated = properties.timeCreated\r\n| where TimeCreated < ago({SnapshotAge})\r\n| extend sku = sku.name\r\n| summarize count(sku) by tostring(sku)",
+                    "query": "resources \r\n| where type == \"microsoft.compute/snapshots\"\r\n| where resourceGroup in~ ({ResourceGroup:value})\r\n| where name in~ (split(\"{Snapshots:label}\", \", \"))\r\n| extend TimeCreated = properties.timeCreated\r\n| where TimeCreated >= {SnapshotAge:start} and TimeCreated <= {SnapshotAge:end}\r\n| extend sku = sku.name\r\n| summarize count(sku) by tostring(sku)",
                     "size": 3,
                     "title": "Count by Storage type",
                     "queryType": 1,
@@ -1009,7 +1009,7 @@
                   "type": 3,
                   "content": {
                     "version": "KqlItem/1.0",
-                    "query": "resources \r\n| where type == \"microsoft.compute/snapshots\"\r\n| where resourceGroup in~ ({ResourceGroup:value})\r\n| where name in~ (split(\"{Snapshots:label}\", \", \"))\r\n| extend TimeCreated = properties.timeCreated\r\n| where TimeCreated < ago({SnapshotAge})\r\n| extend diskSizeGB = properties.diskSizeGB\r\n| summarize count(diskSizeGB) by tostring(diskSizeGB)",
+                    "query": "resources \r\n| where type == \"microsoft.compute/snapshots\"\r\n| where resourceGroup in~ ({ResourceGroup:value})\r\n| where name in~ (split(\"{Snapshots:label}\", \", \"))\r\n| extend TimeCreated = properties.timeCreated\r\n| where TimeCreated >= {SnapshotAge:start} and TimeCreated <= {SnapshotAge:end}\r\n| extend diskSizeGB = properties.diskSizeGB\r\n| summarize count(diskSizeGB) by tostring(diskSizeGB)",
                     "size": 3,
                     "title": "Count by Source disk size (GiB)",
                     "queryType": 1,
@@ -1030,7 +1030,7 @@
                   "type": 3,
                   "content": {
                     "version": "KqlItem/1.0",
-                    "query": "resources \r\n| where type == \"microsoft.compute/snapshots\"\r\n| where resourceGroup in~ ({ResourceGroup:value})\r\n| where name in~ (split(\"{Snapshots:label}\", \", \"))\r\n| extend TimeCreated = properties.timeCreated\r\n| where TimeCreated < ago({SnapshotAge})\r\n| extend snapshotType = case(properties.incremental == true, \"Incremental\", properties.incremental == false, \"Full\", \"\")\r\n| summarize count(snapshotType) by tostring(snapshotType)",
+                    "query": "resources \r\n| where type == \"microsoft.compute/snapshots\"\r\n| where resourceGroup in~ ({ResourceGroup:value})\r\n| where name in~ (split(\"{Snapshots:label}\", \", \"))\r\n| extend TimeCreated = properties.timeCreated\r\n| where TimeCreated >= {SnapshotAge:start} and TimeCreated <= {SnapshotAge:end}\r\n| extend snapshotType = case(properties.incremental == true, \"Incremental\", properties.incremental == false, \"Full\", \"\")\r\n| summarize count(snapshotType) by tostring(snapshotType)",
                     "size": 3,
                     "title": "Count by Snapshot type",
                     "queryType": 1,
@@ -1051,7 +1051,7 @@
                   "type": 3,
                   "content": {
                     "version": "KqlItem/1.0",
-                    "query": "resources \r\n| where type == \"microsoft.compute/snapshots\"\r\n| where resourceGroup in~ ({ResourceGroup:value})\r\n| where name in~ (split(\"{Snapshots:label}\", \", \"))\r\n| extend TimeCreated = properties.timeCreated\r\n| where TimeCreated < ago({SnapshotAge})\r\n| extend diskState = properties.diskState\r\n| summarize count(diskState) by tostring(diskState)",
+                    "query": "resources \r\n| where type == \"microsoft.compute/snapshots\"\r\n| where resourceGroup in~ ({ResourceGroup:value})\r\n| where name in~ (split(\"{Snapshots:label}\", \", \"))\r\n| extend TimeCreated = properties.timeCreated\r\n| where TimeCreated >= {SnapshotAge:start} and TimeCreated <= {SnapshotAge:end}\r\n| extend diskState = properties.diskState\r\n| summarize count(diskState) by tostring(diskState)",
                     "size": 3,
                     "title": "Count by Disk State",
                     "queryType": 1,
@@ -1072,7 +1072,7 @@
                   "type": 3,
                   "content": {
                     "version": "KqlItem/1.0",
-                    "query": "resources \r\n| where type == \"microsoft.compute/snapshots\"\r\n| where resourceGroup in~ ({ResourceGroup:value})\r\n| where name in~ (split(\"{Snapshots:label}\", \", \"))\r\n| extend TimeCreated = properties.timeCreated\r\n| where TimeCreated < ago({SnapshotAge})\r\n| extend createOption = properties.creationData.createOption\r\n| summarize count(createOption) by tostring(createOption)",
+                    "query": "resources \r\n| where type == \"microsoft.compute/snapshots\"\r\n| where resourceGroup in~ ({ResourceGroup:value})\r\n| where name in~ (split(\"{Snapshots:label}\", \", \"))\r\n| extend TimeCreated = properties.timeCreated\r\n| where TimeCreated >= {SnapshotAge:start} and TimeCreated <= {SnapshotAge:end}\r\n| extend createOption = properties.creationData.createOption\r\n| summarize count(createOption) by tostring(createOption)",
                     "size": 3,
                     "title": "Count by Create Option",
                     "queryType": 1,
@@ -1093,7 +1093,7 @@
                   "type": 3,
                   "content": {
                     "version": "KqlItem/1.0",
-                    "query": "resources \r\n| where type == \"microsoft.compute/snapshots\"\r\n| where resourceGroup in~ ({ResourceGroup:value})\r\n| where name in~ (split(\"{Snapshots:label}\", \", \"))\r\n| extend TimeCreated = properties.timeCreated\r\n| where TimeCreated < ago({SnapshotAge})\r\n| summarize count(apiVersion) by tostring(apiVersion)",
+                    "query": "resources \r\n| where type == \"microsoft.compute/snapshots\"\r\n| where resourceGroup in~ ({ResourceGroup:value})\r\n| where name in~ (split(\"{Snapshots:label}\", \", \"))\r\n| extend TimeCreated = properties.timeCreated\r\n| where TimeCreated >= {SnapshotAge:start} and TimeCreated <= {SnapshotAge:end}\r\n| summarize count(apiVersion) by tostring(apiVersion)",
                     "size": 3,
                     "title": "Count by Api Version",
                     "queryType": 1,
@@ -1114,7 +1114,7 @@
                   "type": 3,
                   "content": {
                     "version": "KqlItem/1.0",
-                    "query": "resources \r\n| where type == \"microsoft.compute/snapshots\"\r\n| where resourceGroup in~ ({ResourceGroup:value})\r\n| where name in~ (split(\"{Snapshots:label}\", \", \"))\r\n| extend TimeCreated = properties.timeCreated\r\n| where TimeCreated < ago({SnapshotAge})\r\n| extend publicNetworkAccess = properties.publicNetworkAccess\r\n| summarize count(publicNetworkAccess) by tostring(publicNetworkAccess)",
+                    "query": "resources \r\n| where type == \"microsoft.compute/snapshots\"\r\n| where resourceGroup in~ ({ResourceGroup:value})\r\n| where name in~ (split(\"{Snapshots:label}\", \", \"))\r\n| extend TimeCreated = properties.timeCreated\r\n| where TimeCreated >= {SnapshotAge:start} and TimeCreated <= {SnapshotAge:end}\r\n| extend publicNetworkAccess = properties.publicNetworkAccess\r\n| summarize count(publicNetworkAccess) by tostring(publicNetworkAccess)",
                     "size": 3,
                     "title": "Count by Public Network Access",
                     "queryType": 1,
@@ -1135,7 +1135,7 @@
                   "type": 3,
                   "content": {
                     "version": "KqlItem/1.0",
-                    "query": "resources \r\n| where type == \"microsoft.compute/snapshots\"\r\n| where resourceGroup in~ ({ResourceGroup:value})\r\n| where name in~ (split(\"{Snapshots:label}\", \", \"))\r\n| extend TimeCreated = properties.timeCreated\r\n| where TimeCreated < ago({SnapshotAge})\r\n| extend networkAccessPolicy = properties.networkAccessPolicy\r\n| summarize count(networkAccessPolicy) by tostring(networkAccessPolicy)",
+                    "query": "resources \r\n| where type == \"microsoft.compute/snapshots\"\r\n| where resourceGroup in~ ({ResourceGroup:value})\r\n| where name in~ (split(\"{Snapshots:label}\", \", \"))\r\n| extend TimeCreated = properties.timeCreated\r\n| where TimeCreated >= {SnapshotAge:start} and TimeCreated <= {SnapshotAge:end}\r\n| extend networkAccessPolicy = properties.networkAccessPolicy\r\n| summarize count(networkAccessPolicy) by tostring(networkAccessPolicy)",
                     "size": 3,
                     "title": "Count by Network Access Policy",
                     "queryType": 1,
@@ -1156,7 +1156,7 @@
                   "type": 3,
                   "content": {
                     "version": "KqlItem/1.0",
-                    "query": "resources \r\n| where type == \"microsoft.compute/snapshots\"\r\n| where resourceGroup in~ ({ResourceGroup:value})\r\n| where name in~ (split(\"{Snapshots:label}\", \", \"))\r\n| extend TimeCreated = properties.timeCreated\r\n| where TimeCreated < ago({SnapshotAge})\r\n| extend dataAccessAuthMode = properties.dataAccessAuthMode\r\n| summarize count(dataAccessAuthMode) by tostring(dataAccessAuthMode)",
+                    "query": "resources \r\n| where type == \"microsoft.compute/snapshots\"\r\n| where resourceGroup in~ ({ResourceGroup:value})\r\n| where name in~ (split(\"{Snapshots:label}\", \", \"))\r\n| extend TimeCreated = properties.timeCreated\r\n| where TimeCreated >= {SnapshotAge:start} and TimeCreated <= {SnapshotAge:end}\r\n| extend dataAccessAuthMode = properties.dataAccessAuthMode\r\n| summarize count(dataAccessAuthMode) by tostring(dataAccessAuthMode)",
                     "size": 3,
                     "title": "Count by Data Access Auth Mode",
                     "queryType": 1,
@@ -1289,7 +1289,7 @@
                   "type": 3,
                   "content": {
                     "version": "KqlItem/1.0",
-                    "query": "resources\r\n| where type == 'microsoft.compute/snapshots'\r\n| where tags[\"smcp-location-type\"] == \"secondary\"\r\n| where resourceGroup in~ ({ResourceGroup:value})\r\n| where name in~ (split(\"{Snapshots:label}\", \", \"))\r\n| extend TimeCreated = properties.timeCreated\r\n| where TimeCreated < ago({SnapshotAge})\r\n| extend title2 = 'Backup Snapshots'\r\n| summarize count() by title2",
+                    "query": "resources\r\n| where type == 'microsoft.compute/snapshots'\r\n| where tags[\"smcp-location-type\"] == \"secondary\"\r\n| where resourceGroup in~ ({ResourceGroup:value})\r\n| where name in~ (split(\"{Snapshots:label}\", \", \"))\r\n| extend TimeCreated = properties.timeCreated\r\n| where TimeCreated >= {SnapshotAge:start} and TimeCreated <= {SnapshotAge:end}\r\n| extend title2 = 'Backup Snapshots'\r\n| summarize count() by title2",
                     "size": 3,
                     "noDataMessage": "No resources found",
                     "queryType": 1,
@@ -1331,7 +1331,7 @@
                   "type": 3,
                   "content": {
                     "version": "KqlItem/1.0",
-                    "query": "resources\r\n| where type == 'microsoft.compute/snapshots'\r\n| where tags[\"smcp-location-type\"] == \"primary\"\r\n| where resourceGroup in~ ({ResourceGroup:value})\r\n| where name in~ (split(\"{Snapshots:label}\", \", \"))\r\n| extend TimeCreated = properties.timeCreated\r\n| where TimeCreated < ago({SnapshotAge})\r\n| extend title2 = 'Temporary snapshots'\r\n| summarize count() by title2",
+                    "query": "resources\r\n| where type == 'microsoft.compute/snapshots'\r\n| where tags[\"smcp-location-type\"] == \"primary\"\r\n| where resourceGroup in~ ({ResourceGroup:value})\r\n| where name in~ (split(\"{Snapshots:label}\", \", \"))\r\n| extend TimeCreated = properties.timeCreated\r\n| where TimeCreated >= {SnapshotAge:start} and TimeCreated <= {SnapshotAge:end}\r\n| extend title2 = 'Temporary snapshots'\r\n| summarize count() by title2",
                     "size": 3,
                     "noDataMessage": "No resources found",
                     "queryType": 1,
@@ -1380,7 +1380,7 @@
                   "type": 3,
                   "content": {
                     "version": "KqlItem/1.0",
-                    "query": "SnapshotsOperations_CL\r\n| where jobType == \"Snapshot\"\r\n| extend resourceGroup = extract(@\"/resourceGroups/([^/]+)\", 1, sourceVmId)\r\n| where resourceGroup in~ ({ResourceGroup:value})\r\n| where TimeGenerated < ago({SnapshotAge})\r\n| summarize Operations = make_set(jobStatus) by jobId\r\n| extend \r\n    IsCompleted = Operations has \"Snapshot Completed\" and not(Operations has \"Snapshot Failed\"),\r\n    IsInProgress = Operations has \"Snapshot In Progress\" and not(Operations has \"Snapshot Completed\") and not(Operations has \"Snapshot Failed\"),\r\n    IsFailed = Operations has \"Snapshot Failed\"\r\n| summarize \r\n    AllJobs = countif(IsCompleted) + countif(IsInProgress) + countif(IsFailed)\r\n| extend type = 'All backup jobs'",
+                    "query": "SnapshotsOperations_CL\r\n| where jobType == \"Snapshot\"\r\n| extend resourceGroup = extract(@\"/resourceGroups/([^/]+)\", 1, sourceVmId)\r\n| where resourceGroup in~ ({ResourceGroup:value})\r\n| where TimeGenerated >= {SnapshotAge:start} and TimeGenerated <= {SnapshotAge:end}\r\n| summarize Operations = make_set(jobStatus) by jobId\r\n| extend \r\n    IsCompleted = Operations has \"Snapshot Completed\" and not(Operations has \"Snapshot Failed\"),\r\n    IsInProgress = Operations has \"Snapshot In Progress\" and not(Operations has \"Snapshot Completed\") and not(Operations has \"Snapshot Failed\"),\r\n    IsFailed = Operations has \"Snapshot Failed\"\r\n| summarize \r\n    AllJobs = countif(IsCompleted) + countif(IsInProgress) + countif(IsFailed)\r\n| extend type = 'All backup jobs'",
                     "size": 3,
                     "noDataMessage": "No resources found",
                     "queryType": 0,
@@ -1421,7 +1421,7 @@
                   "type": 3,
                   "content": {
                     "version": "KqlItem/1.0",
-                    "query": "SnapshotsOperations_CL\r\n| where jobType == \"Snapshot\"\r\n| extend resourceGroup = extract(@\"/resourceGroups/([^/]+)\", 1, sourceVmId)\r\n| where resourceGroup in~ ({ResourceGroup:value})\r\n| where TimeGenerated < ago({SnapshotAge})\r\n| summarize Operations = make_set(jobStatus) by jobId\r\n| extend \r\n    IsCompleted = Operations has \"Snapshot Completed\" and not(Operations has \"Snapshot Failed\"),\r\n    IsInProgress = Operations has \"Snapshot In Progress\" and not(Operations has \"Snapshot Completed\") and not(Operations has \"Snapshot Failed\"),\r\n    IsFailed = Operations has \"Snapshot Failed\"\r\n| summarize \r\n    CompletedJobs = countif(IsCompleted),\r\n    InProgressJobs = countif(IsInProgress),\r\n    FailedJobs = countif(IsFailed)\r\n| extend type = 'Backup completed jobs'",
+                    "query": "SnapshotsOperations_CL\r\n| where jobType == \"Snapshot\"\r\n| extend resourceGroup = extract(@\"/resourceGroups/([^/]+)\", 1, sourceVmId)\r\n| where resourceGroup in~ ({ResourceGroup:value})\r\n| where TimeGenerated >= {SnapshotAge:start} and TimeGenerated <= {SnapshotAge:end}\r\n| summarize Operations = make_set(jobStatus) by jobId\r\n| extend \r\n    IsCompleted = Operations has \"Snapshot Completed\" and not(Operations has \"Snapshot Failed\"),\r\n    IsInProgress = Operations has \"Snapshot In Progress\" and not(Operations has \"Snapshot Completed\") and not(Operations has \"Snapshot Failed\"),\r\n    IsFailed = Operations has \"Snapshot Failed\"\r\n| summarize \r\n    CompletedJobs = countif(IsCompleted),\r\n    InProgressJobs = countif(IsInProgress),\r\n    FailedJobs = countif(IsFailed)\r\n| extend type = 'Backup completed jobs'",
                     "size": 3,
                     "noDataMessage": "No resources found",
                     "queryType": 0,
@@ -1463,7 +1463,7 @@
                   "type": 3,
                   "content": {
                     "version": "KqlItem/1.0",
-                    "query": "SnapshotsOperations_CL\r\n| where jobType == \"Snapshot\"\r\n| extend resourceGroup = extract(@\"/resourceGroups/([^/]+)\", 1, sourceVmId)\r\n| where resourceGroup in~ ({ResourceGroup:value})\r\n| where TimeGenerated < ago({SnapshotAge})\r\n| summarize Operations = make_set(jobStatus) by jobId\r\n| extend \r\n    IsCompleted = Operations has \"Snapshot Completed\" and not(Operations has \"Snapshot Failed\"),\r\n    IsInProgress = Operations has \"Snapshot In Progress\" and not(Operations has \"Snapshot Completed\") and not(Operations has \"Snapshot Failed\"),\r\n    IsFailed = Operations has \"Snapshot Failed\"\r\n| summarize \r\n    CompletedJobs = countif(IsCompleted),\r\n    InProgressJobs = countif(IsInProgress),\r\n    FailedJobs = countif(IsFailed)\r\n| extend type = 'Backup failed jobs'",
+                    "query": "SnapshotsOperations_CL\r\n| where jobType == \"Snapshot\"\r\n| extend resourceGroup = extract(@\"/resourceGroups/([^/]+)\", 1, sourceVmId)\r\n| where resourceGroup in~ ({ResourceGroup:value})\r\n| where TimeGenerated >= {SnapshotAge:start} and TimeGenerated <= {SnapshotAge:end}\r\n| summarize Operations = make_set(jobStatus) by jobId\r\n| extend \r\n    IsCompleted = Operations has \"Snapshot Completed\" and not(Operations has \"Snapshot Failed\"),\r\n    IsInProgress = Operations has \"Snapshot In Progress\" and not(Operations has \"Snapshot Completed\") and not(Operations has \"Snapshot Failed\"),\r\n    IsFailed = Operations has \"Snapshot Failed\"\r\n| summarize \r\n    CompletedJobs = countif(IsCompleted),\r\n    InProgressJobs = countif(IsInProgress),\r\n    FailedJobs = countif(IsFailed)\r\n| extend type = 'Backup failed jobs'",
                     "size": 3,
                     "noDataMessage": "No resources found",
                     "queryType": 0,
@@ -1505,7 +1505,7 @@
                   "type": 3,
                   "content": {
                     "version": "KqlItem/1.0",
-                    "query": "SnapshotsOperations_CL\r\n| where jobType == \"Snapshot\"\r\n| extend resourceGroup = extract(@\"/resourceGroups/([^/]+)\", 1, sourceVmId)\r\n| where resourceGroup in~ ({ResourceGroup:value})\r\n| where TimeGenerated < ago({SnapshotAge})\r\n| summarize Operations = make_set(jobStatus) by jobId\r\n| extend \r\n    IsCompleted = Operations has \"Snapshot Completed\" and not(Operations has \"Snapshot Failed\"),\r\n    IsInProgress = Operations has \"Snapshot In Progress\" and not(Operations has \"Snapshot Completed\") and not(Operations has \"Snapshot Failed\"),\r\n    IsFailed = Operations has \"Snapshot Failed\"\r\n| summarize \r\n    CompletedJobs = countif(IsCompleted),\r\n    InProgressJobs = countif(IsInProgress),\r\n    FailedJobs = countif(IsFailed)\r\n| extend type = 'Backup in progress jobs'",
+                    "query": "SnapshotsOperations_CL\r\n| where jobType == \"Snapshot\"\r\n| extend resourceGroup = extract(@\"/resourceGroups/([^/]+)\", 1, sourceVmId)\r\n| where resourceGroup in~ ({ResourceGroup:value})\r\n| where TimeGenerated >= {SnapshotAge:start} and TimeGenerated <= {SnapshotAge:end}\r\n| summarize Operations = make_set(jobStatus) by jobId\r\n| extend \r\n    IsCompleted = Operations has \"Snapshot Completed\" and not(Operations has \"Snapshot Failed\"),\r\n    IsInProgress = Operations has \"Snapshot In Progress\" and not(Operations has \"Snapshot Completed\") and not(Operations has \"Snapshot Failed\"),\r\n    IsFailed = Operations has \"Snapshot Failed\"\r\n| summarize \r\n    CompletedJobs = countif(IsCompleted),\r\n    InProgressJobs = countif(IsInProgress),\r\n    FailedJobs = countif(IsFailed)\r\n| extend type = 'Backup in progress jobs'",
                     "size": 3,
                     "noDataMessage": "No resources found",
                     "queryType": 0,
@@ -1554,7 +1554,7 @@
                   "type": 3,
                   "content": {
                     "version": "KqlItem/1.0",
-                    "query": "SnapshotsOperations_CL\r\n| where jobType == \"Purge\"\r\n| extend resourceGroup = extract(@\"/resourceGroups/([^/]+)\", 1, sourceVmId)\r\n| where resourceGroup in~ ({ResourceGroup:value})\r\n| where TimeGenerated < ago({SnapshotAge})\r\n| summarize Operations = make_set(jobStatus) by jobId\r\n| extend \r\n    IsCompleted = Operations has \"Purge Completed\" and not(Operations has \"Purge Failed\"),\r\n    IsInProgress = Operations has \"Purge In Progress\" and not(Operations has \"Purge Completed\") and not(Operations has \"Purge Failed\"),\r\n    IsFailed = Operations has \"Purge Failed\"\r\n| summarize \r\n    AllJobs = countif(IsCompleted) + countif(IsInProgress) + countif(IsFailed)\r\n| extend type = 'All purge jobs'",
+                    "query": "SnapshotsOperations_CL\r\n| where jobType == \"Purge\"\r\n| extend resourceGroup = extract(@\"/resourceGroups/([^/]+)\", 1, sourceVmId)\r\n| where resourceGroup in~ ({ResourceGroup:value})\r\n| where TimeGenerated >= {SnapshotAge:start} and TimeGenerated <= {SnapshotAge:end}\r\n| summarize Operations = make_set(jobStatus) by jobId\r\n| extend \r\n    IsCompleted = Operations has \"Purge Completed\" and not(Operations has \"Purge Failed\"),\r\n    IsInProgress = Operations has \"Purge In Progress\" and not(Operations has \"Purge Completed\") and not(Operations has \"Purge Failed\"),\r\n    IsFailed = Operations has \"Purge Failed\"\r\n| summarize \r\n    AllJobs = countif(IsCompleted) + countif(IsInProgress) + countif(IsFailed)\r\n| extend type = 'All purge jobs'",
                     "size": 3,
                     "noDataMessage": "No resources found",
                     "queryType": 0,
@@ -1595,7 +1595,7 @@
                   "type": 3,
                   "content": {
                     "version": "KqlItem/1.0",
-                    "query": "SnapshotsOperations_CL\r\n| where jobType == \"Purge\"\r\n| extend resourceGroup = extract(@\"/resourceGroups/([^/]+)\", 1, sourceVmId)\r\n| where resourceGroup in~ ({ResourceGroup:value})\r\n| where TimeGenerated < ago({SnapshotAge})\r\n| summarize Operations = make_set(jobStatus) by jobId\r\n| extend \r\n    IsCompleted = Operations has \"Purge Completed\" and not(Operations has \"Purge Failed\"),\r\n    IsInProgress = Operations has \"Purge In Progress\" and not(Operations has \"Purge Completed\") and not(Operations has \"Purge Failed\"),\r\n    IsFailed = Operations has \"Purge Failed\"\r\n| summarize \r\n    CompletedJobs = countif(IsCompleted),\r\n    InProgressJobs = countif(IsInProgress),\r\n    FailedJobs = countif(IsFailed)\r\n| extend type = 'Purge completed jobs'",
+                    "query": "SnapshotsOperations_CL\r\n| where jobType == \"Purge\"\r\n| extend resourceGroup = extract(@\"/resourceGroups/([^/]+)\", 1, sourceVmId)\r\n| where resourceGroup in~ ({ResourceGroup:value})\r\n| where TimeGenerated >= {SnapshotAge:start} and TimeGenerated <= {SnapshotAge:end}\r\n| summarize Operations = make_set(jobStatus) by jobId\r\n| extend \r\n    IsCompleted = Operations has \"Purge Completed\" and not(Operations has \"Purge Failed\"),\r\n    IsInProgress = Operations has \"Purge In Progress\" and not(Operations has \"Purge Completed\") and not(Operations has \"Purge Failed\"),\r\n    IsFailed = Operations has \"Purge Failed\"\r\n| summarize \r\n    CompletedJobs = countif(IsCompleted),\r\n    InProgressJobs = countif(IsInProgress),\r\n    FailedJobs = countif(IsFailed)\r\n| extend type = 'Purge completed jobs'",
                     "size": 3,
                     "noDataMessage": "No resources found",
                     "queryType": 0,
@@ -1637,7 +1637,7 @@
                   "type": 3,
                   "content": {
                     "version": "KqlItem/1.0",
-                    "query": "SnapshotsOperations_CL\r\n| where jobType == \"Purge\"\r\n| extend resourceGroup = extract(@\"/resourceGroups/([^/]+)\", 1, sourceVmId)\r\n| where resourceGroup in~ ({ResourceGroup:value})\r\n| where TimeGenerated < ago({SnapshotAge})\r\n| summarize Operations = make_set(jobStatus) by jobId\r\n| extend \r\n    IsCompleted = Operations has \"Purge Completed\" and not(Operations has \"Purge Failed\"),\r\n    IsInProgress = Operations has \"Purge In Progress\" and not(Operations has \"Purge Completed\") and not(Operations has \"Purge Failed\"),\r\n    IsFailed = Operations has \"Purge Failed\"\r\n| summarize \r\n    CompletedJobs = countif(IsCompleted),\r\n    InProgressJobs = countif(IsInProgress),\r\n    FailedJobs = countif(IsFailed)\r\n| extend type = 'Purge failed jobs'",
+                    "query": "SnapshotsOperations_CL\r\n| where jobType == \"Purge\"\r\n| extend resourceGroup = extract(@\"/resourceGroups/([^/]+)\", 1, sourceVmId)\r\n| where resourceGroup in~ ({ResourceGroup:value})\r\n| where TimeGenerated >= {SnapshotAge:start} and TimeGenerated <= {SnapshotAge:end}\r\n| summarize Operations = make_set(jobStatus) by jobId\r\n| extend \r\n    IsCompleted = Operations has \"Purge Completed\" and not(Operations has \"Purge Failed\"),\r\n    IsInProgress = Operations has \"Purge In Progress\" and not(Operations has \"Purge Completed\") and not(Operations has \"Purge Failed\"),\r\n    IsFailed = Operations has \"Purge Failed\"\r\n| summarize \r\n    CompletedJobs = countif(IsCompleted),\r\n    InProgressJobs = countif(IsInProgress),\r\n    FailedJobs = countif(IsFailed)\r\n| extend type = 'Purge failed jobs'",
                     "size": 3,
                     "noDataMessage": "No resources found",
                     "queryType": 0,
@@ -1679,7 +1679,7 @@
                   "type": 3,
                   "content": {
                     "version": "KqlItem/1.0",
-                    "query": "SnapshotsOperations_CL\r\n| where jobType == \"Purge\"\r\n| extend resourceGroup = extract(@\"/resourceGroups/([^/]+)\", 1, sourceVmId)\r\n| where resourceGroup in~ ({ResourceGroup:value})\r\n| where TimeGenerated < ago({SnapshotAge})\r\n| summarize Operations = make_set(jobStatus) by jobId\r\n| extend \r\n    IsCompleted = Operations has \"Purge Completed\" and not(Operations has \"Purge Failed\"),\r\n    IsInProgress = Operations has \"Purge In Progress\" and not(Operations has \"Purge Completed\") and not(Operations has \"Purge Failed\"),\r\n    IsFailed = Operations has \"Purge Failed\"\r\n| summarize \r\n    CompletedJobs = countif(IsCompleted),\r\n    InProgressJobs = countif(IsInProgress),\r\n    FailedJobs = countif(IsFailed)\r\n| extend type = 'Purge in progress jobs'",
+                    "query": "SnapshotsOperations_CL\r\n| where jobType == \"Purge\"\r\n| extend resourceGroup = extract(@\"/resourceGroups/([^/]+)\", 1, sourceVmId)\r\n| where resourceGroup in~ ({ResourceGroup:value})\r\n| where TimeGenerated >= {SnapshotAge:start} and TimeGenerated <= {SnapshotAge:end}\r\n| summarize Operations = make_set(jobStatus) by jobId\r\n| extend \r\n    IsCompleted = Operations has \"Purge Completed\" and not(Operations has \"Purge Failed\"),\r\n    IsInProgress = Operations has \"Purge In Progress\" and not(Operations has \"Purge Completed\") and not(Operations has \"Purge Failed\"),\r\n    IsFailed = Operations has \"Purge Failed\"\r\n| summarize \r\n    CompletedJobs = countif(IsCompleted),\r\n    InProgressJobs = countif(IsInProgress),\r\n    FailedJobs = countif(IsFailed)\r\n| extend type = 'Purge in progress jobs'",
                     "size": 3,
                     "noDataMessage": "No resources found",
                     "queryType": 0,
@@ -1728,7 +1728,7 @@
                   "type": 3,
                   "content": {
                     "version": "KqlItem/1.0",
-                    "query": "resources \r\n| where type == \"microsoft.compute/snapshots\"\r\n| where resourceGroup in~ ({ResourceGroup:value})\r\n| where name in~ (split(\"{Snapshots:label}\", \", \"))\r\n| extend TimeCreated = properties.timeCreated\r\n| where TimeCreated < ago({SnapshotAge})\r\n| summarize count(type) by location",
+                    "query": "resources \r\n| where type == \"microsoft.compute/snapshots\"\r\n| where resourceGroup in~ ({ResourceGroup:value})\r\n| where name in~ (split(\"{Snapshots:label}\", \", \"))\r\n| extend TimeCreated = properties.timeCreated\r\n| where TimeCreated >= {SnapshotAge:start} and TimeCreated <= {SnapshotAge:end}\r\n| summarize count(type) by location",
                     "size": 3,
                     "title": "Snapshots Count by Location",
                     "queryType": 1,
@@ -1770,7 +1770,7 @@
                   "type": 3,
                   "content": {
                     "version": "KqlItem/1.0",
-                    "query": "resources \r\n| where type == \"microsoft.compute/snapshots\"\r\n| where resourceGroup in~ ({ResourceGroup:value})\r\n| where name in~ (split(\"{Snapshots:label}\", \", \"))\r\n| extend TimeCreated = properties.timeCreated\r\n| where TimeCreated < ago({SnapshotAge})\r\n| extend diskSizeGB = properties.diskSizeGB\r\n| summarize count(diskSizeGB) by tostring(diskSizeGB)",
+                    "query": "resources \r\n| where type == \"microsoft.compute/snapshots\"\r\n| where resourceGroup in~ ({ResourceGroup:value})\r\n| where name in~ (split(\"{Snapshots:label}\", \", \"))\r\n| extend TimeCreated = properties.timeCreated\r\n| where TimeCreated >= {SnapshotAge:start} and TimeCreated <= {SnapshotAge:end}\r\n| extend diskSizeGB = properties.diskSizeGB\r\n| summarize count(diskSizeGB) by tostring(diskSizeGB)",
                     "size": 3,
                     "title": "Snapshots Count by Source disk size (GiB)",
                     "queryType": 1,
@@ -1814,7 +1814,7 @@
                   "type": 3,
                   "content": {
                     "version": "KqlItem/1.0",
-                    "query": "let FirstOps = SnapshotsOperations_CL\r\n| where jobType == \"Purge\" \r\n| where TimeGenerated < ago({SnapshotAge})\r\n| summarize arg_min(TimeGenerated, *) by jobId;\r\n\r\nSnapshotsOperations_CL\r\n| join kind=inner (FirstOps) on jobId\r\n| where jobType == \"Purge\" \r\n| where TimeGenerated < ago({SnapshotAge})\r\n| summarize arg_max(TimeGenerated, *) by jobId\r\n| extend DurationMinutes = todouble(TimeGenerated - TimeGenerated1) / 600000000.0\r\n| project TimeGenerated, jobId, jobStatus, DurationMinutes, sourceVm = sourceVmId, sourceDisk = sourceDiskId, temporarySnapshot = primarySnapshotId, backupSnapshot = secondarySnapshotId, sourceLocation = primaryLocation, backupLocation = secondaryLocation\r\n| sort by TimeGenerated desc",
+                    "query": "let FirstOps = SnapshotsOperations_CL\r\n| where jobType == \"Purge\" \r\n| where TimeGenerated >= {SnapshotAge:start} and TimeGenerated <= {SnapshotAge:end}\r\n| summarize arg_min(TimeGenerated, *) by jobId;\r\n\r\nSnapshotsOperations_CL\r\n| join kind=inner (FirstOps) on jobId\r\n| where jobType == \"Purge\" \r\n| where TimeGenerated >= {SnapshotAge:start} and TimeGenerated <= {SnapshotAge:end}\r\n| summarize arg_max(TimeGenerated, *) by jobId\r\n| extend DurationMinutes = todouble(TimeGenerated - TimeGenerated1) / 600000000.0\r\n| project TimeGenerated, jobId, jobStatus, DurationMinutes, sourceVm = sourceVmId, sourceDisk = sourceDiskId, temporarySnapshot = primarySnapshotId, backupSnapshot = secondarySnapshotId, sourceLocation = primaryLocation, backupLocation = secondaryLocation\r\n| sort by TimeGenerated desc",
                     "size": 3,
                     "exportFieldName": "jobId",
                     "exportParameterName": "SelectedJob",
@@ -2144,7 +2144,7 @@
                   "type": 3,
                   "content": {
                     "version": "KqlItem/1.0",
-                    "query": "let FirstOps = SnapshotsOperations_CL\r\n| where jobType == \"Snapshot\" \r\n| where TimeGenerated < ago({SnapshotAge})\r\n| summarize arg_min(TimeGenerated, *) by jobId;\r\n\r\nSnapshotsOperations_CL\r\n| join kind=inner (FirstOps) on jobId\r\n| where jobType == \"Snapshot\" \r\n| where TimeGenerated < ago({SnapshotAge})\r\n| summarize arg_max(TimeGenerated, *) by jobId\r\n| extend DurationMinutes = todouble(TimeGenerated - TimeGenerated1) / 600000000.0\r\n| project TimeGenerated, jobId, jobStatus, DurationMinutes, sourceVm = sourceVmId, sourceDisk = sourceDiskId, temporarySnapshot = primarySnapshotId, backupSnapshot = secondarySnapshotId, sourceLocation = primaryLocation, backupLocation = secondaryLocation\r\n| sort by TimeGenerated desc",
+                    "query": "let FirstOps = SnapshotsOperations_CL\r\n| where jobType == \"Snapshot\" \r\n| where TimeGenerated >= {SnapshotAge:start} and TimeGenerated <= {SnapshotAge:end}\r\n| summarize arg_min(TimeGenerated, *) by jobId;\r\n\r\nSnapshotsOperations_CL\r\n| join kind=inner (FirstOps) on jobId\r\n| where jobType == \"Snapshot\" \r\n| where TimeGenerated >= {SnapshotAge:start} and TimeGenerated <= {SnapshotAge:end}\r\n| summarize arg_max(TimeGenerated, *) by jobId\r\n| extend DurationMinutes = todouble(TimeGenerated - TimeGenerated1) / 600000000.0\r\n| project TimeGenerated, jobId, jobStatus, DurationMinutes, sourceVm = sourceVmId, sourceDisk = sourceDiskId, temporarySnapshot = primarySnapshotId, backupSnapshot = secondarySnapshotId, sourceLocation = primaryLocation, backupLocation = secondaryLocation\r\n| sort by TimeGenerated desc",
                     "size": 3,
                     "exportFieldName": "jobId",
                     "exportParameterName": "SelectedJob",
