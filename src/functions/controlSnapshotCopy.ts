@@ -59,7 +59,7 @@ export async function controlSnapshotCopy(queueItem: SnapshotCopyControl, contex
             logger.info(`Sending trigger message to start purging snapshots for disk ID ${queueItem.control.sourceDiskId} in the secondary location ${queueItem.control.secondaryLocation}`);
 
             const purgeSecondary: SnapshotPurgeSource = {
-                 control: {
+                control: {
                     ...queueItem.control
                 },
                 type: 'secondary'
@@ -92,7 +92,7 @@ export async function controlSnapshotCopy(queueItem: SnapshotCopyControl, contex
             // Re-send control copy event with a visibility timeout of 1 hour
             const retryAfter = process.env.SNAPSHOT_RETRY_CONTROL_COPY_MINUTES ? parseInt(process.env.SNAPSHOT_RETRY_CONTROL_COPY_MINUTES)*60 : 60*60; // 1 hour in seconds
             logger.info(`Snapshot copy still in progress. Re-sending control copy event for snapshot ID ${queueItem.snapshot.id} with retry after ${retryAfter} seconds`);
-            const queueManager = new QueueManager(logger, process.env.AzureWebJobsStorage || "", 'copy-control');
+            const queueManager = new QueueManager(logger, process.env.AzureWebJobsStorage__accountname || "", 'copy-control');
             await queueManager.sendMessage(JSON.stringify(queueItem), retryAfter);
         }
 

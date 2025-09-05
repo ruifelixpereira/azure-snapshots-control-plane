@@ -1,19 +1,22 @@
 // Disk snapshots
 import { ILogger } from '../common/logger';
 import { ComputeManagementClient } from "@azure/arm-compute";
+import { ResourceGraphManager } from "./graph.manager";
 import { DefaultAzureCredential } from "@azure/identity";
 import { SnapshotError, _getString } from "../common/apperror";
-import { SnapshotSource, Snapshot } from "../common/interfaces";
+import { SnapshotSource, Snapshot, SnapshotToPurge } from "../common/interfaces";
 import { extractDiskNameFromDiskId, extractSnapshotNameFromSnapshotId, formatDateYYYYMMDDTHHMM } from "../common/utils";
 
  
 export class SnapshotManager {
 
     private computeClient: ComputeManagementClient;
+    private graphManager: ResourceGraphManager;
 
     constructor(private logger: ILogger, subscriptionId: string) {
         const credential = new DefaultAzureCredential();
         this.computeClient = new ComputeManagementClient(credential, subscriptionId);
+        this.graphManager = new ResourceGraphManager(logger);
     }
 
     public async createIncrementalSnapshot(source: SnapshotSource): Promise<Snapshot> {
@@ -134,22 +137,14 @@ export class SnapshotManager {
         try {
             const cutoff = new Date(baseDate.getTime() - days * 24 * 60 * 60 * 1000);
 
-            for await (const snapshot of this.computeClient.snapshots.listByResourceGroup(resourceGroupName)) {
-                if (
-                    snapshot.timeCreated &&
-                    new Date(snapshot.timeCreated) < cutoff &&
-                    snapshot.creationData &&
-                    snapshot.creationData.sourceResourceId &&
-                    snapshot.creationData?.sourceResourceId?.toLowerCase() === diskId.toLowerCase() &&
-                    snapshot.location &&
-                    snapshot.location?.toLowerCase() === location.toLowerCase()
-                ) {
-                    this.logger.info(
-                        `Deleting primary snapshot '${snapshot.name}' for diskId '${diskId}' in location '${location}' created at ${snapshot.timeCreated}`
-                    );
-                    await this.computeClient.snapshots.beginDelete(resourceGroupName, snapshot.name);
-                    deletedSnapshots.push(snapshot.name);
-                }
+            const snapshotsToPurge = await this.graphManager.getSnapshotsBySourceAndDate(resourceGroupName, location, diskId, cutoff.toISOString());
+
+            for await (const snapshot of snapshotsToPurge) {
+                this.logger.info(
+                    `Deleting primary snapshot '${snapshot.name}' for diskId '${diskId}' in location '${location}' created at ${snapshot.timeCreated}`
+                );
+                await this.computeClient.snapshots.beginDelete(resourceGroupName, snapshot.name);
+                deletedSnapshots.push(snapshot.name);
             }
             return deletedSnapshots;
         } catch (error) {
@@ -169,38 +164,62 @@ export class SnapshotManager {
         const deletedSnapshots: string[] = [];
         try {
             const cutoff = new Date(baseDate.getTime() - days * 24 * 60 * 60 * 1000);
+            
+            // get disk name from disk id
+            const diskName = extractDiskNameFromDiskId(diskId);
 
-            for await (const snapshot of this.computeClient.snapshots.listByResourceGroup(resourceGroupName)) {
+            const snapshotsToPurge = await this.graphManager.getSnapshotsByNameAndDate(resourceGroupName, location, diskName, cutoff.toISOString());
 
-                // get disk name from disk id
-                const diskName = extractDiskNameFromDiskId(diskId);
-
-                // get source resource name from snapshot id
-                const sourceSnapshotName = extractSnapshotNameFromSnapshotId(snapshot.creationData?.sourceResourceId);
-
-                if (
-                    snapshot.timeCreated &&
-                    new Date(snapshot.timeCreated) < cutoff &&
-                    snapshot.creationData &&
-                    snapshot.creationData.sourceResourceId &&
-                    sourceSnapshotName &&
-                    sourceSnapshotName.toLowerCase().includes(`-${diskName.toLowerCase()}`) &&
-                    snapshot.location?.toLowerCase() === location.toLowerCase()
-                ) {
-                    this.logger.info(
-                        `Deleting secondary snapshot '${snapshot.name}' for disk '${diskName}' in location '${location}' created at ${snapshot.timeCreated}`
-                    );
-                    await this.computeClient.snapshots.beginDelete(resourceGroupName, snapshot.name);
-                    deletedSnapshots.push(snapshot.name);
-                }
+            for await (const snapshot of snapshotsToPurge) {
+                this.logger.info(
+                    `Deleting secondary snapshot '${snapshot.name}' for disk '${diskName}' in location '${location}' created at ${snapshot.timeCreated}`
+                );
+                await this.computeClient.snapshots.beginDelete(resourceGroupName, snapshot.name);
+                deletedSnapshots.push(snapshot.name);
             }
             return deletedSnapshots;
+
         } catch (error) {
             const message = `Unable to purge secondary snapshots for disk id '${diskId}' in location '${location}' older than ${days} days with error: ${_getString(error)}`;
             this.logger.error(message);
             throw new SnapshotError(message);
         }
     }
+
+
+    public async startBulkPurgeSnapshotsOfDiskIdAndLocationOlderThan(
+        resourceGroupName: string,
+        diskId: string,
+        location: string,
+        baseDate: Date,
+        days: number
+    ): Promise<string[]> {
+        const deletedSnapshots: string[] = [];
+        try {
+            const cutoff = new Date(baseDate.getTime() - days * 24 * 60 * 60 * 1000);
+            
+            // get disk name from disk id
+            const diskName = extractDiskNameFromDiskId(diskId);
+
+            const snapshotsToPurge = await this.graphManager.getSnapshotsByNameAndDate(resourceGroupName, location, diskName, cutoff.toISOString());
+
+            for await (const snapshot of snapshotsToPurge) {
+                this.logger.info(
+                    `Deleting secondary snapshot '${snapshot.name}' for disk '${diskName}' in location '${location}' created at ${snapshot.timeCreated}`
+                );
+                await this.computeClient.snapshots.beginDelete(resourceGroupName, snapshot.name);
+                deletedSnapshots.push(snapshot.name);
+            }
+            return deletedSnapshots;
+
+        } catch (error) {
+            const message = `Unable to purge secondary snapshots for disk id '${diskId}' in location '${location}' older than ${days} days with error: ${_getString(error)}`;
+            this.logger.error(message);
+            throw new SnapshotError(message);
+        }
+    }
+
+
 
     public async isSnapshotDeleted(resourceGroupName: string, snapshotName: string): Promise<boolean> {
         try {

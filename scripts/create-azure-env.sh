@@ -71,7 +71,7 @@ if [ "$sa_query" == "[]" ]; then
     az storage account create \
         --name $storageAccountName \
         --resource-group ${resourceGroupName} \
-        --allow-blob-public-access false \
+        --allow-blob-public-access true \
         --allow-shared-key-access true \
         --kind StorageV2 \
         --sku Standard_LRS
@@ -115,6 +115,7 @@ az role assignment create --assignee $FUNCAPP_ID --role "Storage Queue Data Cont
 az storage queue create --name "snapshot-jobs" --account-name $storageAccountName
 az storage queue create --name "copy-control" --account-name $storageAccountName
 az storage queue create --name "purge-jobs" --account-name $storageAccountName
+az storage queue create --name "bulk-purge-jobs" --account-name $storageAccountName
 az storage queue create --name "purge-control" --account-name $storageAccountName
 
 #
@@ -145,10 +146,10 @@ az functionapp config appsettings set --name $funcAppName --resource-group $reso
     LOGS_INGESTION_RULE_ID="$LOG_INGESTION_RULE_ID" \
     LOGS_INGESTION_STREAM_NAME="$LOG_INGESTION_STREAM_NAME" \
     SNAPSHOT_SECONDARY_LOCATION="westeurope" \
-    SNAPSHOT_RETRY_CONTROL_COPY_MINUTES="15" \
-    SNAPSHOT_RETRY_CONTROL_PURGE_MINUTES="15" \
+    SNAPSHOT_RETRY_CONTROL_COPY_MINUTES="10" \
+    SNAPSHOT_RETRY_CONTROL_PURGE_MINUTES="10" \
     SNAPSHOT_PURGE_PRIMARY_LOCATION_NUMBER_OF_DAYS="1" \
-    SNAPSHOT_PURGE_SECONDARY_LOCATION_NUMBER_OF_DAYS="30"
+    SNAPSHOT_PURGE_SECONDARY_LOCATION_NUMBER_OF_DAYS="11"
 
 #
 # Grant additional permissions to the Function App assigned identity

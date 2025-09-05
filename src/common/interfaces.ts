@@ -20,6 +20,17 @@ export interface Snapshot {
     subscriptionId: string;
 }
 
+export interface SnapshotToPurge {
+    id: string;
+    name: string;
+    location: string;
+    resourceGroup: string;
+    subscriptionId: string;
+    sourceResourceId: string;
+    sourceResourceName: string;
+    timeCreated: string;
+}
+
 export interface SnapshotControl {
     jobId: string;
     sourceVmId: string;

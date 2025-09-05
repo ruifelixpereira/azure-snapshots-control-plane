@@ -10,10 +10,9 @@ export class QueueManager {
     private queueServiceClient: QueueServiceClient;
     private queueName: string;
 
-    constructor(private logger: ILogger, connectionString: string, queue: string) {
+    constructor(private logger: ILogger, accountName: string, queue: string) {
         const credential = new DefaultAzureCredential();
-        const account = getAccountNameFromConnString(connectionString);
-        this.queueServiceClient = new QueueServiceClient(`https://${account}.queue.core.windows.net`, credential);
+        this.queueServiceClient = new QueueServiceClient(`https://${accountName}.queue.core.windows.net`, credential);
         this.queueName = queue;
     }
 

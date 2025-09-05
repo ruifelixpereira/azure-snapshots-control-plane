@@ -9,7 +9,7 @@ import { _getString } from "../common/apperror";
 import { extractResourceGroupFromResourceId, extractSubscriptionIdFromResourceId } from "../common/utils";
 
 
-export async function startSnapshotPurgeJob(queueItem: SnapshotPurgeSource, context: InvocationContext): Promise<void> {
+export async function startSnapshotBulkPurgeJob(queueItem: SnapshotPurgeSource, context: InvocationContext): Promise<void> {
 
     const logger = new AzureLogger(context);
 
@@ -21,38 +21,30 @@ export async function startSnapshotPurgeJob(queueItem: SnapshotPurgeSource, cont
             throw new Error(`Invalid queue item type: ${queueItem.type}. Expected 'primary' or 'secondary'.`);
         }
 
+        // Validate bulk operation
+        if (queueItem.control.primarySnapshotId !== 'all' && queueItem.control.secondarySnapshotId !== 'all') {
+            throw new Error(`Invalid bulk operation: ${queueItem.control.primarySnapshotId}, ${queueItem.control.secondarySnapshotId}. Expected 'all' in the primary or secondary snapshot id.`);
+        }
+
         // Get snapshots subscriptionId and resource group in primary/secondary location
-        const subscriptionId = extractSubscriptionIdFromResourceId( queueItem.type === 'primary' ? queueItem.control.primarySnapshotId : queueItem.control.secondarySnapshotId);
-        const resourceGroup = extractResourceGroupFromResourceId(queueItem.type === 'primary' ? queueItem.control.primarySnapshotId : queueItem.control.secondarySnapshotId);
+        const subscriptionId = extractSubscriptionIdFromResourceId(queueItem.control.sourceDiskId);
+        const resourceGroup = extractResourceGroupFromResourceId(queueItem.control.sourceDiskId);
 
         // A. Start old snapshots purge
         const snapshotManager = new SnapshotManager(logger, subscriptionId);
 
         const now = new Date();
-        const primaryNumberOfDays = process.env.SNAPSHOT_PURGE_PRIMARY_LOCATION_NUMBER_OF_DAYS ? parseInt(process.env.SNAPSHOT_PURGE_PRIMARY_LOCATION_NUMBER_OF_DAYS) : 5;
-        const secondaryNumberOfDays = process.env.SNAPSHOT_PURGE_SECONDARY_LOCATION_NUMBER_OF_DAYS ? parseInt(process.env.SNAPSHOT_PURGE_SECONDARY_LOCATION_NUMBER_OF_DAYS) : 30;
-        const numberOfDays = queueItem.type === 'primary' ? primaryNumberOfDays : secondaryNumberOfDays;
+        const numberOfDays = 0;
         
-        logger.info(`Start purging snapshots for disk ID ${queueItem.control.sourceDiskId} in ${queueItem.type} location ${queueItem.type === 'primary' ? queueItem.control.primaryLocation : queueItem.control.secondaryLocation}`);
+        logger.info(`Start bulk purging snapshots for disk ID ${queueItem.control.sourceDiskId} in ${queueItem.type} location ${queueItem.type === 'primary' ? queueItem.control.primaryLocation : queueItem.control.secondaryLocation}`);
 
-        let snapshotsBeingPurged: string[] = [];
-        if (queueItem.type === 'primary') {
-            snapshotsBeingPurged = await snapshotManager.startPurgePrimarySnapshotsOfDiskIdAndLocationOlderThan(
-                resourceGroup,
-                queueItem.control.sourceDiskId,
-                queueItem.control.primaryLocation,
-                now,
-                numberOfDays
-            );
-        } else {
-            snapshotsBeingPurged = await snapshotManager.startPurgeSecondarySnapshotsOfDiskIdAndLocationOlderThan(
-                resourceGroup,
-                queueItem.control.sourceDiskId,
-                queueItem.control.secondaryLocation,
-                now,
-                numberOfDays
-            );
-        }
+        const snapshotsBeingPurged = await snapshotManager.startBulkPurgeSnapshotsOfDiskIdAndLocationOlderThan(
+            resourceGroup,
+            queueItem.control.sourceDiskId,
+            queueItem.type === 'primary' ? queueItem.control.primaryLocation : queueItem.control.secondaryLocation,
+            now,
+            numberOfDays
+        );
 
         if (snapshotsBeingPurged.length > 0) {
 
@@ -96,7 +88,7 @@ export async function startSnapshotPurgeJob(queueItem: SnapshotPurgeSource, cont
         logger.error(err);
 
         // End process
-        const msgError = `Snapshot purge job for disk ID ${queueItem.control.sourceDiskId} failed with error ${_getString(err)}`;
+        const msgError = `Snapshot bulk purge job for disk ID ${queueItem.control.sourceDiskId} failed with error ${_getString(err)}`;
         const logEntryError: JobLogEntry = {
             jobId: queueItem.control.jobId,
             jobOperation: 'Error',
@@ -118,8 +110,8 @@ export async function startSnapshotPurgeJob(queueItem: SnapshotPurgeSource, cont
     }
 }
 
-app.storageQueue('startSnapshotPurgeJob', {
-    queueName: 'purge-jobs',
+app.storageQueue('startSnapshotBulkPurgeJob', {
+    queueName: 'bulk-purge-jobs',
     connection: 'AzureWebJobsStorage',
-    handler: startSnapshotPurgeJob
+    handler: startSnapshotBulkPurgeJob
 });

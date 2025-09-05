@@ -95,15 +95,13 @@ echo "=============================="
 STORAGE_ACCOUNT_ID=$(az storage account show --name $storageAccountName --resource-group $resourceGroupName --query id -o tsv)
 az role assignment create --assignee $spId --role "Storage Blob Data Owner" --scope $STORAGE_ACCOUNT_ID
 az role assignment create --assignee $spId --role "Storage Queue Data Contributor" --scope $STORAGE_ACCOUNT_ID
+az role assignment create --assignee $spId --role "Storage Table Data Contributor" --scope $STORAGE_ACCOUNT_ID
 
 # Grant the "Monitoring Metrics Publisher" role on the DCR (or at the Resource Group/Subscription level if needed).
 az role assignment create --assignee $spId --role "Monitoring Metrics Publisher" --scope /subscriptions/${SUBSCRIPTION_ID}/resourceGroups/${resourceGroupName}
 
 # Grant Contributor on the resource group
 az role assignment create --assignee $spId --role "Contributor" --scope /subscriptions/${SUBSCRIPTION_ID}/resourceGroups/${resourceGroupName}
-
-# Get Storage account connection string
-STORAGE_CONNECTION_STRING=$(az storage account show-connection-string --name $storageAccountName --resource-group $resourceGroupName --query connectionString -o tsv)
 
 # Get log ingestion values
 LOG_INGESTION_RULE_ID=$(az monitor data-collection rule show --name $dcrName --resource-group $resourceGroupName --query "immutableId" --output tsv)
@@ -121,7 +119,7 @@ cat > local.settings.dev.json <<EOF
   "IsEncrypted": false,
   "Values": {
     "FUNCTIONS_WORKER_RUNTIME": "node",
-    "AzureWebJobsStorage": "$STORAGE_CONNECTION_STRING",
+    "AzureWebJobsStorage__accountname": "$storageAccountName",
     "AZURE_TENANT_ID": "$TENANT_ID",
     "AZURE_CLIENT_ID": "$appId",
     "AZURE_CLIENT_SECRET": "$secret",

@@ -23,8 +23,8 @@ export async function controlSnapshotPurge(queueItem: SnapshotPurgeControl, cont
         }
 
         // Get snapshots subscriptionId and resource group in primary/secondary location
-        const subscriptionId = extractSubscriptionIdFromResourceId( queueItem.source.type === 'primary' ? queueItem.source.control.primarySnapshotId : queueItem.source.control.secondarySnapshotId);
-        const resourceGroup = extractResourceGroupFromResourceId(queueItem.source.type === 'primary' ? queueItem.source.control.primarySnapshotId : queueItem.source.control.secondarySnapshotId);
+        const subscriptionId = extractSubscriptionIdFromResourceId( queueItem.source.control.sourceDiskId );
+        const resourceGroup = extractResourceGroupFromResourceId( queueItem.source.control.sourceDiskId);
 
         // A. Check if snapshot purge already finished
         const snapshotManager = new SnapshotManager(logger, subscriptionId);
@@ -58,7 +58,7 @@ export async function controlSnapshotPurge(queueItem: SnapshotPurgeControl, cont
             // Re-send control purge event with a visibility timeout of 1 hour
             const retryAfter = process.env.SNAPSHOT_RETRY_CONTROL_PURGE_MINUTES ? parseInt(process.env.SNAPSHOT_RETRY_CONTROL_PURGE_MINUTES)*60 : 60*60; // 1 hour in seconds
             logger.info(`Snapshot purge still in progress. Re-sending control purge event for disk ID ${queueItem.source.control.sourceDiskId} with retry after ${retryAfter} seconds`);
-            const queueManager = new QueueManager(logger, process.env.AzureWebJobsStorage || "", 'purge-control');
+            const queueManager = new QueueManager(logger, process.env.AzureWebJobsStorage__accountname || "", 'purge-control');
             await queueManager.sendMessage(JSON.stringify(queueItem), retryAfter);
         }
 
