@@ -148,7 +148,7 @@ export class SnapshotManager {
             }
             return deletedSnapshots;
         } catch (error) {
-            const message = `Unable to purge primary snapshots of diskId '${diskId}' in location '${location}' older than ${days} days with error: ${_getString(error)}`;
+            const message = `Unable to purge primary snapshots of diskId '${diskId}' in location '${location}' and resource group '${resourceGroupName}' older than ${days} days since '${baseDate.toISOString()}' with error: ${_getString(error)}`;
             this.logger.error(message);
             throw new SnapshotError(message);
         }
@@ -180,7 +180,7 @@ export class SnapshotManager {
             return deletedSnapshots;
 
         } catch (error) {
-            const message = `Unable to purge secondary snapshots for disk id '${diskId}' in location '${location}' older than ${days} days with error: ${_getString(error)}`;
+            const message = `Unable to purge secondary snapshots of diskId '${diskId}' in location '${location}' and resource group '${resourceGroupName}' older than ${days} days since '${baseDate.toISOString()}' with error: ${_getString(error)}`;
             this.logger.error(message);
             throw new SnapshotError(message);
         }

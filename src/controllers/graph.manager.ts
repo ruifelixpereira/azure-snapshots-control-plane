@@ -60,7 +60,7 @@ export class ResourceGraphManager {
                     | where tolower(resourceGroup) =~ tolower('${resourceGroup}')
                     | where tolower(location) =~ tolower('${location}')
                     | extend sourceResourceName = split(properties.creationData.sourceResourceId, '/')[8]
-                    | where sourceResourceName contains tolower('-${diskName}')
+                    | where tolower(sourceResourceName) contains tolower('-${diskName}')
                     | where todatetime(properties.timeCreated) <= todatetime('${cutoffDate}')
                     | project id, name, location, resourceGroup, subscriptionId, sourceResourceId = properties.creationData.sourceResourceId, sourceResourceName,timeCreated = properties.timeCreated`
                 },

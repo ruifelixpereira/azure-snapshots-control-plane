@@ -64,6 +64,15 @@ export async function startSnapshotCreationJob(queueItem: SnapshotSource, contex
 
         if (secondaryNumberOfDays <= 0) {
 
+            // No copy is needed in the secondary region so the snapshot backup process is completed
+            const logEntryCompleted: JobLogEntry = {
+                ...logEntrySnapshotCreated,
+                jobOperation: 'Snapshot Create End',
+                jobStatus: 'Snapshot Completed',
+                message: `Snapshot creation finished and no copy is required for secondary region`,
+            }
+            await logManager.uploadLog(logEntryCompleted);
+
             // C. Trigger old snapshots purge in primary and secondary locations
             logger.info(`Sending trigger message to start purge event for disk ID ${queueItem.diskId} and primary location ${primarySnapshot.location}`);
 
@@ -80,25 +89,33 @@ export async function startSnapshotCreationJob(queueItem: SnapshotSource, contex
                 type: 'primary'
             };
 
-            // D. Trigger all snapshots purge in secondary location
-            logger.info(`Sending trigger message to start purging all snapshots for disk ID ${queueItem.diskId} in the secondary location ${process.env.SNAPSHOT_SECONDARY_LOCATION}`);
-
-            const purgeSecondary: SnapshotPurgeSource = {
-                control: {
-                    jobId: jobId,
-                    sourceVmId: queueItem.vmId,
-                    sourceDiskId: queueItem.diskId,
-                    primarySnapshotId: "na",
-                    secondarySnapshotId: "all",
-                    primaryLocation: "na",
-                    secondaryLocation: process.env.SNAPSHOT_SECONDARY_LOCATION
-                },
-                type: 'secondary'
-            };
-
             // Send notifications using Storage Queue
             context.extraOutputs.set(purgeJobsQueueOutput, purgePrimary);
-            context.extraOutputs.set(bulkPurgeJobsQueueOutput, purgeSecondary);
+
+            // D. Trigger all snapshots purge in secondary location
+            const snapshotBulkPurgeActive = process.env.SNAPSHOT_BULK_PURGE_ACTIVE ? process.env.SNAPSHOT_BULK_PURGE_ACTIVE.toLowerCase() === 'true' : false;
+            if (snapshotBulkPurgeActive) {
+                logger.info(`Sending trigger message to start purging all snapshots for disk ID ${queueItem.diskId} in the secondary location ${process.env.SNAPSHOT_SECONDARY_LOCATION}`);
+
+                const purgeSecondary: SnapshotPurgeSource = {
+                    control: {
+                        jobId: jobId,
+                        sourceVmId: queueItem.vmId,
+                        sourceDiskId: queueItem.diskId,
+                        primarySnapshotId: "na",
+                        secondarySnapshotId: "all",
+                        primaryLocation: "na",
+                        secondaryLocation: process.env.SNAPSHOT_SECONDARY_LOCATION
+                    },
+                    type: 'secondary'
+                };
+
+                // Send notifications using Storage Queue
+                context.extraOutputs.set(bulkPurgeJobsQueueOutput, purgeSecondary);
+            }
+            else {
+                logger.info(`Bulk purge is not active, skipping sending trigger message to start purging all snapshots for disk ID ${queueItem.diskId} in the secondary location ${process.env.SNAPSHOT_SECONDARY_LOCATION}`);
+            }
         }
         else {
 

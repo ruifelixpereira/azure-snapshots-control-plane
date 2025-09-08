@@ -1,0 +1,3 @@
+{
+    "query": "resources | where type =~ 'microsoft.compute/snapshots' | where tolower(resourceGroup) =~ tolower('SNAP-RG-NE') | where tolower(location) =~ tolower('northeurope') | extend sourceResourceName = split(properties.creationData.sourceResourceId, '/')[8] | where sourceResourceName contains tolower('-') | where todatetime(properties.timeCreated) <= todatetime('2025-09-06T11:31:36.116Z') | project id, name, location, resourceGroup, subscriptionId, sourceResourceId = properties.creationData.sourceResourceId, sourceResourceName,timeCreated = properties.timeCreated"
+}

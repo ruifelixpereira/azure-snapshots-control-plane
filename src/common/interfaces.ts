@@ -59,7 +59,7 @@ export interface SnapshotPurgeControl {
 
 export interface JobLogEntry {
     jobId: string;
-    jobOperation: 'Start' | 'Snapshot Create' | 'Snapshot Copy Start' | 'Snapshot Copy End' | 'Primary Snapshot Purge Start' | 'Primary Snapshot Purge End' | 'Secondary Snapshot Purge Start' | 'Secondary Snapshot Purge End' | 'Error';
+    jobOperation: 'Start' | 'Snapshot Create' | 'Snapshot Create End' | 'Snapshot Copy Start' | 'Snapshot Copy End' | 'Primary Snapshot Purge Start' | 'Primary Snapshot Purge End' | 'Secondary Snapshot Purge Start' | 'Secondary Snapshot Purge End' | 'Error';
     jobStatus: 'Snapshot In Progress' | 'Snapshot Completed' | 'Snapshot Failed' | 'Purge In Progress' | 'Purge Completed' | 'Purge Failed';
     jobType: 'Snapshot' | 'Purge';
     message: string;
