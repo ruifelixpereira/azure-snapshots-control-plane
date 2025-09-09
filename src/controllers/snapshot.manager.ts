@@ -126,6 +126,87 @@ export class SnapshotManager {
         }
     }
 
+
+    public async startPurgePrimarySnapshotsOfDiskIdAndLocationOlderThan(
+            resourceGroupName: string,
+            diskId: string,
+            location: string,
+            baseDate: Date,
+            days: number
+    ): Promise<string[]> {
+        const deletedSnapshots: string[] = [];
+        try {
+            const cutoff = new Date(baseDate.getTime() - days * 24 * 60 * 60 * 1000);
+
+            for await (const snapshot of this.computeClient.snapshots.listByResourceGroup(resourceGroupName)) {
+                if (
+                    snapshot.timeCreated &&
+                    new Date(snapshot.timeCreated) < cutoff &&
+                    snapshot.creationData &&
+                    snapshot.creationData.sourceResourceId &&
+                    snapshot.creationData?.sourceResourceId?.toLowerCase() === diskId.toLowerCase() &&
+                    snapshot.location &&
+                    snapshot.location?.toLowerCase() === location.toLowerCase()
+                ) {
+                    this.logger.info(
+                        `Deleting primary snapshot '${snapshot.name}' for diskId '${diskId}' in location '${location}' created at ${snapshot.timeCreated}`
+                    );
+                    await this.computeClient.snapshots.beginDelete(resourceGroupName, snapshot.name);
+                    deletedSnapshots.push(snapshot.name);
+                }
+            }
+            return deletedSnapshots;
+        } catch (error) {
+            const message = `Unable to purge primary snapshots of diskId '${diskId}' in location '${location}' and resource group '${resourceGroupName}' older than ${days} days since '${baseDate.toISOString()}' with error: ${_getString(error)}`;
+            this.logger.error(message);
+            throw new SnapshotError(message);
+        }
+    }
+
+    public async startPurgeSecondarySnapshotsOfDiskIdAndLocationOlderThan(
+        resourceGroupName: string,
+        diskId: string,
+        location: string,
+        baseDate: Date,
+        days: number
+    ): Promise<string[]> {
+        const deletedSnapshots: string[] = [];
+        try {
+            const cutoff = new Date(baseDate.getTime() - days * 24 * 60 * 60 * 1000);
+
+            for await (const snapshot of this.computeClient.snapshots.listByResourceGroup(resourceGroupName)) {
+
+                // get disk name from disk id
+                const diskName = extractDiskNameFromDiskId(diskId);
+
+                // get source resource name from snapshot id
+                const sourceSnapshotName = extractSnapshotNameFromSnapshotId(snapshot.creationData?.sourceResourceId);
+
+                if (
+                    snapshot.timeCreated &&
+                    new Date(snapshot.timeCreated) < cutoff &&
+                    snapshot.creationData &&
+                    snapshot.creationData.sourceResourceId &&
+                    sourceSnapshotName &&
+                    sourceSnapshotName.toLowerCase().includes(`-${diskName.toLowerCase()}`) &&
+                    snapshot.location?.toLowerCase() === location.toLowerCase()
+                ) {
+                    this.logger.info(
+                        `Deleting secondary snapshot '${snapshot.name}' for disk '${diskName}' in location '${location}' created at ${snapshot.timeCreated}`
+                    );
+                    await this.computeClient.snapshots.beginDelete(resourceGroupName, snapshot.name);
+                    deletedSnapshots.push(snapshot.name);
+                }
+            }
+            return deletedSnapshots;
+        } catch (error) {
+            const message = `Unable to purge secondary snapshots for disk id '${diskId}' in location '${location}' older than ${days} days with error: ${_getString(error)}`;
+            this.logger.error(message);
+            throw new SnapshotError(message);
+        }
+    }
+
+    /*
     public async startPurgePrimarySnapshotsOfDiskIdAndLocationOlderThan(
         resourceGroupName: string,
         diskId: string,
@@ -185,6 +266,7 @@ export class SnapshotManager {
             throw new SnapshotError(message);
         }
     }
+    */
 
 
     public async startBulkPurgeSnapshotsOfDiskIdAndLocationOlderThan(
@@ -218,7 +300,6 @@ export class SnapshotManager {
             throw new SnapshotError(message);
         }
     }
-
 
 
     public async isSnapshotDeleted(resourceGroupName: string, snapshotName: string): Promise<boolean> {
