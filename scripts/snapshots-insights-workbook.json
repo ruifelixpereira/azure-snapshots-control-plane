@@ -12,6 +12,9 @@
       "type": 9,
       "content": {
         "version": "KqlParameterItem/1.0",
+        "crossComponentResources": [
+          "{Subscription}"
+        ],
         "parameters": [
           {
             "id": "1f74ed9a-e3ed-498d-bd5b-f68f3836a117",
@@ -33,7 +36,10 @@
               ],
               "showDefault": false
             },
-            "queryType": 1
+            "queryType": 1,
+            "value": [
+              "/subscriptions/111-111-111"
+            ]
           },
           {
             "id": "df4a3e18-45e6-41fd-ab9b-903226867436",
@@ -57,7 +63,10 @@
               "showDefault": false
             },
             "queryType": 1,
-            "resourceType": "microsoft.resourcegraph/resources"
+            "resourceType": "microsoft.resourcegraph/resources",
+            "value": [
+              "xpto"
+            ]
           },
           {
             "id": "f60ea0a0-3703-44ca-a59b-df0246423f41",
@@ -90,15 +99,44 @@
             "version": "KqlParameterItem/1.0",
             "name": "SnapshotAge",
             "label": "Time Range",
-            "type": 2,
+            "type": 4,
             "description": "This allow you to filter snapshot by time created.",
             "isRequired": true,
-            "query": "{\"version\":\"1.0.0\",\"content\":\"[\\r\\n    { \\\"value\\\":\\\"0d\\\", \\\"label\\\":\\\"All\\\", \\\"selected\\\":true},\\r\\n\\t{ \\\"value\\\":\\\"1d\\\", \\\"label\\\":\\\"1 day ago\\\" },\\r\\n    { \\\"value\\\":\\\"2d\\\", \\\"label\\\":\\\"2 days ago\\\" },\\r\\n    { \\\"value\\\":\\\"3d\\\", \\\"label\\\":\\\"3 days ago\\\"},\\r\\n\\t{ \\\"value\\\":\\\"4d\\\", \\\"label\\\":\\\"4 days ago\\\" },\\r\\n\\t{ \\\"value\\\":\\\"5d\\\", \\\"label\\\":\\\"5 days ago\\\" },\\r\\n\\t{ \\\"value\\\":\\\"6d\\\", \\\"label\\\":\\\"6 days ago\\\" },\\r\\n\\t{ \\\"value\\\":\\\"7d\\\", \\\"label\\\":\\\"7 days ago\\\" },\\r\\n\\t{ \\\"value\\\":\\\"14d\\\", \\\"label\\\":\\\"14 days ago\\\" },\\r\\n\\t{ \\\"value\\\":\\\"30d\\\", \\\"label\\\":\\\"30 days ago\\\" },\\r\\n\\t{ \\\"value\\\":\\\"60d\\\", \\\"label\\\":\\\"60 days ago\\\" },\\r\\n\\t{ \\\"value\\\":\\\"90d\\\", \\\"label\\\":\\\"90 days ago\\\" }\\t\\t\\t\\r\\n]\",\"transformers\":null}",
             "typeSettings": {
-              "additionalResourceOptions": [],
-              "showDefault": false
+              "selectableValues": [
+                {
+                  "durationMs": 86400000
+                },
+                {
+                  "durationMs": 172800000
+                },
+                {
+                  "durationMs": 259200000
+                },
+                {
+                  "durationMs": 604800000
+                },
+                {
+                  "durationMs": 1209600000
+                },
+                {
+                  "durationMs": 2419200000
+                },
+                {
+                  "durationMs": 2592000000
+                },
+                {
+                  "durationMs": 5184000000
+                },
+                {
+                  "durationMs": 7776000000
+                }
+              ],
+              "allowCustom": true
             },
-            "queryType": 8
+            "value": {
+              "durationMs": 86400000
+            }
           },
           {
             "id": "4b6b8f2a-c2cc-4740-98e8-f4ce08650601",
@@ -136,13 +174,13 @@
             "queryType": 1,
             "resourceType": "microsoft.resourcegraph/resources",
             "value": [
-              "/subscriptions/e8460393-3aeb-4161-a310-a46849221365/resourceGroups/snapshots-management/providers/Microsoft.OperationalInsights/workspaces/snmd2snapmng-law01"
+              "/subscriptions/111-111-111/resourceGroups/xpto/providers/Microsoft.OperationalInsights/workspaces/law-01"
             ]
           }
         ],
         "style": "above",
-        "queryType": 0,
-        "resourceType": "microsoft.operationalinsights/workspaces"
+        "queryType": 1,
+        "resourceType": "microsoft.resourcegraph/resources"
       },
       "name": "Workbook Parameters",
       "styleSettings": {
@@ -255,10 +293,80 @@
                   "name": "text - Main Title"
                 },
                 {
+                  "type": 9,
+                  "content": {
+                    "version": "KqlParameterItem/1.0",
+                    "parameters": [
+                      {
+                        "id": "e6108487-636b-4557-a650-9c979f63e9f8",
+                        "version": "KqlParameterItem/1.0",
+                        "name": "SnapshotNameFilter",
+                        "label": "Snapshot Name",
+                        "type": 1,
+                        "description": "Filter the snapshots by name",
+                        "typeSettings": {
+                          "isSearchBox": true
+                        },
+                        "timeContext": {
+                          "durationMs": 86400000
+                        }
+                      },
+                      {
+                        "id": "cf868eb7-4a58-4cf0-b7bc-47d64a4a9bca",
+                        "version": "KqlParameterItem/1.0",
+                        "name": "LocationFilter",
+                        "type": 2,
+                        "multiSelect": true,
+                        "quote": "'",
+                        "delimiter": ",",
+                        "typeSettings": {
+                          "additionalResourceOptions": [],
+                          "showDefault": false
+                        },
+                        "jsonData": "[\r\n    { \"value\":\"primary\", \"label\": \"primary\"},\r\n    { \"value\":\"secondary\", \"label\": \"secondary\"}\r\n]",
+                        "timeContext": {
+                          "durationMs": 86400000
+                        },
+                        "value": [
+                          "primary",
+                          "secondary"
+                        ],
+                        "label": "Location Type"
+                      },
+                      {
+                        "id": "592ccd59-e0dd-4a3b-96bf-5c8b07a6e069",
+                        "version": "KqlParameterItem/1.0",
+                        "name": "ProvisioningStateFilter",
+                        "label": "Provisioning State",
+                        "type": 2,
+                        "multiSelect": true,
+                        "quote": "'",
+                        "delimiter": ",",
+                        "query": "resources \r\n| where type == \"microsoft.compute/snapshots\"\r\n| extend provisioningState = tostring(properties.provisioningState)\r\n| distinct provisioningState\r\n| project provisioningState",
+                        "typeSettings": {
+                          "additionalResourceOptions": []
+                        },
+                        "timeContext": {
+                          "durationMs": 86400000
+                        },
+                        "queryType": 1,
+                        "resourceType": "microsoft.resourcegraph/resources",
+                        "value": [
+                          "Failed"
+                        ]
+                      }
+                    ],
+                    "style": "above",
+                    "queryType": 0,
+                    "resourceType": "microsoft.operationalinsights/workspaces"
+                  },
+                  "name": "Snaphots - parameters"
+                },
+                {
                   "type": 3,
                   "content": {
                     "version": "KqlItem/1.0",
-                    "query": "resources \r\n| where type == \"microsoft.compute/snapshots\"\r\n| where resourceGroup in~ ({ResourceGroup:value})\r\n| where name in~ (split(\"{Snapshots:label}\", \", \"))\r\n| extend TimeCreated = properties.timeCreated\r\n| extend snapshotType = case(properties.incremental == true, \"Incremental\", properties.incremental == false, \"Full\", \"\")\r\n| where TimeCreated >= {SnapshotAge:start} and TimeCreated <= {SnapshotAge:end}\r\n| extend Details = pack_all()\r\n| project id, sourceDisk = properties.creationData.sourceResourceId, diskSizeGB = properties.diskSizeGB, resourceGroup, location, apiVersion, sku = sku.name, snapshotType, TimeCreated, publicNetworkAccess = properties.publicNetworkAccess, networkAccessPolicy = properties.networkAccessPolicy, subscriptionId, tags, Details",
+                    "query": "resources \r\n| where type == \"microsoft.compute/snapshots\"\r\n| where resourceGroup in~ ({ResourceGroup:value})\r\n| where name in~ (split(\"{Snapshots:label}\", \", \"))\r\n| where isempty('{SnapshotNameFilter}') or tolower(name) contains tolower(tostring('{SnapshotNameFilter}'))\r\n| extend TimeCreated = properties.timeCreated\r\n| extend snapshotType = case(properties.incremental == true, \"Incremental\", properties.incremental == false, \"Full\", \"\")\r\n| extend locationType = tags['smcp-location-type']\r\n| where TimeCreated >= {SnapshotAge:start} and TimeCreated <= {SnapshotAge:end}\r\n| where locationType in~ (split(\"{LocationFilter:label}\", \", \"))\r\n| extend provisioningState = tostring(properties.provisioningState)\r\n| where provisioningState in~ (split(\"{ProvisioningStateFilter:label}\", \", \"))\r\n| extend Details = pack_all()\r\n| project id, sourceDisk = properties.creationData.sourceResourceId, diskSizeGB = properties.diskSizeGB, resourceGroup, location, apiVersion, sku = sku.name, snapshotType, TimeCreated, publicNetworkAccess = properties.publicNetworkAccess, networkAccessPolicy = properties.networkAccessPolicy, subscriptionId, provisioningState, locationType, tags, Details",
                     "size": 3,
                     "exportMultipleValues": true,
                     "exportedParameters": [
@@ -421,7 +529,7 @@
                           "formatter": 1
                         }
                       ],
-                      "filter": true,
+                      "rowLimit": 50,
                       "hierarchySettings": {
                         "treeType": 1,
                         "groupBy": [
@@ -484,6 +592,14 @@
                         {
                           "columnId": "subscriptionId",
                           "label": "Subscription"
+                        },
+                        {
+                          "columnId": "provisioningState",
+                          "label": "Provisioning State"
+                        },
+                        {
+                          "columnId": "locationType",
+                          "label": "Location Type"
                         },
                         {
                           "columnId": "tags",
@@ -586,10 +702,39 @@
                   "name": "text - Main Title"
                 },
                 {
+                  "type": 9,
+                  "content": {
+                    "version": "KqlParameterItem/1.0",
+                    "crossComponentResources": [
+                      "/subscriptions/111-111-111/resourceGroups/xpto"
+                    ],
+                    "parameters": [
+                      {
+                        "id": "4d5893ee-ae49-4a9a-be91-7d11cf4b8eb2",
+                        "version": "KqlParameterItem/1.0",
+                        "name": "VmName",
+                        "label": "Virtual Machine Name",
+                        "type": 1,
+                        "description": "Filter VMs by name",
+                        "typeSettings": {
+                          "isSearchBox": true
+                        },
+                        "timeContext": {
+                          "durationMs": 86400000
+                        }
+                      }
+                    ],
+                    "style": "above",
+                    "queryType": 0,
+                    "resourceType": "microsoft.operationalinsights/workspaces"
+                  },
+                  "name": "vm - parameters"
+                },
+                {
                   "type": 3,
                   "content": {
                     "version": "KqlItem/1.0",
-                    "query": "resources\r\n| where type == 'microsoft.compute/virtualmachines'\r\n| where resourceGroup in~ ({ResourceGroup:value})\r\n| extend backupActive = coalesce(tolower(tostring(tags[\"smcp-backup\"])), \"off\")\r\n| extend osDiskId = tolower(tostring(properties.storageProfile.osDisk.managedDisk.id))\r\n| extend vmSize = tostring(properties.hardwareProfile.vmSize)\r\n| join kind=inner (\r\n    resources\r\n    | where type == \"microsoft.compute/disks\"\r\n    | extend diskId = tolower(id)\r\n    | extend diskSku = tostring(sku.name)\r\n    | extend diskSizeGB = tostring(properties.diskSizeGB)\r\n) on $left.osDiskId == $right.diskId\r\n| project id, name, location, resourceGroup, subscriptionId, vmSize, osDiskId, diskName = name1, diskSku, diskSizeGB, backupActive",
+                    "query": "resources\r\n| where type == 'microsoft.compute/virtualmachines'\r\n| where resourceGroup in~ ({ResourceGroup:value})\r\n| where isempty('{VmName:value}') or tolower(name) contains tolower(tostring('{VmName:value}'))\r\n| extend backupActive = coalesce(tolower(tostring(tags[\"smcp-backup\"])), \"off\")\r\n| extend osDiskId = tolower(tostring(properties.storageProfile.osDisk.managedDisk.id))\r\n| extend vmSize = tostring(properties.hardwareProfile.vmSize)\r\n| join kind=inner (\r\n    resources\r\n    | where type == \"microsoft.compute/disks\"\r\n    | extend diskId = tolower(id)\r\n    | extend diskSku = tostring(sku.name)\r\n    | extend diskSizeGB = tostring(properties.diskSizeGB)\r\n) on $left.osDiskId == $right.diskId\r\n| project id, name, location, resourceGroup, subscriptionId, vmSize, osDiskId, diskName = name1, diskSku, diskSizeGB, backupActive",
                     "size": 3,
                     "exportFieldName": "diskName",
                     "exportParameterName": "SelectedDisk",
@@ -667,8 +812,7 @@
                           }
                         }
                       ],
-                      "rowLimit": 100,
-                      "filter": true,
+                      "rowLimit": 50,
                       "labelSettings": [
                         {
                           "columnId": "id",
@@ -716,7 +860,7 @@
                   "type": 3,
                   "content": {
                     "version": "KqlItem/1.0",
-                    "query": "resources \r\n| where type == \"microsoft.compute/snapshots\"\r\n| extend expectedSnapshotName = strcat(\"-\", \"{SelectedDisk}\")\r\n| where name contains expectedSnapshotName\r\n| where resourceGroup in~ ({ResourceGroup:value})\r\n| extend TimeCreated = todatetime(properties.timeCreated)\r\n| extend snapshotType = case(properties.incremental == true, \"Incremental\", properties.incremental == false, \"Full\", \"\")\r\n| extend snapshotType2 = case(name endswith \"-sec\", \"Backup\", \"Temporary\")\r\n| where TimeCreated >= {SnapshotAge:start} and TimeCreated <= {SnapshotAge:end}\r\n| extend Details = pack_all()\r\n| project TimeCreated, id, name, sourceDisk = properties.creationData.sourceResourceId, diskSizeGB = properties.diskSizeGB, resourceGroup, location, apiVersion, sku = sku.name, snapshotType, snapshotType2, publicNetworkAccess = properties.publicNetworkAccess, networkAccessPolicy = properties.networkAccessPolicy, subscriptionId, tags, Details\r\n| sort by TimeCreated",
+                    "query": "resources \r\n| where type == \"microsoft.compute/snapshots\"\r\n| extend expectedSnapshotName = strcat(\"-\", \"{SelectedDisk}\")\r\n| where name contains expectedSnapshotName\r\n| where resourceGroup in~ ({ResourceGroup:value})\r\n| extend TimeCreated = todatetime(properties.timeCreated)\r\n| extend snapshotType = case(properties.incremental == true, \"Incremental\", properties.incremental == false, \"Full\", \"\")\r\n| extend snapshotType2 = case(name endswith \"-sec\", \"Secondary Backup\", \"Primary Backup\")\r\n| where TimeCreated >= {SnapshotAge:start} and TimeCreated <= {SnapshotAge:end}\r\n| extend Details = pack_all()\r\n| project TimeCreated, id, name, sourceDisk = properties.creationData.sourceResourceId, diskSizeGB = properties.diskSizeGB, resourceGroup, location, apiVersion, sku = sku.name, snapshotType, snapshotType2, publicNetworkAccess = properties.publicNetworkAccess, networkAccessPolicy = properties.networkAccessPolicy, subscriptionId, tags, Details\r\n| sort by TimeCreated",
                     "size": 0,
                     "title": "Virtual Machine OS Disk Snapshots",
                     "queryType": 1,
@@ -1289,7 +1433,7 @@
                   "type": 3,
                   "content": {
                     "version": "KqlItem/1.0",
-                    "query": "resources\r\n| where type == 'microsoft.compute/snapshots'\r\n| where tags[\"smcp-location-type\"] == \"secondary\"\r\n| where resourceGroup in~ ({ResourceGroup:value})\r\n| where name in~ (split(\"{Snapshots:label}\", \", \"))\r\n| extend TimeCreated = properties.timeCreated\r\n| where TimeCreated >= {SnapshotAge:start} and TimeCreated <= {SnapshotAge:end}\r\n| extend title2 = 'Backup Snapshots'\r\n| summarize count() by title2",
+                    "query": "resources\r\n| where type == 'microsoft.compute/snapshots'\r\n| where resourceGroup in~ ({ResourceGroup:value})\r\n| where name in~ (split(\"{Snapshots:label}\", \", \"))\r\n| extend TimeCreated = properties.timeCreated\r\n| where TimeCreated >= {SnapshotAge:start} and TimeCreated <= {SnapshotAge:end}\r\n| extend SnapshotLocationType = tags[\"smcp-location-type\"]\r\n| summarize BackupSnapshots = make_set(SnapshotLocationType) by id\r\n| extend\r\n    IsPrimary = BackupSnapshots has \"primary\",\r\n    IsSecondary = BackupSnapshots has \"secondary\"\r\n| summarize\r\n    PrimarySnapshots = countif(IsPrimary),\r\n    SecondarySnapshots = countif(IsSecondary)\r\n| extend title2 = 'Backup Snapshots'\r\n| extend title3 = 'Primary Region'\r\n",
                     "size": 3,
                     "noDataMessage": "No resources found",
                     "queryType": 1,
@@ -1303,8 +1447,11 @@
                         "columnMatch": "title2",
                         "formatter": 1
                       },
+                      "subtitleContent": {
+                        "columnMatch": "title3"
+                      },
                       "leftContent": {
-                        "columnMatch": "count_",
+                        "columnMatch": "PrimarySnapshots",
                         "formatter": 12,
                         "formatOptions": {
                           "min": 0,
@@ -1331,7 +1478,7 @@
                   "type": 3,
                   "content": {
                     "version": "KqlItem/1.0",
-                    "query": "resources\r\n| where type == 'microsoft.compute/snapshots'\r\n| where tags[\"smcp-location-type\"] == \"primary\"\r\n| where resourceGroup in~ ({ResourceGroup:value})\r\n| where name in~ (split(\"{Snapshots:label}\", \", \"))\r\n| extend TimeCreated = properties.timeCreated\r\n| where TimeCreated >= {SnapshotAge:start} and TimeCreated <= {SnapshotAge:end}\r\n| extend title2 = 'Temporary snapshots'\r\n| summarize count() by title2",
+                    "query": "resources\r\n| where type == 'microsoft.compute/snapshots'\r\n| where resourceGroup in~ ({ResourceGroup:value})\r\n| where name in~ (split(\"{Snapshots:label}\", \", \"))\r\n| extend TimeCreated = properties.timeCreated\r\n| where TimeCreated >= {SnapshotAge:start} and TimeCreated <= {SnapshotAge:end}\r\n| extend SnapshotLocationType = tags[\"smcp-location-type\"]\r\n| summarize BackupSnapshots = make_set(SnapshotLocationType) by id\r\n| extend\r\n    IsPrimary = BackupSnapshots has \"primary\",\r\n    IsSecondary = BackupSnapshots has \"secondary\"\r\n| summarize\r\n    PrimarySnapshots = countif(IsPrimary),\r\n    SecondarySnapshots = countif(IsSecondary)\r\n| extend title2 = 'Backup Snapshots'\r\n| extend title3 = 'Secondary Region'\r\n",
                     "size": 3,
                     "noDataMessage": "No resources found",
                     "queryType": 1,
@@ -1345,8 +1492,11 @@
                         "columnMatch": "title2",
                         "formatter": 1
                       },
+                      "subtitleContent": {
+                        "columnMatch": "title3"
+                      },
                       "leftContent": {
-                        "columnMatch": "count_",
+                        "columnMatch": "SecondarySnapshots",
                         "formatter": 12,
                         "formatOptions": {
                           "min": 0,
@@ -1811,10 +1961,60 @@
                   "name": "text - Main Title"
                 },
                 {
+                  "type": 9,
+                  "content": {
+                    "version": "KqlParameterItem/1.0",
+                    "crossComponentResources": [
+                      "/subscriptions/111-111-111/resourceGroups/xpto"
+                    ],
+                    "parameters": [
+                      {
+                        "id": "c4c76b07-a0b9-48ca-9a8b-2d5df3d5e2f0",
+                        "version": "KqlParameterItem/1.0",
+                        "name": "PurgeSourceVmName",
+                        "label": "Virtual Machine name",
+                        "type": 1,
+                        "description": "Filter purge jobs by virtual machine",
+                        "typeSettings": {
+                          "isSearchBox": true
+                        },
+                        "timeContext": {
+                          "durationMs": 86400000
+                        },
+                        "value": ""
+                      },
+                      {
+                        "id": "b15e26b4-9f01-4746-a244-a425ce88cd4b",
+                        "version": "KqlParameterItem/1.0",
+                        "name": "PurgeJobStatus",
+                        "label": "Job Status",
+                        "type": 2,
+                        "multiSelect": true,
+                        "quote": "'",
+                        "delimiter": ",",
+                        "typeSettings": {
+                          "additionalResourceOptions": []
+                        },
+                        "jsonData": "[\r\n    { \"value\":\"Purge Completed\", \"label\": \"Purge Completed\"},\r\n    { \"value\":\"Purge Failed\", \"label\": \"Purge Failed\"}\r\n]",
+                        "timeContext": {
+                          "durationMs": 86400000
+                        },
+                        "value": [
+                          "Purge Failed"
+                        ]
+                      }
+                    ],
+                    "style": "above",
+                    "queryType": 0,
+                    "resourceType": "microsoft.operationalinsights/workspaces"
+                  },
+                  "name": "purge jobs - parameters"
+                },
+                {
                   "type": 3,
                   "content": {
                     "version": "KqlItem/1.0",
-                    "query": "let FirstOps = SnapshotsOperations_CL\r\n| where jobType == \"Purge\" \r\n| where TimeGenerated >= {SnapshotAge:start} and TimeGenerated <= {SnapshotAge:end}\r\n| summarize arg_min(TimeGenerated, *) by jobId;\r\n\r\nSnapshotsOperations_CL\r\n| join kind=inner (FirstOps) on jobId\r\n| where jobType == \"Purge\" \r\n| where TimeGenerated >= {SnapshotAge:start} and TimeGenerated <= {SnapshotAge:end}\r\n| summarize arg_max(TimeGenerated, *) by jobId\r\n| extend DurationMinutes = todouble(TimeGenerated - TimeGenerated1) / 600000000.0\r\n| project TimeGenerated, jobId, jobStatus, DurationMinutes, sourceVm = sourceVmId, sourceDisk = sourceDiskId, temporarySnapshot = primarySnapshotId, backupSnapshot = secondarySnapshotId, sourceLocation = primaryLocation, backupLocation = secondaryLocation\r\n| sort by TimeGenerated desc",
+                    "query": "let FirstOps = SnapshotsOperations_CL\r\n| where jobType == \"Purge\" \r\n| where TimeGenerated >= {SnapshotAge:start} and TimeGenerated <= {SnapshotAge:end}\r\n| where jobStatus in~ (split(\"{PurgeJobStatus:label}\", \", \"))\r\n| extend vmName = tostring(split(sourceVmId, \"/\")[8])\r\n| where isempty('{PurgeSourceVmName:value}') or tolower(vmName) contains tolower(tostring('{PurgeSourceVmName:value}'))\r\n| summarize arg_min(TimeGenerated, *) by jobId;\r\n\r\nSnapshotsOperations_CL\r\n| join kind=inner (FirstOps) on jobId\r\n| where jobType == \"Purge\" \r\n| where TimeGenerated >= {SnapshotAge:start} and TimeGenerated <= {SnapshotAge:end}\r\n| summarize arg_max(TimeGenerated, *) by jobId\r\n| extend DurationMinutes = todouble(TimeGenerated - TimeGenerated1) / 600000000.0\r\n| project TimeGenerated, jobId, jobStatus, DurationMinutes, sourceVm = sourceVmId, sourceDisk = sourceDiskId, temporarySnapshot = primarySnapshotId, backupSnapshot = secondarySnapshotId, sourceLocation = primaryLocation, backupLocation = secondaryLocation\r\n| sort by TimeGenerated desc",
                     "size": 3,
                     "exportFieldName": "jobId",
                     "exportParameterName": "SelectedJob",
@@ -1915,11 +2115,11 @@
                         },
                         {
                           "columnId": "temporarySnapshot",
-                          "label": "Temporary Snapshot"
+                          "label": "Primary Backup Snapshot"
                         },
                         {
                           "columnId": "backupSnapshot",
-                          "label": "Backup Snapshot"
+                          "label": "Secondary Backup Snapshot"
                         },
                         {
                           "columnId": "sourceLocation",
@@ -2141,10 +2341,58 @@
                   "name": "text - Main Title"
                 },
                 {
+                  "type": 9,
+                  "content": {
+                    "version": "KqlParameterItem/1.0",
+                    "crossComponentResources": [
+                      "/subscriptions/111-111-111/resourceGroups/xpto"
+                    ],
+                    "parameters": [
+                      {
+                        "id": "4c8eafae-2513-452f-bab8-082250027f58",
+                        "version": "KqlParameterItem/1.0",
+                        "name": "SourceVmName",
+                        "label": "Virtual Machine name",
+                        "type": 1,
+                        "description": "Filter the backup jobs",
+                        "typeSettings": {
+                          "isSearchBox": true
+                        },
+                        "value": ""
+                      },
+                      {
+                        "id": "bf800817-0f5d-4bfe-b5be-a6226d5da613",
+                        "version": "KqlParameterItem/1.0",
+                        "name": "JobStatusFilter",
+                        "label": "Job Status",
+                        "type": 2,
+                        "multiSelect": true,
+                        "quote": "'",
+                        "delimiter": ",",
+                        "typeSettings": {
+                          "additionalResourceOptions": [],
+                          "showDefault": false
+                        },
+                        "jsonData": "[\r\n    { \"value\":\"Snapshot Completed\", \"label\": \"Snapshot Completed\"},\r\n    { \"value\":\"Snapshot Failed\", \"label\": \"Snapshot Failed\"}\r\n]",
+                        "timeContext": {
+                          "durationMs": 86400000
+                        },
+                        "value": [
+                          "Snapshot Failed"
+                        ]
+                      }
+                    ],
+                    "style": "above",
+                    "queryType": 0,
+                    "resourceType": "microsoft.operationalinsights/workspaces"
+                  },
+                  "name": "backup jobs - parameters"
+                },
+                {
                   "type": 3,
                   "content": {
                     "version": "KqlItem/1.0",
-                    "query": "let FirstOps = SnapshotsOperations_CL\r\n| where jobType == \"Snapshot\" \r\n| where TimeGenerated >= {SnapshotAge:start} and TimeGenerated <= {SnapshotAge:end}\r\n| summarize arg_min(TimeGenerated, *) by jobId;\r\n\r\nSnapshotsOperations_CL\r\n| join kind=inner (FirstOps) on jobId\r\n| where jobType == \"Snapshot\" \r\n| where TimeGenerated >= {SnapshotAge:start} and TimeGenerated <= {SnapshotAge:end}\r\n| summarize arg_max(TimeGenerated, *) by jobId\r\n| extend DurationMinutes = todouble(TimeGenerated - TimeGenerated1) / 600000000.0\r\n| project TimeGenerated, jobId, jobStatus, DurationMinutes, sourceVm = sourceVmId, sourceDisk = sourceDiskId, temporarySnapshot = primarySnapshotId, backupSnapshot = secondarySnapshotId, sourceLocation = primaryLocation, backupLocation = secondaryLocation\r\n| sort by TimeGenerated desc",
+                    "query": "let FirstOps = SnapshotsOperations_CL\r\n| where jobType == \"Snapshot\" \r\n| where TimeGenerated >= {SnapshotAge:start} and TimeGenerated <= {SnapshotAge:end}\r\n| where jobStatus in~ (split(\"{JobStatusFilter:label}\", \", \"))\r\n| extend vmName = tostring(split(sourceVmId, \"/\")[8])\r\n| where isempty('{SourceVmName:value}') or tolower(vmName) contains tolower(tostring('{SourceVmName:value}'))\r\n| summarize arg_min(TimeGenerated, *) by jobId;\r\n\r\nSnapshotsOperations_CL\r\n| join kind=inner (FirstOps) on jobId\r\n| where jobType == \"Snapshot\" \r\n| where TimeGenerated >= {SnapshotAge:start} and TimeGenerated <= {SnapshotAge:end}\r\n| where jobStatus in~ (split(\"{JobStatusFilter:label}\", \", \"))\r\n| summarize arg_max(TimeGenerated, *) by jobId\r\n| extend DurationMinutes = todouble(TimeGenerated - TimeGenerated1) / 600000000.0\r\n| project TimeGenerated, jobId, jobStatus, DurationMinutes, sourceVm = sourceVmId, sourceDisk = sourceDiskId, temporarySnapshot = primarySnapshotId, backupSnapshot = secondarySnapshotId, sourceLocation = primaryLocation, backupLocation = secondaryLocation\r\n| sort by TimeGenerated desc",
                     "size": 3,
                     "exportFieldName": "jobId",
                     "exportParameterName": "SelectedJob",
@@ -2212,7 +2460,6 @@
                         }
                       ],
                       "rowLimit": 50,
-                      "filter": true,
                       "sortBy": [
                         {
                           "itemKey": "$gen_date_TimeGenerated_0",
@@ -2246,11 +2493,11 @@
                         },
                         {
                           "columnId": "temporarySnapshot",
-                          "label": "Temporary Snapshot"
+                          "label": "Primary Backup Snapshot"
                         },
                         {
                           "columnId": "backupSnapshot",
-                          "label": "Backup Snapshot"
+                          "label": "Secondary Backup Snapshot"
                         },
                         {
                           "columnId": "sourceLocation",
@@ -2467,7 +2714,7 @@
     }
   ],
   "fallbackResourceIds": [
-    "/subscriptions/e8460393-3aeb-4161-a310-a46849221365/resourceGroups/snapshots-management"
+    "/subscriptions/111-111-111/resourceGroups/xpto"
   ],
   "$schema": "https://github.com/Microsoft/Application-Insights-Workbooks/blob/master/schema/workbook.json"
 }
