@@ -36,10 +36,7 @@
               ],
               "showDefault": false
             },
-            "queryType": 1,
-            "value": [
-              "/subscriptions/111-111-111"
-            ]
+            "queryType": 1
           },
           {
             "id": "df4a3e18-45e6-41fd-ab9b-903226867436",
@@ -63,10 +60,7 @@
               "showDefault": false
             },
             "queryType": 1,
-            "resourceType": "microsoft.resourcegraph/resources",
-            "value": [
-              "xpto"
-            ]
+            "resourceType": "microsoft.resourcegraph/resources"
           },
           {
             "id": "f60ea0a0-3703-44ca-a59b-df0246423f41",
@@ -174,7 +168,7 @@
             "queryType": 1,
             "resourceType": "microsoft.resourcegraph/resources",
             "value": [
-              "/subscriptions/111-111-111/resourceGroups/xpto/providers/Microsoft.OperationalInsights/workspaces/law-01"
+              "/subscriptions/xxxxx/resourceGroups/snaps/providers/Microsoft.OperationalInsights/workspaces/snmjsnapmng-law01"
             ]
           }
         ],
@@ -352,7 +346,7 @@
                         "queryType": 1,
                         "resourceType": "microsoft.resourcegraph/resources",
                         "value": [
-                          "Failed"
+                          "Succeeded"
                         ]
                       }
                     ],
@@ -1980,8 +1974,7 @@
                         },
                         "timeContext": {
                           "durationMs": 86400000
-                        },
-                        "value": ""
+                        }
                       },
                       {
                         "id": "b15e26b4-9f01-4746-a244-a425ce88cd4b",
@@ -2000,7 +1993,8 @@
                           "durationMs": 86400000
                         },
                         "value": [
-                          "Purge Failed"
+                          "Purge Failed",
+                          "Purge Completed"
                         ]
                       }
                     ],
@@ -2014,7 +2008,7 @@
                   "type": 3,
                   "content": {
                     "version": "KqlItem/1.0",
-                    "query": "let FirstOps = SnapshotsOperations_CL\r\n| where jobType == \"Purge\" \r\n| where TimeGenerated >= {SnapshotAge:start} and TimeGenerated <= {SnapshotAge:end}\r\n| where jobStatus in~ (split(\"{PurgeJobStatus:label}\", \", \"))\r\n| extend vmName = tostring(split(sourceVmId, \"/\")[8])\r\n| where isempty('{PurgeSourceVmName:value}') or tolower(vmName) contains tolower(tostring('{PurgeSourceVmName:value}'))\r\n| summarize arg_min(TimeGenerated, *) by jobId;\r\n\r\nSnapshotsOperations_CL\r\n| join kind=inner (FirstOps) on jobId\r\n| where jobType == \"Purge\" \r\n| where TimeGenerated >= {SnapshotAge:start} and TimeGenerated <= {SnapshotAge:end}\r\n| summarize arg_max(TimeGenerated, *) by jobId\r\n| extend DurationMinutes = todouble(TimeGenerated - TimeGenerated1) / 600000000.0\r\n| project TimeGenerated, jobId, jobStatus, DurationMinutes, sourceVm = sourceVmId, sourceDisk = sourceDiskId, temporarySnapshot = primarySnapshotId, backupSnapshot = secondarySnapshotId, sourceLocation = primaryLocation, backupLocation = secondaryLocation\r\n| sort by TimeGenerated desc",
+                    "query": "let FirstOps = SnapshotsOperations_CL\r\n| where jobType == \"Purge\" \r\n| where TimeGenerated >= {SnapshotAge:start} and TimeGenerated <= {SnapshotAge:end}\r\n| extend vmName = tostring(split(sourceVmId, \"/\")[8])\r\n| where isempty('{PurgeSourceVmName:value}') or tolower(vmName) contains tolower(tostring('{PurgeSourceVmName:value}'))\r\n| summarize arg_min(TimeGenerated, *) by jobId;\r\n\r\nSnapshotsOperations_CL\r\n| join kind=inner (FirstOps) on jobId\r\n| where jobType == \"Purge\" \r\n| where jobStatus in~ (split(\"{PurgeJobStatus:label}\", \", \"))\r\n| summarize arg_max(TimeGenerated, *) by jobId\r\n| extend DurationMinutes = todouble(TimeGenerated - TimeGenerated1) / 600000000.0\r\n| project TimeGenerated, jobId, jobStatus, DurationMinutes, sourceVm = sourceVmId, sourceDisk = sourceDiskId, temporarySnapshot = primarySnapshotId, backupSnapshot = secondarySnapshotId, sourceLocation = primaryLocation, backupLocation = secondaryLocation\r\n| sort by TimeGenerated desc",
                     "size": 3,
                     "exportFieldName": "jobId",
                     "exportParameterName": "SelectedJob",
@@ -2357,8 +2351,7 @@
                         "description": "Filter the backup jobs",
                         "typeSettings": {
                           "isSearchBox": true
-                        },
-                        "value": ""
+                        }
                       },
                       {
                         "id": "bf800817-0f5d-4bfe-b5be-a6226d5da613",
@@ -2378,7 +2371,8 @@
                           "durationMs": 86400000
                         },
                         "value": [
-                          "Snapshot Failed"
+                          "Snapshot Failed",
+                          "Snapshot Completed"
                         ]
                       }
                     ],
@@ -2392,7 +2386,7 @@
                   "type": 3,
                   "content": {
                     "version": "KqlItem/1.0",
-                    "query": "let FirstOps = SnapshotsOperations_CL\r\n| where jobType == \"Snapshot\" \r\n| where TimeGenerated >= {SnapshotAge:start} and TimeGenerated <= {SnapshotAge:end}\r\n| where jobStatus in~ (split(\"{JobStatusFilter:label}\", \", \"))\r\n| extend vmName = tostring(split(sourceVmId, \"/\")[8])\r\n| where isempty('{SourceVmName:value}') or tolower(vmName) contains tolower(tostring('{SourceVmName:value}'))\r\n| summarize arg_min(TimeGenerated, *) by jobId;\r\n\r\nSnapshotsOperations_CL\r\n| join kind=inner (FirstOps) on jobId\r\n| where jobType == \"Snapshot\" \r\n| where TimeGenerated >= {SnapshotAge:start} and TimeGenerated <= {SnapshotAge:end}\r\n| where jobStatus in~ (split(\"{JobStatusFilter:label}\", \", \"))\r\n| summarize arg_max(TimeGenerated, *) by jobId\r\n| extend DurationMinutes = todouble(TimeGenerated - TimeGenerated1) / 600000000.0\r\n| project TimeGenerated, jobId, jobStatus, DurationMinutes, sourceVm = sourceVmId, sourceDisk = sourceDiskId, temporarySnapshot = primarySnapshotId, backupSnapshot = secondarySnapshotId, sourceLocation = primaryLocation, backupLocation = secondaryLocation\r\n| sort by TimeGenerated desc",
+                    "query": "let FirstOps = SnapshotsOperations_CL\r\n| where jobType == \"Snapshot\" \r\n| where TimeGenerated >= {SnapshotAge:start} and TimeGenerated <= {SnapshotAge:end}\r\n| extend vmName = tostring(split(sourceVmId, \"/\")[8])\r\n| where isempty('{SourceVmName:value}') or tolower(vmName) contains tolower(tostring('{SourceVmName:value}'))\r\n| summarize arg_min(TimeGenerated, *) by jobId;\r\n\r\nSnapshotsOperations_CL\r\n| join kind=inner (FirstOps) on jobId\r\n| where jobType == \"Snapshot\"\r\n| where jobStatus in~ (split(\"{JobStatusFilter:label}\", \", \"))\r\n| summarize arg_max(TimeGenerated, *) by jobId\r\n| extend DurationMinutes = datetime_diff(\"minute\", TimeGenerated, TimeGenerated1)\r\n| project TimeGenerated, jobId, jobStatus, DurationMinutes, sourceVm = sourceVmId, sourceDisk = sourceDiskId, temporarySnapshot = primarySnapshotId, backupSnapshot = secondarySnapshotId, sourceLocation = primaryLocation, backupLocation = secondaryLocation\r\n| sort by TimeGenerated desc",
                     "size": 3,
                     "exportFieldName": "jobId",
                     "exportParameterName": "SelectedJob",
@@ -2453,8 +2447,7 @@
                           "numberFormat": {
                             "unit": 25,
                             "options": {
-                              "style": "decimal",
-                              "maximumFractionDigits": 1
+                              "style": "decimal"
                             }
                           }
                         }
@@ -2714,7 +2707,7 @@
     }
   ],
   "fallbackResourceIds": [
-    "/subscriptions/111-111-111/resourceGroups/xpto"
+    "/subscriptions/xxxxx/resourceGroups/snaps"
   ],
   "$schema": "https://github.com/Microsoft/Application-Insights-Workbooks/blob/master/schema/workbook.json"
 }
