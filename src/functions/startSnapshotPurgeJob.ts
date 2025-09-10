@@ -42,7 +42,8 @@ export async function startSnapshotPurgeJob(queueItem: SnapshotPurgeSource, cont
                 queueItem.control.sourceDiskId,
                 queueItem.control.primaryLocation,
                 now,
-                numberOfDays
+                numberOfDays,
+                'smcp-location-type' // only delete snapshots with this tag
             );
         } else {
             snapshotsBeingPurged = await snapshotManager.startPurgeSecondarySnapshotsOfDiskIdAndLocationOlderThan(
@@ -50,7 +51,8 @@ export async function startSnapshotPurgeJob(queueItem: SnapshotPurgeSource, cont
                 queueItem.control.sourceDiskId,
                 queueItem.control.secondaryLocation,
                 now,
-                numberOfDays
+                numberOfDays,
+                'smcp-location-type' // only delete snapshots with this tag
             );
         }
 

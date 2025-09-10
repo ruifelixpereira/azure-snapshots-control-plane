@@ -108,15 +108,18 @@ FUNCAPP_ID=$(az functionapp identity show --name $funcAppName --resource-group $
 STORAGE_ACCOUNT_ID=$(az storage account show --name $storageAccountName --resource-group $resourceGroupName --query id -o tsv)
 az role assignment create --assignee $FUNCAPP_ID --role "Storage Blob Data Owner" --scope $STORAGE_ACCOUNT_ID
 az role assignment create --assignee $FUNCAPP_ID --role "Storage Queue Data Contributor" --scope $STORAGE_ACCOUNT_ID
+az role assignment create --assignee $FUNCAPP_ID --role "Storage Table Data Owner" --scope $STORAGE_ACCOUNT_ID
 
 #
 # Create Storage Queues
 #
 az storage queue create --name "snapshot-jobs" --account-name $storageAccountName
+az storage queue create --name "copy-jobs" --account-name $storageAccountName
 az storage queue create --name "copy-control" --account-name $storageAccountName
 az storage queue create --name "purge-jobs" --account-name $storageAccountName
 az storage queue create --name "bulk-purge-jobs" --account-name $storageAccountName
 az storage queue create --name "purge-control" --account-name $storageAccountName
+az storage queue create --name "dead-letter-snapshot-creation-jobs" --account-name $storageAccountName
 
 #
 # Deploy log analytics workspace with a custom table + data collection rule + data infgestion endpoint using Bicep

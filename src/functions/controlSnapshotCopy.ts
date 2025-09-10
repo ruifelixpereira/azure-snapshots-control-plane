@@ -5,6 +5,7 @@ import { SnapshotCopyControl, JobLogEntry, SnapshotPurgeSource } from "../common
 import { SnapshotManager } from "../controllers/snapshot.manager";
 import { LogManager } from "../controllers/log.manager";
 import { QueueManager } from "../controllers/queue.manager";
+import { ConcurrencyManager } from "../controllers/concurrency.manager";
 import { _getString } from "../common/apperror";
 
 
@@ -27,6 +28,9 @@ export async function controlSnapshotCopy(queueItem: SnapshotCopyControl, contex
         const currentState = await snapshotManager.getSnapshotCopyState(queueItem.snapshot.resourceGroup, queueItem.snapshot.name);
         if (currentState === "Succeeded") {
             // Copy is done
+            const concurrency = new ConcurrencyManager(process.env.AzureWebJobsStorage__accountname || "", process.env.AzureWebJobsStorage);
+            await concurrency.releaseSlot();
+
             const msgCopyFinished = `Snapshot copy finished for snapshot ID ${queueItem.snapshot.id}`;
             logger.info(msgCopyFinished);
 
@@ -70,6 +74,9 @@ export async function controlSnapshotCopy(queueItem: SnapshotCopyControl, contex
 
         } else if (currentState === "Failed") {
             // Copy failed
+            const concurrency = new ConcurrencyManager(process.env.AzureWebJobsStorage__accountname || "", process.env.AzureWebJobsStorage);
+            await concurrency.releaseSlot();
+            
             const msgCopyFailed = `Snapshot copy failed for snapshot ID ${queueItem.snapshot.id}`;
             logger.error(msgCopyFailed);
             const logEntryCopyFailed: JobLogEntry = {

@@ -33,7 +33,7 @@ export async function getTargetDisks(myTimer: Timer, context: InvocationContext)
 }
 
 app.timer('getTargetDisks', {
-    schedule: '0 30 22 * * *', // every day at 22:30
+    schedule: '0 30 6 * * *', // every day at 06:30 in the morning
     extraOutputs: [
         snapshotsQueueOutput
     ],

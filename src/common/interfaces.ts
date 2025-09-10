@@ -31,6 +31,14 @@ export interface SnapshotToPurge {
     timeCreated: string;
 }
 
+export interface SnapshotCopy {
+    jobId: string;
+    sourceVmId: string;
+    sourceDiskId: string;
+    primarySnapshot: Snapshot;
+    secondaryLocation: string;
+}
+
 export interface SnapshotControl {
     jobId: string;
     sourceVmId: string;

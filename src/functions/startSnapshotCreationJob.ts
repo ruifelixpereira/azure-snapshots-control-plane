@@ -1,12 +1,16 @@
 import { app, InvocationContext, output } from "@azure/functions";
 
 import { AzureLogger } from '../common/logger';
-import { SnapshotSource, SnapshotCopyControl, SnapshotPurgeSource, JobLogEntry } from "../common/interfaces";
+import { SnapshotSource, SnapshotCopy, SnapshotPurgeSource, JobLogEntry } from "../common/interfaces";
 import { generateGuid } from "../common/utils";
 import { SnapshotManager } from "../controllers/snapshot.manager";
 import { LogManager } from "../controllers/log.manager";
-import { QueueManager } from "../controllers/queue.manager";
 import { _getString } from "../common/apperror";
+
+const copyJobsQueueOutput = output.storageQueue({
+    queueName: 'copy-jobs',
+    connection: 'AzureWebJobsStorage'
+});
 
 const purgeJobsQueueOutput = output.storageQueue({
     queueName: 'purge-jobs',
@@ -15,6 +19,11 @@ const purgeJobsQueueOutput = output.storageQueue({
 
 const bulkPurgeJobsQueueOutput = output.storageQueue({
     queueName: 'bulk-purge-jobs',
+    connection: 'AzureWebJobsStorage'
+});
+
+const deadLetterQueueOutput = output.storageQueue({
+    queueName: 'dead-letter-snapshot-creation-jobs',
     connection: 'AzureWebJobsStorage'
 });
 
@@ -120,38 +129,15 @@ export async function startSnapshotCreationJob(queueItem: SnapshotSource, contex
         else {
 
             // E. Start snapshot copy to secondary region
-            const secondarySnapshot = await snapshotManager.startCopySnapshotToAnotherRegion(primarySnapshot, process.env.SNAPSHOT_SECONDARY_LOCATION);
-            const msgStartCopy = `Started snapshot copy ${primarySnapshot.id} to location ${process.env.SNAPSHOT_SECONDARY_LOCATION}`;
-            logger.info(msgSnapshotCreated);
-
-            const logEntryStartCopy: JobLogEntry = {
-                ...logEntrySnapshotCreated,
-                jobOperation: 'Snapshot Copy Start',
-                message: msgStartCopy,
-                secondarySnapshotId: secondarySnapshot.id,
-                secondaryLocation: secondarySnapshot.location
-            }
-            await logManager.uploadLog(logEntryStartCopy);
-
-            // F. Send control copy event with a visibility timeout of 1 hour
-            const retryAfter = process.env.SNAPSHOT_RETRY_CONTROL_COPY_MINUTES ? parseInt(process.env.SNAPSHOT_RETRY_CONTROL_COPY_MINUTES) * 60 : 60*60; // 1 hour in seconds
-            logger.info(`Sending control copy event for disk ID ${queueItem.diskId} and snapshot ID ${primarySnapshot.id} with retry after ${retryAfter} seconds`);
-
-            const snapshotControl: SnapshotCopyControl = {
-                control: {
-                    jobId: jobId,
-                    sourceVmId: queueItem.vmId,
-                    sourceDiskId: queueItem.diskId,
-                    primarySnapshotId: primarySnapshot.id,
-                    secondarySnapshotId: secondarySnapshot.id,
-                    primaryLocation: primarySnapshot.location,
-                    secondaryLocation: secondarySnapshot.location
-                },
-                snapshot: secondarySnapshot
+            const snapshotCopy: SnapshotCopy = {
+                jobId: jobId,
+                sourceVmId: queueItem.vmId,
+                sourceDiskId: queueItem.diskId,
+                primarySnapshot: primarySnapshot,
+                secondaryLocation: process.env.SNAPSHOT_SECONDARY_LOCATION || ''
             };
-
-            const queueManager = new QueueManager(logger, process.env.AzureWebJobsStorage__accountname || "", 'copy-control');
-            await queueManager.sendMessage(JSON.stringify(snapshotControl), retryAfter);
+            // Send notification using Storage Queue
+            context.extraOutputs.set(copyJobsQueueOutput, snapshotCopy);
         }        
     
     } catch (err) {
@@ -172,7 +158,15 @@ export async function startSnapshotCreationJob(queueItem: SnapshotSource, contex
         await logManager.uploadLog(logEntryError);
 
         // This rethrown exception will only fail the individual invocation, instead of crashing the whole process
-        throw err;
+        //throw err;
+
+        // Send the failed message to the dead-letter queue for further investigation
+        logger.info(`Sending failed snapshot creation job for disk ID ${queueItem.diskId} to the dead-letter queue`);
+        context.extraOutputs.set(deadLetterQueueOutput, queueItem);
+
+        // Do NOT rethrow the error. Returning will mark the queue message as processed
+        // and prevent Azure Functions from retrying this invocation.
+        return;
     }
 }
 
@@ -181,7 +175,9 @@ app.storageQueue('startSnapshotCreationJob', {
     connection: 'AzureWebJobsStorage',
     extraOutputs: [
         purgeJobsQueueOutput,
-        bulkPurgeJobsQueueOutput
+        bulkPurgeJobsQueueOutput,
+        deadLetterQueueOutput,
+        copyJobsQueueOutput
     ],
     handler: startSnapshotCreationJob
 });
