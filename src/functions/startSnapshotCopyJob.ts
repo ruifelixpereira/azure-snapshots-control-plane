@@ -21,10 +21,13 @@ export async function startSnapshotCopyJob(queueItem: SnapshotCopy, context: Inv
 
         if (!got) {
             logger.warn(`Copy concurrency limit reached. Re-scheduling copy for ${queueItem.primarySnapshot.id}`);
-            const qm = new QueueManager(logger, process.env.AzureWebJobsStorage__accountname || "", 'copy-control');
+            const qm = new QueueManager(logger, process.env.AzureWebJobsStorage__accountname || "", 'copy-jobs');
             // requeue the control copy message with delay (exponential backoff)
             // set visibility/time to retry later (e.g., 60s or exponential based on attempt count)
-            await qm.sendMessage(JSON.stringify(queueItem), 60*5); // 5 minutes
+
+            // Returns a random integer from 4 to 12:
+            const randomDelay = Math.floor(Math.random() * 8) + 4;
+            await qm.sendMessage(JSON.stringify(queueItem), randomDelay * 60); // Delay in seconds
         } else {
             try {
                 // A. Start snapshot copy to secondary region
