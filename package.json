@@ -14,6 +14,7 @@
   "dependencies": {
     "@azure/arm-compute": "^22.4.0",
     "@azure/arm-resourcegraph": "^4.2.1",
+    "@azure/core-http": "^3.0.5",
     "@azure/data-tables": "^13.3.1",
     "@azure/functions": "^4.0.0",
     "@azure/identity": "^4.6.0",

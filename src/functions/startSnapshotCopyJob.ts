@@ -17,7 +17,7 @@ export async function startSnapshotCopyJob(queueItem: SnapshotCopy, context: Inv
         const logManager = new LogManager(logger);
 
         const concurrency = new ConcurrencyManager(process.env.AzureWebJobsStorage__accountname || "", process.env.AzureWebJobsStorage);
-        const got = await concurrency.acquireSlot(100);
+        const got = await concurrency.acquireSlot(99);
 
         if (!got) {
             logger.warn(`Copy concurrency limit reached. Re-scheduling copy for ${queueItem.primarySnapshot.id}`);
