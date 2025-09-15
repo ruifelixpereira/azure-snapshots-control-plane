@@ -18,7 +18,7 @@ export async function startSnapshotCopyJob(queueItem: SnapshotCopy, context: Inv
         // A. Start snapshot copy to secondary region
         const snapshotManager = new SnapshotManager(logger, queueItem.primarySnapshot.subscriptionId);
 
-        const secondarySnapshot = await snapshotManager.startCopySnapshotToAnotherRegion(queueItem.primarySnapshot, queueItem.secondaryLocation);
+        const secondarySnapshot = await snapshotManager.startCopySnapshotToAnotherRegion(queueItem.sourceDiskId, queueItem.primarySnapshot, queueItem.secondaryLocation);
 
         const msgStartCopy = `Started snapshot copy ${queueItem.primarySnapshot.id} to location ${queueItem.secondaryLocation}`;
         logger.info(msgStartCopy);
