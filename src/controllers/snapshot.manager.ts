@@ -75,7 +75,7 @@ export class SnapshotManager {
             const computeClient = new ComputeManagementClient(credential, sourceSnapshot.subscriptionId);
 
             // Get the source snapshot
-            const source = await computeClient.snapshots.get(sourceSnapshot.resourceGroup, sourceSnapshot.name);
+            //const source = await computeClient.snapshots.get(sourceSnapshot.resourceGroup, sourceSnapshot.name);
 
             // Create the snapshot in the target region
             const targetSnapshotParams = {
@@ -85,7 +85,7 @@ export class SnapshotManager {
                 },
                 creationData: {
                     createOption: "CopyStart",
-                    sourceResourceId: source.id, // Use the source snapshot ID
+                    sourceResourceId: sourceSnapshot.id // source.id // Use the source snapshot ID
                 },
                 incremental: true, // Set to true for incremental snapshot
                 tags: { 
@@ -404,6 +404,7 @@ export class SnapshotManager {
     }
 
 
+    /*
     public async isSnapshotDeleted(resourceGroupName: string, snapshotName: string): Promise<boolean> {
         try {
             await this.computeClient.snapshots.get(resourceGroupName, snapshotName);
@@ -420,6 +421,7 @@ export class SnapshotManager {
             throw new SnapshotError(message);
         }
     }
+    */
 
     public async areSnapshotsDeleted(resourceGroupName: string, snapshotNames: string[]): Promise<{ [name: string]: boolean }> {
         const results: { [name: string]: boolean } = {};
