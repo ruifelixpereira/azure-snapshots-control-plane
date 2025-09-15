@@ -5,7 +5,7 @@ import { SnapshotCopyControl, JobLogEntry, SnapshotPurgeSource } from "../common
 import { SnapshotManager } from "../controllers/snapshot.manager";
 import { LogManager } from "../controllers/log.manager";
 import { QueueManager } from "../controllers/queue.manager";
-import { ConcurrencyManager } from "../controllers/concurrency.manager";
+import { AtomicCounterRedis } from "../controllers/atomicCounterRedis";
 import { _getString } from "../common/apperror";
 
 
@@ -27,9 +27,18 @@ export async function controlSnapshotCopy(queueItem: SnapshotCopyControl, contex
         const snapshotManager = new SnapshotManager(logger, queueItem.snapshot.subscriptionId);
         const currentState = await snapshotManager.getSnapshotCopyState(queueItem.snapshot.resourceGroup, queueItem.snapshot.name);
         if (currentState === "Succeeded") {
-            // Copy is done
-            const concurrency = new ConcurrencyManager(process.env.AzureWebJobsStorage__accountname || "", process.env.AzureWebJobsStorage);
-            await concurrency.releaseSlot();
+            // Copy is done — release slot in Redis (best-effort)
+            try {
+                const redisUrl = process.env.REDIS_ENDPOINT || "xpto.redis.cache.windows.net:6380";
+                const counter = new AtomicCounterRedis(redisUrl);
+                await counter.release();
+
+                const testVal = await counter.count();
+                logger.info(`Released one slot in Redis counter. Current count is ${testVal}`);
+
+            } catch (releaseErr) {
+                logger.warn(`Failed to release redis counter for snapshot ${queueItem.snapshot.id}: ${_getString(releaseErr)}`);
+            }
 
             const msgCopyFinished = `Snapshot copy finished for snapshot ID ${queueItem.snapshot.id}`;
             logger.info(msgCopyFinished);
@@ -73,9 +82,18 @@ export async function controlSnapshotCopy(queueItem: SnapshotCopyControl, contex
             context.extraOutputs.set(purgeJobsQueueOutput, [purgePrimary, purgeSecondary]);
 
         } else if (currentState === "Failed") {
-            // Copy failed
-            const concurrency = new ConcurrencyManager(process.env.AzureWebJobsStorage__accountname || "", process.env.AzureWebJobsStorage);
-            await concurrency.releaseSlot();
+            // Copy failed — release slot in Redis (best-effort)
+            try {
+                const redisUrl = process.env.REDIS_ENDPOINT || "xpto.redis.cache.windows.net:6380";
+                const counter = new AtomicCounterRedis(redisUrl);
+                await counter.release();
+
+                const testVal = await counter.count();
+                logger.info(`Released one slot in Redis counter. Current count is ${testVal}`);
+
+            } catch (releaseErr) {
+                logger.warn(`Failed to release redis counter after failed copy for snapshot ${queueItem.snapshot.id}: ${_getString(releaseErr)}`);
+            }
             
             const msgCopyFailed = `Snapshot copy failed for snapshot ID ${queueItem.snapshot.id}`;
             logger.error(msgCopyFailed);

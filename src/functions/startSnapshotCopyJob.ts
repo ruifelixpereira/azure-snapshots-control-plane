@@ -5,7 +5,7 @@ import { SnapshotCopy, SnapshotCopyControl, JobLogEntry } from "../common/interf
 import { SnapshotManager } from "../controllers/snapshot.manager";
 import { LogManager } from "../controllers/log.manager";
 import { QueueManager } from "../controllers/queue.manager";
-import { ConcurrencyManager } from "../controllers/concurrency.manager";
+import { AtomicCounterRedis } from "../controllers/atomicCounterRedis";
 import { _getString } from "../common/apperror";
 
 
@@ -16,8 +16,13 @@ export async function startSnapshotCopyJob(queueItem: SnapshotCopy, context: Inv
     try {
         const logManager = new LogManager(logger);
 
-        const concurrency = new ConcurrencyManager(process.env.AzureWebJobsStorage__accountname || "", process.env.AzureWebJobsStorage);
-        const got = await concurrency.acquireSlot(99);
+        const redisUrl = process.env.REDIS_ENDPOINT || "xpto.redis.cache.windows.net:6380";
+        const atomicCounter = new AtomicCounterRedis(redisUrl);
+
+        const got = await atomicCounter.tryAcquire(100); // limit to 100 concurrent copies
+
+        const testVal = await atomicCounter.count();
+        logger.info(`Released one slot in Redis counter. Current count is ${testVal}`);
 
         if (!got) {
             logger.warn(`Copy concurrency limit reached. Re-scheduling copy for ${queueItem.primarySnapshot.id}`);
@@ -73,8 +78,48 @@ export async function startSnapshotCopyJob(queueItem: SnapshotCopy, context: Inv
 
             } catch (err) {
                 // If start fails immediately, release slot so others can proceed
-                await concurrency.releaseSlot();
-                throw err;
+                try {
+                    await atomicCounter.release();
+                } catch (releaseErr) {
+                    logger.warn(`Failed to release redis counter after failed start for ${queueItem.primarySnapshot.id}: ${_getString(releaseErr)}`);
+                }
+
+                const errMsg = _getString(err);
+                logger.error(`Failed starting copy for ${queueItem.primarySnapshot.id}: ${errMsg}`);
+
+                // Detect subscription CopyStart limit error (service message)
+                const isCopyLimitError = /CopyStart requests limit|ongoing CopyStart|number of ongoing CopyStart/i.test(errMsg);
+
+                if (isCopyLimitError) {
+                    // Exponential backoff configuration (tunable via env)
+                    const maxAttempts = parseInt(process.env.SNAPSHOT_RETRY_MAX_ATTEMPTS || '10', 10);
+                    const baseSeconds = parseInt(process.env.SNAPSHOT_RETRY_BASE_SECONDS || '60', 10); // default 60s
+                    const maxMinutes = parseInt(process.env.SNAPSHOT_RETRY_MAX_MINUTES || '60', 10);
+                    const maxSeconds = maxMinutes * 60;
+
+                    // attempt counter kept inside payload
+                    const attempt = ((queueItem as any).attempt ?? 0) + 1;
+                    (queueItem as any).attempt = attempt;
+
+                    if (attempt > maxAttempts) {
+                        logger.error(`Exceeded max retry attempts (${maxAttempts}) for copy ${queueItem.primarySnapshot.id}. Recording failure and not requeuing.`);
+                        throw err;
+                    }
+
+                    // exponential backoff: base * 2^(attempt-1)
+                    const expDelay = Math.min(maxSeconds, Math.floor(baseSeconds * Math.pow(2, attempt - 1)));
+                    // jitter to avoid thundering herd
+                    const jitter = Math.floor(Math.random() * Math.max(1, baseSeconds));
+                    const delaySeconds = expDelay + jitter;
+
+                    logger.warn(`CopyStart limit reached. Re-scheduling copy ${queueItem.primarySnapshot.id} (attempt ${attempt}) in ${delaySeconds}s`);
+
+                    const qm = new QueueManager(logger, process.env.AzureWebJobsStorage__accountname || "", 'copy-jobs');
+                    await qm.sendMessage(JSON.stringify(queueItem), delaySeconds);
+                } else {
+                    // Other error - just fail and log
+                    throw err;
+                }
             }
         }
     } catch (err) {

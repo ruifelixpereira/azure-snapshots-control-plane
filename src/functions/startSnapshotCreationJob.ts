@@ -134,7 +134,8 @@ export async function startSnapshotCreationJob(queueItem: SnapshotSource, contex
                 sourceVmId: queueItem.vmId,
                 sourceDiskId: queueItem.diskId,
                 primarySnapshot: primarySnapshot,
-                secondaryLocation: process.env.SNAPSHOT_SECONDARY_LOCATION || ''
+                secondaryLocation: process.env.SNAPSHOT_SECONDARY_LOCATION || '',
+                attempt: 0
             };
             // Send notification using Storage Queue
             context.extraOutputs.set(copyJobsQueueOutput, snapshotCopy);

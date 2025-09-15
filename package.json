@@ -15,11 +15,12 @@
     "@azure/arm-compute": "^22.4.0",
     "@azure/arm-resourcegraph": "^4.2.1",
     "@azure/core-http": "^3.0.5",
-    "@azure/data-tables": "^13.3.1",
     "@azure/functions": "^4.0.0",
     "@azure/identity": "^4.6.0",
     "@azure/monitor-ingestion": "^1.1.0",
-    "@azure/storage-queue": "^12.26.0"
+    "@azure/storage-queue": "^12.26.0",
+    "@redis/client": "^5.8.2",
+    "@redis/entraid": "^5.8.2"
   },
   "devDependencies": {
     "@types/node": "20.x",

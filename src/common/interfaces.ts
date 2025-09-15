@@ -37,6 +37,7 @@ export interface SnapshotCopy {
     sourceDiskId: string;
     primarySnapshot: Snapshot;
     secondaryLocation: string;
+    attempt: number;
 }
 
 export interface SnapshotControl {

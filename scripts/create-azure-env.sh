@@ -9,6 +9,7 @@ required_vars=(
     "location"
     "storageAccountName"
     "funcAppName"
+    "redisCacheName"
     "logAnalyticsWorkspaceName"
     "customLogAnalyticsTableName"
     "dcrName"
@@ -184,3 +185,26 @@ az monitor app-insights workbook create \
     --kind shared \
     --category workbook \
     --display-name "Azure Snapshots Insights"
+
+
+# get function app managed identity principal id (you already set FUNCAPP_ID earlier)
+FUNC_PRINCIPAL_ID=$(az functionapp identity show --name "$funcAppName" --resource-group "$resourceGroupName" --query principalId -o tsv)
+
+#
+# Redis Cache
+#
+az redis create \
+  --location $location \
+  --name $redisCacheName \
+  --resource-group $resourceGroupName \
+  --sku Basic \
+  --vm-size c0 \
+  --mi-system-assigned \
+  --disable-access-keys true \
+  --redis-configuration @config_redis_enable-aad.json
+
+# get redis resource id
+REDIS_ID=$(az redis show --name "$redisCacheName" --resource-group "$resourceGroupName" --query id -o tsv)
+
+# assign data-plane role so the function can authenticate to Redis via AAD
+az role assignment create --assignee "$FUNC_PRINCIPAL_ID" --role "Azure Cache for Redis Data Contributor" --scope "$REDIS_ID"
