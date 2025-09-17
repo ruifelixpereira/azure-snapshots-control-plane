@@ -48,7 +48,8 @@ export async function controlSnapshotCopy(queueItem: SnapshotCopyControl, contex
             logger.info(`Sending trigger message to start purge event for disk ID ${queueItem.control.sourceDiskId} in primary location ${queueItem.control.primaryLocation} and secondary location ${queueItem.control.secondaryLocation}`);
 
             // Send notifications using Storage Queue
-            context.extraOutputs.set(purgeJobsQueueOutput, queueItem.control);
+            const queueItemControl = queueItem.control;
+            context.extraOutputs.set(purgeJobsQueueOutput, queueItemControl);
 
         } else if (currentState === "Failed") {
            

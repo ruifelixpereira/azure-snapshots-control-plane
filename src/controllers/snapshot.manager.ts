@@ -158,7 +158,8 @@ export class SnapshotManager {
         
         try {
             const primaryCutoff = new Date(baseDate.getTime() - primaryDays * 24 * 60 * 60 * 1000);
-            const secondaryCutoff = new Date(baseDate.getTime() - secondaryDays * 24 * 60 * 60 * 1000);
+            //const secondaryCutoff = new Date(baseDate.getTime() - secondaryDays * 24 * 60 * 60 * 1000);
+            const secondaryCutoff = new Date(baseDate.getTime() - 0 * 24 * 60 * 60 * 1000);
 
             // List all snapshots in the resource group
             const allSnapshots: Array<any> = [];
