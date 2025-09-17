@@ -15,16 +15,11 @@ export async function controlSnapshotPurge(queueItem: SnapshotPurgeControl, cont
 
     try {
         const logManager = new LogManager(logger);
-        logger.info(`Checking the snapshot purge for disk ID ${queueItem.source.control.sourceDiskId} in ${queueItem.source.type} location ${queueItem.source.type === 'primary' ? queueItem.source.control.primaryLocation : queueItem.source.control.secondaryLocation}`);
-
-        // Validate location
-        if (queueItem.source.type !== 'primary' && queueItem.source.type !== 'secondary') {
-            throw new Error(`Invalid queue item type: ${queueItem.source.type}. Expected 'primary' or 'secondary'.`);
-        }
+        logger.info(`Checking the snapshot purge for disk ID ${queueItem.source.sourceDiskId} in all locations`);
 
         // Get snapshots subscriptionId and resource group in primary/secondary location
-        const subscriptionId = extractSubscriptionIdFromResourceId( queueItem.source.control.sourceDiskId );
-        const resourceGroup = extractResourceGroupFromResourceId( queueItem.source.control.sourceDiskId);
+        const subscriptionId = extractSubscriptionIdFromResourceId( queueItem.source.sourceDiskId );
+        const resourceGroup = extractResourceGroupFromResourceId( queueItem.source.sourceDiskId);
 
         // A. Check if snapshot purge already finished
         const snapshotManager = new SnapshotManager(logger, subscriptionId);
@@ -34,21 +29,21 @@ export async function controlSnapshotPurge(queueItem: SnapshotPurgeControl, cont
 
         if (finished) {
             // Purge is done
-            const msgPurgeFinished = `Snapshot ${queueItem.source.type} purge finished for disk ID ${queueItem.source.control.sourceDiskId}`;
+            const msgPurgeFinished = `Snapshot purge finished for disk ID ${queueItem.source.sourceDiskId}`;
             logger.info(msgPurgeFinished);
 
             const logEntryPurgeFinished: JobLogEntry = {
-                jobId: queueItem.source.control.jobId,
-                jobOperation: `${queueItem.source.type === 'primary' ? 'Primary' : 'Secondary'} Snapshot Purge End`,
+                jobId: queueItem.source.jobId,
+                jobOperation: 'Snapshot Purge End',
                 jobStatus: 'Purge Completed',
                 jobType: 'Purge',
                 message: msgPurgeFinished,
-                sourceVmId: queueItem.source.control.sourceVmId,
-                sourceDiskId: queueItem.source.control.sourceDiskId,
-                primarySnapshotId: queueItem.source.control.primarySnapshotId,
-                primaryLocation: queueItem.source.control.primaryLocation,
-                secondarySnapshotId: queueItem.source.control.secondarySnapshotId,
-                secondaryLocation: queueItem.source.control.secondaryLocation
+                sourceVmId: queueItem.source.sourceVmId,
+                sourceDiskId: queueItem.source.sourceDiskId,
+                primarySnapshotId: queueItem.source.primarySnapshotId,
+                primaryLocation: queueItem.source.primaryLocation,
+                secondarySnapshotId: queueItem.source.secondarySnapshotId,
+                secondaryLocation: queueItem.source.secondaryLocation
             }
             await logManager.uploadLog(logEntryPurgeFinished);
 
@@ -57,7 +52,7 @@ export async function controlSnapshotPurge(queueItem: SnapshotPurgeControl, cont
 
             // Re-send control purge event with a visibility timeout of 1 hour
             const retryAfter = process.env.SNAPSHOT_RETRY_CONTROL_PURGE_MINUTES ? parseInt(process.env.SNAPSHOT_RETRY_CONTROL_PURGE_MINUTES)*60 : 60*60; // 1 hour in seconds
-            logger.info(`Snapshot purge still in progress. Re-sending control purge event for disk ID ${queueItem.source.control.sourceDiskId} with retry after ${retryAfter} seconds`);
+            logger.info(`Snapshot purge still in progress. Re-sending control purge event for disk ID ${queueItem.source.sourceDiskId} with retry after ${retryAfter} seconds`);
             const queueManager = new QueueManager(logger, process.env.AzureWebJobsStorage__accountname || "", 'purge-control');
             await queueManager.sendMessage(JSON.stringify(queueItem), retryAfter);
         }
@@ -66,19 +61,19 @@ export async function controlSnapshotPurge(queueItem: SnapshotPurgeControl, cont
         logger.error(err);
 
         // End process
-        const msgError = `Snapshot purge control for disk ID ${queueItem.source.control.sourceDiskId} failed with error ${_getString(err)}`;
+        const msgError = `Snapshot purge control for disk ID ${queueItem.source.sourceDiskId} failed with error ${_getString(err)}`;
         const logEntryError: JobLogEntry = {
-            jobId: queueItem.source.control.jobId,
+            jobId: queueItem.source.jobId,
             jobOperation: 'Error',
             jobStatus: 'Purge Failed',
             jobType: 'Purge',
             message: msgError,
-            sourceVmId: queueItem.source.control.sourceVmId,
-            sourceDiskId: queueItem.source.control.sourceDiskId,
-            primarySnapshotId: queueItem.source.control.primarySnapshotId,
-            primaryLocation: queueItem.source.control.primaryLocation,
-            secondarySnapshotId: queueItem.source.control.secondarySnapshotId,
-            secondaryLocation: queueItem.source.control.secondaryLocation
+            sourceVmId: queueItem.source.sourceVmId,
+            sourceDiskId: queueItem.source.sourceDiskId,
+            primarySnapshotId: queueItem.source.primarySnapshotId,
+            primaryLocation: queueItem.source.primaryLocation,
+            secondarySnapshotId: queueItem.source.secondarySnapshotId,
+            secondaryLocation: queueItem.source.secondaryLocation
         }
         const logManager = new LogManager(logger);
         await logManager.uploadLog(logEntryError);

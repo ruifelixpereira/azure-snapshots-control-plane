@@ -1,7 +1,7 @@
 import { app, InvocationContext } from "@azure/functions";
 
 import { AzureLogger } from '../common/logger';
-import { SnapshotPurgeSource, SnapshotPurgeControl, JobLogEntry } from "../common/interfaces";
+import { SnapshotPurgeControl, JobLogEntry, SnapshotBulkPurgeSource } from "../common/interfaces";
 import { SnapshotManager } from "../controllers/snapshot.manager";
 import { LogManager } from "../controllers/log.manager";
 import { QueueManager } from "../controllers/queue.manager";
@@ -9,7 +9,7 @@ import { _getString } from "../common/apperror";
 import { extractResourceGroupFromResourceId, extractSubscriptionIdFromResourceId } from "../common/utils";
 
 
-export async function startSnapshotBulkPurgeJob(queueItem: SnapshotPurgeSource, context: InvocationContext): Promise<void> {
+export async function startSnapshotBulkPurgeJob(queueItem: SnapshotBulkPurgeSource, context: InvocationContext): Promise<void> {
 
     const logger = new AzureLogger(context);
 
@@ -58,7 +58,7 @@ export async function startSnapshotBulkPurgeJob(queueItem: SnapshotPurgeSource, 
 
             const logEntryPurge: JobLogEntry = {
                 jobId: queueItem.control.jobId,
-                jobOperation: `${queueItem.type === 'primary' ? 'Primary' : 'Secondary'} Snapshot Purge Start`,
+                jobOperation: 'Snapshot Purge Start',
                 jobStatus: 'Purge In Progress',
                 jobType: 'Purge',
                 message: msgPurge,
@@ -75,9 +75,7 @@ export async function startSnapshotBulkPurgeJob(queueItem: SnapshotPurgeSource, 
             logger.info(`Sending control purge event for disk ID ${queueItem.control.sourceDiskId} in ${queueItem.type} location ${queueItem.type === 'primary' ? queueItem.control.primaryLocation : queueItem.control.secondaryLocation}`);
 
             const purgeControl: SnapshotPurgeControl = {
-                source: queueItem,
-                baseDate: now,
-                daysToKeep: numberOfDays,
+                source: queueItem.control,
                 snapshotsNameToPurge: snapshotsBeingPurged
             };
 

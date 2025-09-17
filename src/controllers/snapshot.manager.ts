@@ -4,8 +4,9 @@ import { ComputeManagementClient } from "@azure/arm-compute";
 import { ResourceGraphManager } from "./graph.manager";
 import { DefaultAzureCredential } from "@azure/identity";
 import { SnapshotError, _getString } from "../common/apperror";
-import { SnapshotSource, Snapshot, SnapshotToPurge } from "../common/interfaces";
-import { extractDiskNameFromDiskId, extractSnapshotNameFromSnapshotId, formatDateYYYYMMDDTHHMM } from "../common/utils";
+import { TAG_SMCP_LOCATION_TYPE, TAG_SMCP_SOURCE_DISK_ID } from "../common/constants";
+import { SnapshotSource, Snapshot } from "../common/interfaces";
+import { extractDiskNameFromDiskId, formatDateYYYYMMDDTHHMM } from "../common/utils";
 
  
 export class SnapshotManager {
@@ -120,7 +121,22 @@ export class SnapshotManager {
 
         try {
             const snapshot = await this.computeClient.snapshots.get(resourceGroup, snapshotName);
-            return snapshot.provisioningState === "Succeeded" ? "Succeeded" : (snapshot.provisioningState === "Failed" ? "Failed" : "InProgress");
+
+            // Safely read completionPercent (may be undefined or a string)
+            const rawCompletion = (snapshot as any)?.completionPercent;
+            const parsedCompletion = rawCompletion == null ? undefined : Number(rawCompletion);
+            const copyStatus = (parsedCompletion !== undefined && Number.isFinite(parsedCompletion)) ? parsedCompletion : undefined;
+
+            const provisioningState = snapshot.provisioningState;
+
+            if (copyStatus === 100 && provisioningState === "Succeeded") {
+                return "Succeeded";
+            } else if (provisioningState === "Failed") {
+                return "Failed";
+            } else {
+                return "InProgress";
+            }
+        
         } catch (error) {
             const message = `Unable to check snapshot copy status for '${snapshotName}' with error: ${_getString(error)}`;
             this.logger.error(message);
@@ -130,153 +146,8 @@ export class SnapshotManager {
 
 
     /**
-     * Purge primary snapshots only if all destination (copied) snapshots created from this source snapshot are in provisioningState "Succeeded".
+     * Purge all snapshots for a certain diskId tag.
      */
-    public async startPurgePrimarySnapshotsOfDiskIdAndLocationOlderThan(
-        resourceGroupName: string,
-        diskId: string,
-        location: string,
-        baseDate: Date,
-        days: number,
-        requiredTag?: string
-    ): Promise<string[]> {
-        const deletedSnapshots: string[] = [];
-        try {
-            const cutoff = new Date(baseDate.getTime() - days * 24 * 60 * 60 * 1000);
-
-            // List all snapshots once and reuse the collection in the two subsequent loops
-            const allSnapshots: Array<any> = [];
-            for await (const s of this.computeClient.snapshots.listByResourceGroup(resourceGroupName)) {
-                allSnapshots.push(s);
-            }
-
-            // Iterate over all snapshots to find source (primary) snapshots to consider for deletion
-            for (const snapshot of allSnapshots) {
-                if (
-                    snapshot.timeCreated &&
-                    new Date(snapshot.timeCreated) < cutoff &&
-                    snapshot.creationData &&
-                    snapshot.creationData.sourceResourceId &&
-                    snapshot.creationData?.sourceResourceId?.toLowerCase() === diskId.toLowerCase() &&
-                    snapshot.location &&
-                    snapshot.location?.toLowerCase() === location.toLowerCase()
-                ) {
-
-                    // Validate tag existence if requiredTag is provided
-                    if (requiredTag && (!snapshot.tags || !(requiredTag in snapshot.tags))) {
-                        this.logger.info(
-                            `Skipping snapshot '${snapshot.name}' because required tag '${requiredTag}' does not exist.`
-                        );
-                        continue;
-                    }
-
-                    // Find all destination snapshots created from this source snapshot
-                    const sourceSnapshotId = snapshot.id;
-                    let allDestSucceeded = true;
-
-                    if (!sourceSnapshotId) {
-                        this.logger.warn(`Source snapshot '${snapshot.name}' has no id; skipping deletion.`);
-                        continue;
-                    }
-
-                    // List all snapshots in the resource group and check if any have creationData.sourceResourceId == sourceSnapshotId
-                    for (const destSnapshot of allSnapshots) {
-                        if (
-                            destSnapshot.creationData &&
-                            destSnapshot.creationData.sourceResourceId &&
-                            destSnapshot.creationData.sourceResourceId.toLowerCase() === sourceSnapshotId.toLowerCase()
-                        ) {
-                            // If any destination snapshot is not succeeded, skip deletion of the source
-                            if (destSnapshot.provisioningState !== "Succeeded") {
-                                allDestSucceeded = false;
-                                this.logger.warn(
-                                    `Cannot delete source snapshot '${snapshot.name}' because destination snapshot '${destSnapshot.name}' is in provisioningState '${destSnapshot.provisioningState}'`
-                                );
-                                break;
-                            }
-                        }
-                    }
-
-                    if (allDestSucceeded) {
-                        this.logger.info(
-                            `Deleting primary snapshot '${snapshot.name}' for diskId '${diskId}' in location '${location}' created at ${snapshot.timeCreated}`
-                        );
-                        await this.computeClient.snapshots.beginDelete(resourceGroupName, snapshot.name);
-                        deletedSnapshots.push(snapshot.name);
-                    } else {
-                        this.logger.info(
-                            `Skipping deletion of source snapshot '${snapshot.name}' because not all destination snapshots are in 'Succeeded' state`
-                        );
-                    }
-                }
-            }
-            return deletedSnapshots;
-        } catch (error) {
-            const message = `Unable to purge primary snapshots of diskId '${diskId}' in location '${location}' and resource group '${resourceGroupName}' older than ${days} days since '${baseDate.toISOString()}' with error: ${_getString(error)}`;
-            this.logger.error(message);
-            throw new SnapshotError(message);
-        }
-    }
-
-
-    public async startPurgeSecondarySnapshotsOfDiskIdAndLocationOlderThan(
-        resourceGroupName: string,
-        diskId: string,
-        location: string,
-        baseDate: Date,
-        days: number,
-        requiredTag?: string
-    ): Promise<string[]> {
-        const deletedSnapshots: string[] = [];
-        try {
-            const cutoff = new Date(baseDate.getTime() - days * 24 * 60 * 60 * 1000);
-
-            for await (const snapshot of this.computeClient.snapshots.listByResourceGroup(resourceGroupName)) {
-
-                // get disk name from disk id
-                const diskName = extractDiskNameFromDiskId(diskId);
-
-                // get source resource name from snapshot id
-                const sourceSnapshotName = extractSnapshotNameFromSnapshotId(snapshot.creationData?.sourceResourceId);
-
-                if (
-                    snapshot.timeCreated &&
-                    new Date(snapshot.timeCreated) < cutoff &&
-                    snapshot.creationData &&
-                    snapshot.creationData.sourceResourceId &&
-                    sourceSnapshotName &&
-                    sourceSnapshotName.toLowerCase().includes(`-${diskName.toLowerCase()}`) &&
-                    snapshot.location?.toLowerCase() === location.toLowerCase()
-                ) {
-
-                    // Validate tag existence if requiredTag is provided
-                    if (requiredTag && (!snapshot.tags || !(requiredTag in snapshot.tags))) {
-                        this.logger.info(
-                            `Skipping snapshot '${snapshot.name}' because required tag '${requiredTag}' does not exist.`
-                        );
-                        continue;
-                    }
-
-                    this.logger.info(
-                        `Deleting secondary snapshot '${snapshot.name}' for disk '${diskName}' in location '${location}' created at ${snapshot.timeCreated}`
-                    );
-                    await this.computeClient.snapshots.beginDelete(resourceGroupName, snapshot.name);
-                    deletedSnapshots.push(snapshot.name);
-                }
-            }
-            return deletedSnapshots;
-        } catch (error) {
-            const message = `Unable to purge secondary snapshots for disk id '${diskId}' in location '${location}' older than ${days} days with error: ${_getString(error)}`;
-            this.logger.error(message);
-            throw new SnapshotError(message);
-        }
-    }
-
-
-    /**
-     * Purge primary and secondary snapshots only if all destination (copied) snapshots created from this source snapshot are in provisioningState "Succeeded".
-     */
-    /*
     public async startPurgeSnapshotsOfDiskIdOlderThan(
         resourceGroupName: string,
         diskId: string,
@@ -284,91 +155,64 @@ export class SnapshotManager {
         primaryDays: number,
         secondaryDays: number
     ): Promise<string[]> {
-        const deletedSnapshots: string[] = [];
+        
         try {
             const primaryCutoff = new Date(baseDate.getTime() - primaryDays * 24 * 60 * 60 * 1000);
             const secondaryCutoff = new Date(baseDate.getTime() - secondaryDays * 24 * 60 * 60 * 1000);
 
-            // List all snapshots once and reuse the collection in the two subsequent loops
+            // List all snapshots in the resource group
             const allSnapshots: Array<any> = [];
             for await (const s of this.computeClient.snapshots.listByResourceGroup(resourceGroupName)) {
                 allSnapshots.push(s);
             }
 
-            const primarySnapshostsToPurge = getPrimarySnapshotsToPurge(allSnapshots, diskId, primaryCutoff);
-            const secondarySnapshostsToPurge: string[] = [];
+            // Filter snapshots that are for the desired disk
+            const candidateSnapshots = allSnapshots.filter((snapshot: any) =>
+                snapshot.timeCreated &&
+                snapshot.tags &&
+                snapshot.tags[TAG_SMCP_LOCATION_TYPE] &&
+                snapshot.tags[TAG_SMCP_SOURCE_DISK_ID] &&
+                snapshot.tags[TAG_SMCP_SOURCE_DISK_ID].toLowerCase() === diskId.toLowerCase()
+            );
 
-            // Iterate over all snapshots to find source (primary) snapshots to consider for deletion
-            for (const snapshot of allSnapshots) {
-                if (
-                    snapshot.timeCreated &&
-                    new Date(snapshot.timeCreated) < cutoff &&
-                    snapshot.creationData &&
-                    snapshot.creationData.sourceResourceId &&
-                    snapshot.creationData?.sourceResourceId?.toLowerCase() === diskId.toLowerCase() &&
-                    snapshot.location &&
-                    snapshot.location?.toLowerCase() === location.toLowerCase()
-                ) {
+            // Filter snapshots that are primary for the desired disk and older than cutoff
+            const primaryCandidates = candidateSnapshots.filter((snapshot: any) =>
+                new Date(snapshot.timeCreated) < primaryCutoff &&
+                snapshot.tags[TAG_SMCP_LOCATION_TYPE].toLowerCase() === 'primary'
+            );
 
-                    // Validate tag existence if requiredTag is provided
-                    if (requiredTag && (!snapshot.tags || !(requiredTag in snapshot.tags))) {
-                        this.logger.info(
-                            `Skipping snapshot '${snapshot.name}' because required tag '${requiredTag}' does not exist.`
-                        );
-                        continue;
-                    }
+            // Filter snapshots that are secondary for the desired disk and older than cutoff
+            const secondaryCandidates = candidateSnapshots.filter((snapshot: any) =>
+                new Date(snapshot.timeCreated) < secondaryCutoff &&
+                snapshot.tags[TAG_SMCP_LOCATION_TYPE].toLowerCase() === 'secondary'
+            );
 
-                    // Find all destination snapshots created from this source snapshot
-                    const sourceSnapshotId = snapshot.id;
-                    let allDestSucceeded = true;
+            this.logger.info(`Found ${primaryCandidates.length} primary and ${secondaryCandidates.length} secondary candidate snapshots for diskId '${diskId}' in resource group '${resourceGroupName}' to purge`);
 
-                    if (!sourceSnapshotId) {
-                        this.logger.warn(`Source snapshot '${snapshot.name}' has no id; skipping deletion.`);
-                        continue;
-                    }
+            // Start purging snapshots
+            const promises: Promise<any>[] = []
 
-                    // List all snapshots in the resource group and check if any have creationData.sourceResourceId == sourceSnapshotId
-                    for (const destSnapshot of allSnapshots) {
-                        if (
-                            destSnapshot.creationData &&
-                            destSnapshot.creationData.sourceResourceId &&
-                            destSnapshot.creationData.sourceResourceId.toLowerCase() === sourceSnapshotId.toLowerCase()
-                        ) {
-                            // If any destination snapshot is not succeeded, skip deletion of the source
-                            if (destSnapshot.provisioningState !== "Succeeded") {
-                                allDestSucceeded = false;
-                                this.logger.warn(
-                                    `Cannot delete source snapshot '${snapshot.name}' because destination snapshot '${destSnapshot.name}' is in provisioningState '${destSnapshot.provisioningState}'`
-                                );
-                                break;
-                            }
-                        }
-                    }
-
-                    if (allDestSucceeded) {
-                        this.logger.info(
-                            `Deleting primary snapshot '${snapshot.name}' for diskId '${diskId}' in location '${location}' created at ${snapshot.timeCreated}`
-                        );
-                        await this.computeClient.snapshots.beginDelete(resourceGroupName, snapshot.name);
-                        deletedSnapshots.push(snapshot.name);
-                    } else {
-                        this.logger.info(
-                            `Skipping deletion of source snapshot '${snapshot.name}' because not all destination snapshots are in 'Succeeded' state`
-                        );
-                    }
-                }
+            // Primary snapshots
+            for (const snapshot of primaryCandidates) {
+                promises.push(this.computeClient.snapshots.beginDelete(resourceGroupName, snapshot.name));
             }
+
+            // Secondary snapshots
+            for (const snapshot of secondaryCandidates) {
+                promises.push(this.computeClient.snapshots.beginDelete(resourceGroupName, snapshot.name));
+            }
+
+            await Promise.all(promises);
+            const deletedSnapshots: string[] = primaryCandidates.map(s => s.name).concat(secondaryCandidates.map(s => s.name));
+            this.logger.info(`Deleted snapshots: ${deletedSnapshots.join(", ")}`);
+
             return deletedSnapshots;
         } catch (error) {
-            const message = `Unable to purge primary snapshots of diskId '${diskId}' in location '${location}' and resource group '${resourceGroupName}' older than ${days} days since '${baseDate.toISOString()}' with error: ${_getString(error)}`;
+            const message = `Unable to purge snapshots of diskId '${diskId}' in resource group '${resourceGroupName}' in all locations with error: ${_getString(error)}`;
             this.logger.error(message);
             throw new SnapshotError(message);
         }
     }
-*/
-
-
-
 
 
     public async startBulkPurgeSnapshotsOfDiskIdAndLocationOlderThan(
@@ -404,25 +248,6 @@ export class SnapshotManager {
         }
     }
 
-
-    /*
-    public async isSnapshotDeleted(resourceGroupName: string, snapshotName: string): Promise<boolean> {
-        try {
-            await this.computeClient.snapshots.get(resourceGroupName, snapshotName);
-            // If no error, snapshot still exists
-            return false;
-        } catch (error: any) {
-            if (error.statusCode === 404 || error.code === "ResourceNotFound") {
-                // Snapshot not found, so it is deleted
-                return true;
-            }
-            // Other errors should be handled/logged
-            const message = `Unable to check if snapshot '${snapshotName}' is deleted with error: ${_getString(error)}`;
-            this.logger.error(message);
-            throw new SnapshotError(message);
-        }
-    }
-    */
 
     public async areSnapshotsDeleted(resourceGroupName: string, snapshotNames: string[]): Promise<{ [name: string]: boolean }> {
         const results: { [name: string]: boolean } = {};

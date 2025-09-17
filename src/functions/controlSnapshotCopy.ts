@@ -1,7 +1,7 @@
 import { app, InvocationContext, output } from "@azure/functions";
 
 import { AzureLogger } from '../common/logger';
-import { SnapshotCopyControl, JobLogEntry, SnapshotPurgeSource } from "../common/interfaces";
+import { SnapshotCopyControl, JobLogEntry } from "../common/interfaces";
 import { SnapshotManager } from "../controllers/snapshot.manager";
 import { LogManager } from "../controllers/log.manager";
 import { QueueManager } from "../controllers/queue.manager";
@@ -44,28 +44,11 @@ export async function controlSnapshotCopy(queueItem: SnapshotCopyControl, contex
             }
             await logManager.uploadLog(logEntryCopyFinished);
 
-            // C. Trigger old snapshots purge in primary location
-            logger.info(`Sending trigger message to start purge event for disk ID ${queueItem.control.sourceDiskId} and primary location ${queueItem.control.primaryLocation}`);
-
-            const purgePrimary: SnapshotPurgeSource = {
-                control: {
-                    ...queueItem.control
-                },
-                type: 'primary'
-            };
-
-            // D. Trigger old snapshots purge in secondary location
-            logger.info(`Sending trigger message to start purging snapshots for disk ID ${queueItem.control.sourceDiskId} in the secondary location ${queueItem.control.secondaryLocation}`);
-
-            const purgeSecondary: SnapshotPurgeSource = {
-                control: {
-                    ...queueItem.control
-                },
-                type: 'secondary'
-            };
+            // C. Trigger old snapshots purge in primary and secondary location
+            logger.info(`Sending trigger message to start purge event for disk ID ${queueItem.control.sourceDiskId} in primary location ${queueItem.control.primaryLocation} and secondary location ${queueItem.control.secondaryLocation}`);
 
             // Send notifications using Storage Queue
-            context.extraOutputs.set(purgeJobsQueueOutput, [purgePrimary, purgeSecondary]);
+            context.extraOutputs.set(purgeJobsQueueOutput, queueItem.control);
 
         } else if (currentState === "Failed") {
            

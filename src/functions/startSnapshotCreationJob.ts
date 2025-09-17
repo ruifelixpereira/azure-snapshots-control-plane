@@ -1,7 +1,7 @@
 import { app, InvocationContext, output } from "@azure/functions";
 
 import { AzureLogger } from '../common/logger';
-import { SnapshotSource, SnapshotCopy, SnapshotPurgeSource, JobLogEntry } from "../common/interfaces";
+import { SnapshotSource, SnapshotCopy, JobLogEntry, SnapshotBulkPurgeSource, SnapshotControl } from "../common/interfaces";
 import { generateGuid } from "../common/utils";
 import { SnapshotManager } from "../controllers/snapshot.manager";
 import { LogManager } from "../controllers/log.manager";
@@ -85,17 +85,14 @@ export async function startSnapshotCreationJob(queueItem: SnapshotSource, contex
             // C. Trigger old snapshots purge in primary and secondary locations
             logger.info(`Sending trigger message to start purge event for disk ID ${queueItem.diskId} and primary location ${primarySnapshot.location}`);
 
-            const purgePrimary: SnapshotPurgeSource = {
-                control: {
-                    jobId: jobId,
-                    sourceVmId: queueItem.vmId,
-                    sourceDiskId: queueItem.diskId,
-                    primarySnapshotId: primarySnapshot.id,
-                    secondarySnapshotId: "na",
-                    primaryLocation: primarySnapshot.location,
-                    secondaryLocation: "na"
-                },
-                type: 'primary'
+            const purgePrimary: SnapshotControl = {
+                jobId: jobId,
+                sourceVmId: queueItem.vmId,
+                sourceDiskId: queueItem.diskId,
+                primarySnapshotId: primarySnapshot.id,
+                secondarySnapshotId: "na",
+                primaryLocation: primarySnapshot.location,
+                secondaryLocation: "na"
             };
 
             // Send notifications using Storage Queue
@@ -106,7 +103,7 @@ export async function startSnapshotCreationJob(queueItem: SnapshotSource, contex
             if (snapshotBulkPurgeActive) {
                 logger.info(`Sending trigger message to start purging all snapshots for disk ID ${queueItem.diskId} in the secondary location ${process.env.SNAPSHOT_SECONDARY_LOCATION}`);
 
-                const purgeSecondary: SnapshotPurgeSource = {
+                const purgeSecondary: SnapshotBulkPurgeSource = {
                     control: {
                         jobId: jobId,
                         sourceVmId: queueItem.vmId,

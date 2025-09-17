@@ -54,21 +54,20 @@ export interface SnapshotCopyControl {
     control: SnapshotControl;
     snapshot: Snapshot;
 }
-export interface SnapshotPurgeSource {
+
+export interface SnapshotPurgeControl {
+    source: SnapshotControl;
+    snapshotsNameToPurge: string[];
+}
+
+export interface SnapshotBulkPurgeSource {
     control: SnapshotControl;
     type: 'primary' | 'secondary';
 }
 
-export interface SnapshotPurgeControl {
-    source: SnapshotPurgeSource;
-    baseDate: Date;
-    daysToKeep: number;
-    snapshotsNameToPurge: string[];
-}
-
 export interface JobLogEntry {
     jobId: string;
-    jobOperation: 'Start' | 'Snapshot Create' | 'Snapshot Create End' | 'Snapshot Copy Start' | 'Snapshot Copy End' | 'Primary Snapshot Purge Start' | 'Primary Snapshot Purge End' | 'Secondary Snapshot Purge Start' | 'Secondary Snapshot Purge End' | 'Error';
+    jobOperation: 'Start' | 'Snapshot Create' | 'Snapshot Create End' | 'Snapshot Copy Start' | 'Snapshot Copy End' | 'Snapshot Purge Start' | 'Snapshot Purge End' | 'Error';
     jobStatus: 'Snapshot In Progress' | 'Snapshot Completed' | 'Snapshot Failed' | 'Purge In Progress' | 'Purge Completed' | 'Purge Failed';
     jobType: 'Snapshot' | 'Purge';
     message: string;

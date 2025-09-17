@@ -23,11 +23,11 @@ export class ResourceGraphManager {
                     query: `resources
                     | where type =~ 'microsoft.compute/virtualMachines'
                     | where tags["smcp-backup"] =~ "on"
-                    | project vmName=name, resourceGroup, vmId = id, vmSize = properties.hardwareProfile.vmSize, location, subscriptionId
+                    | project vmName=name, resourceGroup, vmId = tolower(id), vmSize = properties.hardwareProfile.vmSize, location, subscriptionId
                     | join (
                         resources
                         | where type =~ 'microsoft.compute/disks' and isnotempty(managedBy)
-                        | project diskName = name, diskId = id, vmId=managedBy, diskSizeGB = properties.diskSizeGB, diskSku = sku.name
+                        | project diskName = name, diskId = id, vmId = tolower(managedBy), diskSizeGB = properties.diskSizeGB, diskSku = sku.name
                     ) on vmId
                     | project subscriptionId, resourceGroup, location, vmId, vmName, vmSize, diskId, diskName, diskSizeGB, diskSku`
                 },
