@@ -1,7 +1,7 @@
 import { app, InvocationContext, output } from "@azure/functions";
 
 import { AzureLogger } from '../common/logger';
-import { SnapshotSource, SnapshotCopy, JobLogEntry, SnapshotBulkPurgeSource, SnapshotControl } from "../common/interfaces";
+import { SnapshotSource, SnapshotCopy, JobLogEntry, SnapshotControl } from "../common/interfaces";
 import { generateGuid } from "../common/utils";
 import { SnapshotManager } from "../controllers/snapshot.manager";
 import { LogManager } from "../controllers/log.manager";
@@ -14,11 +14,6 @@ const copyJobsQueueOutput = output.storageQueue({
 
 const purgeJobsQueueOutput = output.storageQueue({
     queueName: 'purge-jobs',
-    connection: 'AzureWebJobsStorage'
-});
-
-const bulkPurgeJobsQueueOutput = output.storageQueue({
-    queueName: 'bulk-purge-jobs',
     connection: 'AzureWebJobsStorage'
 });
 
@@ -85,7 +80,7 @@ export async function startSnapshotCreationJob(queueItem: SnapshotSource, contex
             // C. Trigger old snapshots purge in primary and secondary locations
             logger.info(`Sending trigger message to start purge event for disk ID ${queueItem.diskId} and primary location ${primarySnapshot.location}`);
 
-            const purgePrimary: SnapshotControl = {
+            const purgeEvent: SnapshotControl = {
                 jobId: jobId,
                 sourceVmId: queueItem.vmId,
                 sourceDiskId: queueItem.diskId,
@@ -96,32 +91,7 @@ export async function startSnapshotCreationJob(queueItem: SnapshotSource, contex
             };
 
             // Send notifications using Storage Queue
-            context.extraOutputs.set(purgeJobsQueueOutput, purgePrimary);
-
-            // D. Trigger all snapshots purge in secondary location
-            const snapshotBulkPurgeActive = process.env.SNAPSHOT_BULK_PURGE_ACTIVE ? process.env.SNAPSHOT_BULK_PURGE_ACTIVE.toLowerCase() === 'true' : false;
-            if (snapshotBulkPurgeActive) {
-                logger.info(`Sending trigger message to start purging all snapshots for disk ID ${queueItem.diskId} in the secondary location ${process.env.SNAPSHOT_SECONDARY_LOCATION}`);
-
-                const purgeSecondary: SnapshotBulkPurgeSource = {
-                    control: {
-                        jobId: jobId,
-                        sourceVmId: queueItem.vmId,
-                        sourceDiskId: queueItem.diskId,
-                        primarySnapshotId: "na",
-                        secondarySnapshotId: "all",
-                        primaryLocation: "na",
-                        secondaryLocation: process.env.SNAPSHOT_SECONDARY_LOCATION
-                    },
-                    type: 'secondary'
-                };
-
-                // Send notifications using Storage Queue
-                context.extraOutputs.set(bulkPurgeJobsQueueOutput, purgeSecondary);
-            }
-            else {
-                logger.info(`Bulk purge is not active, skipping sending trigger message to start purging all snapshots for disk ID ${queueItem.diskId} in the secondary location ${process.env.SNAPSHOT_SECONDARY_LOCATION}`);
-            }
+            context.extraOutputs.set(purgeJobsQueueOutput, purgeEvent);
         }
         else {
 
@@ -173,7 +143,6 @@ app.storageQueue('startSnapshotCreationJob', {
     connection: 'AzureWebJobsStorage',
     extraOutputs: [
         purgeJobsQueueOutput,
-        bulkPurgeJobsQueueOutput,
         deadLetterQueueOutput,
         copyJobsQueueOutput
     ],

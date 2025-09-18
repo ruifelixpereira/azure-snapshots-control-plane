@@ -24,8 +24,8 @@ var queuesToCreate = [
   'snapshot-jobs'
   'copy-control'
   'purge-jobs'
-  'bulk-purge-jobs'
   'purge-control'
+  'dead-letter-snapshot-creation-jobs'
 ]
 
 // Storage Account

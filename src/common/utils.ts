@@ -67,3 +67,50 @@ export function extractSnapshotNameFromSnapshotId(snapshotId: string): string | 
     const snapshotName = snapshotNameIndex !== -1 ? parts[snapshotNameIndex + 1] : null;
     return snapshotName;
 }
+
+// Helper: returns a random delay in seconds between minMinutes and maxMinutes (inclusive)
+export const getRandomDelaySeconds = (minMinutes = 5, maxMinutes = 20): number => {
+    const min = Math.ceil(minMinutes);
+    const max = Math.floor(maxMinutes);
+    const minutes = Math.floor(Math.random() * (max - min + 1)) + min;
+    return minutes * 60;
+};
+
+/**
+ * Return a random delay in seconds between scaledMin and scaledMax minutes.
+ * - Applies exponential backoff based on `attempt` (multiplier = 2^(attempt-1)).
+ * - Adds jitter by choosing a random minute value between scaledMin and scaledMax.
+ * - Caps scaled values to `maxCapMinutes` (param) or to the env var SNAPSHOT_RETRY_MAX_DELAY_MINUTES, default 180.
+ *
+ * @param minMinutes base minimum (minutes)
+ * @param maxMinutes base maximum (minutes)
+ * @param attempt attempt number (1 => base delay; 2 => doubled; etc.)
+ * @param maxCapMinutes optional maximum cap for minutes (overrides env var)
+ * @returns delay in seconds
+ */
+export const getExponentialBackoffRandomDelaySeconds = (
+    minMinutes = 5,
+    maxMinutes = 20,
+    attempt = 1,
+    maxCapMinutes?: number
+): number => {
+    const envCap = process.env.SNAPSHOT_RETRY_MAX_DELAY_MINUTES ? Number.parseInt(process.env.SNAPSHOT_RETRY_MAX_DELAY_MINUTES) : undefined;
+    const cap = (typeof maxCapMinutes === 'number' && Number.isFinite(maxCapMinutes))
+        ? Math.max(1, Math.floor(maxCapMinutes))
+        : (envCap && Number.isFinite(envCap) ? envCap : 180); // default cap 180 minutes
+
+    const adjAttempt = Math.max(1, Math.floor(Number(attempt) || 1));
+    const multiplier = Math.pow(2, adjAttempt - 1);
+
+    // Scale and clamp
+    let scaledMin = Math.max(1, Math.ceil(minMinutes * multiplier));
+    let scaledMax = Math.max(scaledMin, Math.floor(maxMinutes * multiplier));
+
+    scaledMin = Math.min(scaledMin, cap);
+    scaledMax = Math.min(scaledMax, cap);
+
+    if (scaledMax < scaledMin) scaledMax = scaledMin;
+
+    const minutes = Math.floor(Math.random() * (scaledMax - scaledMin + 1)) + scaledMin;
+    return minutes * 60;
+};

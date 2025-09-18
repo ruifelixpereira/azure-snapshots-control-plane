@@ -60,11 +60,6 @@ export interface SnapshotPurgeControl {
     snapshotsNameToPurge: string[];
 }
 
-export interface SnapshotBulkPurgeSource {
-    control: SnapshotControl;
-    type: 'primary' | 'secondary';
-}
-
 export interface JobLogEntry {
     jobId: string;
     jobOperation: 'Start' | 'Snapshot Create' | 'Snapshot Create End' | 'Snapshot Copy Start' | 'Snapshot Copy End' | 'Snapshot Purge Start' | 'Snapshot Purge End' | 'Error';

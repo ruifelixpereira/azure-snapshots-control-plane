@@ -118,7 +118,6 @@ az storage queue create --name "snapshot-jobs" --account-name $storageAccountNam
 az storage queue create --name "copy-jobs" --account-name $storageAccountName
 az storage queue create --name "copy-control" --account-name $storageAccountName
 az storage queue create --name "purge-jobs" --account-name $storageAccountName
-az storage queue create --name "bulk-purge-jobs" --account-name $storageAccountName
 az storage queue create --name "purge-control" --account-name $storageAccountName
 az storage queue create --name "dead-letter-snapshot-creation-jobs" --account-name $storageAccountName
 

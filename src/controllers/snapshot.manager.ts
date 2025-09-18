@@ -215,41 +215,6 @@ export class SnapshotManager {
         }
     }
 
-
-    public async startBulkPurgeSnapshotsOfDiskIdAndLocationOlderThan(
-        resourceGroupName: string,
-        diskId: string,
-        location: string,
-        baseDate: Date,
-        days: number
-    ): Promise<string[]> {
-        const deletedSnapshots: string[] = [];
-        try {
-            const cutoff = new Date(baseDate.getTime() - days * 24 * 60 * 60 * 1000);
-            
-            // get disk name from disk id
-            const diskName = extractDiskNameFromDiskId(diskId);
-
-            const snapshotsToPurge = await this.graphManager.getSnapshotsByNameAndDate(resourceGroupName, location, diskName, cutoff.toISOString());
-
-            for await (const snapshot of snapshotsToPurge) {
-                
-                this.logger.info(
-                    `Deleting secondary snapshot '${snapshot.name}' for disk '${diskName}' in location '${location}' created at ${snapshot.timeCreated}`
-                );
-                await this.computeClient.snapshots.beginDelete(resourceGroupName, snapshot.name);
-                deletedSnapshots.push(snapshot.name);
-            }
-            return deletedSnapshots;
-
-        } catch (error) {
-            const message = `Unable to purge secondary snapshots for disk id '${diskId}' in location '${location}' older than ${days} days with error: ${_getString(error)}`;
-            this.logger.error(message);
-            throw new SnapshotError(message);
-        }
-    }
-
-
     public async areSnapshotsDeleted(resourceGroupName: string, snapshotNames: string[]): Promise<{ [name: string]: boolean }> {
         const results: { [name: string]: boolean } = {};
         for (const snapshotName of snapshotNames) {

@@ -6,6 +6,7 @@ import { SnapshotManager } from "../controllers/snapshot.manager";
 import { LogManager } from "../controllers/log.manager";
 import { QueueManager } from "../controllers/queue.manager";
 import { _getString } from "../common/apperror";
+import { getRandomDelaySeconds } from "../common/utils";
 
 
 export async function startSnapshotCopyJob(queueItem: SnapshotCopy, context: InvocationContext): Promise<void> {
@@ -68,6 +69,7 @@ export async function startSnapshotCopyJob(queueItem: SnapshotCopy, context: Inv
             const attempt = ((queueItem as any).attempt ?? 0) + 1;
             (queueItem as any).attempt = attempt;
 
+            /*
             if (attempt > 20) {
                 // Max attempts reached
                 const maxRetryMsg = `Exceeded max retry attempts (20) for copy ${queueItem.primarySnapshot.id}. Recording failure and not requeuing.`;
@@ -88,16 +90,18 @@ export async function startSnapshotCopyJob(queueItem: SnapshotCopy, context: Inv
                 
                 throw err;
             }
+            */
 
+            // Requeue the copy message with delay
             logger.warn(`CopyStart limit reached. Re-scheduling copy ${queueItem.primarySnapshot.id} (attempt ${attempt})`);
 
             const qm = new QueueManager(logger, process.env.AzureWebJobsStorage__accountname || "", 'copy-jobs');
 
             // requeue the control copy message with delay (exponential backoff)
             // set visibility/time to retry later (e.g., 60s or exponential based on attempt count)
-            // Returns a random integer from 4 to 12:
-            const randomDelay = Math.floor(Math.random() * 8) + 4;
-            await qm.sendMessage(JSON.stringify(queueItem), randomDelay * 60); // Delay in seconds
+            const randomDelay = getRandomDelaySeconds(8, 25); 
+            await qm.sendMessage(JSON.stringify(queueItem), randomDelay); // Delay in seconds
+
         } else {
             // Other error - just fail and log
             logger.error(`Failed starting copy for ${queueItem.primarySnapshot}: ${errMsg}`);
