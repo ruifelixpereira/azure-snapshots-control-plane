@@ -45,14 +45,14 @@ This modular and asynchronous design ensures reliable execution, scalability, an
      1. Starts the snapshot copy to the secondary region. This is made asynchronously, since it can take some time depending on the snapshot size.
      2. Sends a new snapshot copy control message to the copy-control storage queue. This allows to trigger the control check if the copy ends without errors.
    - IF the snapshot is only created in the primary region, THEN:
-     1. Sends a purge job event to the purge-jobs storage queue. This will trigger a job to purge the snapshots in the primary region that are older than x days (configurable).
+     1. Sends a purge job event to the purge-jobs storage queue. This will trigger a job to purge snapshots in the primary and secondary regions that are older than x days (configurable).
    - Sends job operations to Log Analytics workspace.
 
 4. The snapshot copy control function checks if a copy operation is complete or is still in progress.
    - Check the snapshot copy state.
    - If the copy is still in progress, re-sends a copy control event to the copy-control storage queue with a visibility timeout set for the message to be visible after some minutes (configurable).
    - Updates the snapshot copy operation state in Log Analytics workspace.
-   - Sends 2 purge job events to the purge-jobs storage queue. These will trigger 2 jobs: one to purge the snapshot in the primary region used as a source in the copy operation; an another one to purge snapshots in the secondary region that are older than x days (configurable).
+   - Sends a purge job event to the purge-jobs storage queue. This will trigger a jobs to purge the snapshot in the primary region used as a source in the copy operation and to purge snapshots in the secondary region that are older than x days (configurable).
 
 5. The snapshot purge job function collects snapshot purge messages and starts a new purge job with the following actions:
    - Checks if there are snapshots to be deleted and start the delete operations in the requested region (it can be primary or secondary region)
