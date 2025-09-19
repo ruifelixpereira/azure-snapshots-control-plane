@@ -12,9 +12,6 @@
       "type": 9,
       "content": {
         "version": "KqlParameterItem/1.0",
-        "crossComponentResources": [
-          "{Subscription}"
-        ],
         "parameters": [
           {
             "id": "1f74ed9a-e3ed-498d-bd5b-f68f3836a117",
@@ -38,7 +35,7 @@
             },
             "queryType": 1,
             "value": [
-              "value::all"
+              "/subscriptions/xxxxxxxx-xxxxxx-xxxxxxx"
             ]
           },
           {
@@ -65,7 +62,7 @@
             "queryType": 1,
             "resourceType": "microsoft.resourcegraph/resources",
             "value": [
-              "instore-unifo-lojas-pp-rg-ne"
+              "my-rg"
             ]
           },
           {
@@ -174,13 +171,13 @@
             "queryType": 1,
             "resourceType": "microsoft.resourcegraph/resources",
             "value": [
-              "/subscriptions/xxxxxxx/resourceGroups/rg/providers/Microsoft.OperationalInsights/workspaces/unifosnapmng-pp-law-ne"
+              "/subscriptions/xxxxxxxx-xxxxxx-xxxxxxx/resourceGroups/my-rg/providers/Microsoft.OperationalInsights/workspaces/my-loganalytics"
             ]
           }
         ],
         "style": "above",
-        "queryType": 1,
-        "resourceType": "microsoft.resourcegraph/resources"
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces"
       },
       "name": "Workbook Parameters",
       "styleSettings": {
@@ -328,8 +325,7 @@
                           "durationMs": 86400000
                         },
                         "value": [
-                          "primary",
-                          "secondary"
+                          "primary"
                         ],
                         "label": "Location Type"
                       },
@@ -1530,7 +1526,7 @@
                   "type": 3,
                   "content": {
                     "version": "KqlItem/1.0",
-                    "query": "SnapshotsOperations_CL\r\n| where jobType == \"Snapshot\"\r\n| extend resourceGroup = extract(@\"/resourceGroups/([^/]+)\", 1, sourceVmId)\r\n| where resourceGroup in~ ({ResourceGroup:value})\r\n| where TimeGenerated >= {SnapshotAge:start} and TimeGenerated <= {SnapshotAge:end}\r\n| summarize Operations = make_set(jobStatus) by jobId\r\n| extend \r\n    IsCompleted = Operations has \"Snapshot Completed\" and not(Operations has \"Snapshot Failed\"),\r\n    IsInProgress = Operations has \"Snapshot In Progress\" and not(Operations has \"Snapshot Completed\") and not(Operations has \"Snapshot Failed\"),\r\n    IsFailed = Operations has \"Snapshot Failed\"\r\n| summarize \r\n    AllJobs = countif(IsCompleted) + countif(IsInProgress) + countif(IsFailed)\r\n| extend type = 'All backup jobs'",
+                    "query": "SnapshotsOperations_CL\r\n| where jobType == \"Snapshot\"\r\n| extend resourceGroup = extract(@\"/resourcegroups/([^/]+)\", 1, tolower(sourceVmId))\r\n| where resourceGroup in~ (tolower({ResourceGroup:value}))\r\n| where TimeGenerated >= {SnapshotAge:start} and TimeGenerated <= {SnapshotAge:end}\r\n| summarize Operations = make_set(jobStatus) by jobId\r\n| extend \r\n    IsCompleted = Operations has \"Snapshot Completed\" and not(Operations has \"Snapshot Failed\"),\r\n    IsInProgress = Operations has \"Snapshot In Progress\" and not(Operations has \"Snapshot Completed\") and not(Operations has \"Snapshot Failed\"),\r\n    IsFailed = Operations has \"Snapshot Failed\"\r\n| summarize \r\n    AllJobs = countif(IsCompleted) + countif(IsInProgress) + countif(IsFailed)\r\n| extend type = 'All backup jobs'",
                     "size": 3,
                     "noDataMessage": "No resources found",
                     "queryType": 0,
@@ -1571,7 +1567,7 @@
                   "type": 3,
                   "content": {
                     "version": "KqlItem/1.0",
-                    "query": "SnapshotsOperations_CL\r\n| where jobType == \"Snapshot\"\r\n| extend resourceGroup = extract(@\"/resourceGroups/([^/]+)\", 1, sourceVmId)\r\n| where resourceGroup in~ ({ResourceGroup:value})\r\n| where TimeGenerated >= {SnapshotAge:start} and TimeGenerated <= {SnapshotAge:end}\r\n| summarize Operations = make_set(jobStatus) by jobId\r\n| extend \r\n    IsCompleted = Operations has \"Snapshot Completed\" and not(Operations has \"Snapshot Failed\"),\r\n    IsInProgress = Operations has \"Snapshot In Progress\" and not(Operations has \"Snapshot Completed\") and not(Operations has \"Snapshot Failed\"),\r\n    IsFailed = Operations has \"Snapshot Failed\"\r\n| summarize \r\n    CompletedJobs = countif(IsCompleted),\r\n    InProgressJobs = countif(IsInProgress),\r\n    FailedJobs = countif(IsFailed)\r\n| extend type = 'Backup completed jobs'",
+                    "query": "SnapshotsOperations_CL\r\n| where jobType == \"Snapshot\"\r\n| extend resourceGroup = extract(@\"/resourcegroups/([^/]+)\", 1, tolower(sourceVmId))\r\n| where resourceGroup in~ (tolower({ResourceGroup:value}))\r\n| where TimeGenerated >= {SnapshotAge:start} and TimeGenerated <= {SnapshotAge:end}\r\n| summarize Operations = make_set(jobStatus) by jobId\r\n| extend \r\n    IsCompleted = Operations has \"Snapshot Completed\" and not(Operations has \"Snapshot Failed\"),\r\n    IsInProgress = Operations has \"Snapshot In Progress\" and not(Operations has \"Snapshot Completed\") and not(Operations has \"Snapshot Failed\"),\r\n    IsFailed = Operations has \"Snapshot Failed\"\r\n| summarize \r\n    CompletedJobs = countif(IsCompleted),\r\n    InProgressJobs = countif(IsInProgress),\r\n    FailedJobs = countif(IsFailed)\r\n| extend type = 'Backup completed jobs'",
                     "size": 3,
                     "noDataMessage": "No resources found",
                     "queryType": 0,
@@ -1613,7 +1609,7 @@
                   "type": 3,
                   "content": {
                     "version": "KqlItem/1.0",
-                    "query": "SnapshotsOperations_CL\r\n| where jobType == \"Snapshot\"\r\n| extend resourceGroup = extract(@\"/resourceGroups/([^/]+)\", 1, sourceVmId)\r\n| where resourceGroup in~ ({ResourceGroup:value})\r\n| where TimeGenerated >= {SnapshotAge:start} and TimeGenerated <= {SnapshotAge:end}\r\n| summarize Operations = make_set(jobStatus) by jobId\r\n| extend \r\n    IsCompleted = Operations has \"Snapshot Completed\" and not(Operations has \"Snapshot Failed\"),\r\n    IsInProgress = Operations has \"Snapshot In Progress\" and not(Operations has \"Snapshot Completed\") and not(Operations has \"Snapshot Failed\"),\r\n    IsFailed = Operations has \"Snapshot Failed\"\r\n| summarize \r\n    CompletedJobs = countif(IsCompleted),\r\n    InProgressJobs = countif(IsInProgress),\r\n    FailedJobs = countif(IsFailed)\r\n| extend type = 'Backup failed jobs'",
+                    "query": "SnapshotsOperations_CL\r\n| where jobType == \"Snapshot\"\r\n| extend resourceGroup = extract(@\"/resourcegroups/([^/]+)\", 1, tolower(sourceVmId))\r\n| where resourceGroup in~ (tolower({ResourceGroup:value}))\r\n| where TimeGenerated >= {SnapshotAge:start} and TimeGenerated <= {SnapshotAge:end}\r\n| summarize Operations = make_set(jobStatus) by jobId\r\n| extend \r\n    IsCompleted = Operations has \"Snapshot Completed\" and not(Operations has \"Snapshot Failed\"),\r\n    IsInProgress = Operations has \"Snapshot In Progress\" and not(Operations has \"Snapshot Completed\") and not(Operations has \"Snapshot Failed\"),\r\n    IsFailed = Operations has \"Snapshot Failed\"\r\n| summarize \r\n    CompletedJobs = countif(IsCompleted),\r\n    InProgressJobs = countif(IsInProgress),\r\n    FailedJobs = countif(IsFailed)\r\n| extend type = 'Backup failed jobs'",
                     "size": 3,
                     "noDataMessage": "No resources found",
                     "queryType": 0,
@@ -1655,7 +1651,7 @@
                   "type": 3,
                   "content": {
                     "version": "KqlItem/1.0",
-                    "query": "SnapshotsOperations_CL\r\n| where jobType == \"Snapshot\"\r\n| extend resourceGroup = extract(@\"/resourceGroups/([^/]+)\", 1, sourceVmId)\r\n| where resourceGroup in~ ({ResourceGroup:value})\r\n| where TimeGenerated >= {SnapshotAge:start} and TimeGenerated <= {SnapshotAge:end}\r\n| summarize Operations = make_set(jobStatus) by jobId\r\n| extend \r\n    IsCompleted = Operations has \"Snapshot Completed\" and not(Operations has \"Snapshot Failed\"),\r\n    IsInProgress = Operations has \"Snapshot In Progress\" and not(Operations has \"Snapshot Completed\") and not(Operations has \"Snapshot Failed\"),\r\n    IsFailed = Operations has \"Snapshot Failed\"\r\n| summarize \r\n    CompletedJobs = countif(IsCompleted),\r\n    InProgressJobs = countif(IsInProgress),\r\n    FailedJobs = countif(IsFailed)\r\n| extend type = 'Backup in progress jobs'",
+                    "query": "SnapshotsOperations_CL\r\n| where jobType == \"Snapshot\"\r\n| extend resourceGroup = extract(@\"/resourcegroups/([^/]+)\", 1, tolower(sourceVmId))\r\n| where resourceGroup in~ (tolower({ResourceGroup:value}))\r\n| where TimeGenerated >= {SnapshotAge:start} and TimeGenerated <= {SnapshotAge:end}\r\n| summarize Operations = make_set(jobStatus) by jobId\r\n| extend \r\n    IsCompleted = Operations has \"Snapshot Completed\" and not(Operations has \"Snapshot Failed\"),\r\n    IsInProgress = Operations has \"Snapshot In Progress\" and not(Operations has \"Snapshot Completed\") and not(Operations has \"Snapshot Failed\"),\r\n    IsFailed = Operations has \"Snapshot Failed\"\r\n| summarize \r\n    CompletedJobs = countif(IsCompleted),\r\n    InProgressJobs = countif(IsInProgress),\r\n    FailedJobs = countif(IsFailed)\r\n| extend type = 'Backup in progress jobs'",
                     "size": 3,
                     "noDataMessage": "No resources found",
                     "queryType": 0,
@@ -1704,7 +1700,7 @@
                   "type": 3,
                   "content": {
                     "version": "KqlItem/1.0",
-                    "query": "SnapshotsOperations_CL\r\n| where jobType == \"Purge\"\r\n| extend resourceGroup = extract(@\"/resourceGroups/([^/]+)\", 1, sourceVmId)\r\n| where resourceGroup in~ ({ResourceGroup:value})\r\n| where TimeGenerated >= {SnapshotAge:start} and TimeGenerated <= {SnapshotAge:end}\r\n| summarize Operations = make_set(jobStatus) by jobId\r\n| extend \r\n    IsCompleted = Operations has \"Purge Completed\" and not(Operations has \"Purge Failed\"),\r\n    IsInProgress = Operations has \"Purge In Progress\" and not(Operations has \"Purge Completed\") and not(Operations has \"Purge Failed\"),\r\n    IsFailed = Operations has \"Purge Failed\"\r\n| summarize \r\n    AllJobs = countif(IsCompleted) + countif(IsInProgress) + countif(IsFailed)\r\n| extend type = 'All purge jobs'",
+                    "query": "SnapshotsOperations_CL\r\n| where jobType == \"Purge\"\r\n| extend resourceGroup = extract(@\"/resourcegroups/([^/]+)\", 1, tolower(sourceVmId))\r\n| where resourceGroup in~ (tolower({ResourceGroup:value}))\r\n| where TimeGenerated >= {SnapshotAge:start} and TimeGenerated <= {SnapshotAge:end}\r\n| summarize Operations = make_set(jobStatus) by jobId\r\n| extend \r\n    IsCompleted = Operations has \"Purge Completed\" and not(Operations has \"Purge Failed\"),\r\n    IsInProgress = Operations has \"Purge In Progress\" and not(Operations has \"Purge Completed\") and not(Operations has \"Purge Failed\"),\r\n    IsFailed = Operations has \"Purge Failed\"\r\n| summarize \r\n    AllJobs = countif(IsCompleted) + countif(IsInProgress) + countif(IsFailed)\r\n| extend type = 'All purge jobs'",
                     "size": 3,
                     "noDataMessage": "No resources found",
                     "queryType": 0,
@@ -1745,7 +1741,7 @@
                   "type": 3,
                   "content": {
                     "version": "KqlItem/1.0",
-                    "query": "SnapshotsOperations_CL\r\n| where jobType == \"Purge\"\r\n| extend resourceGroup = extract(@\"/resourceGroups/([^/]+)\", 1, sourceVmId)\r\n| where resourceGroup in~ ({ResourceGroup:value})\r\n| where TimeGenerated >= {SnapshotAge:start} and TimeGenerated <= {SnapshotAge:end}\r\n| summarize Operations = make_set(jobStatus) by jobId\r\n| extend \r\n    IsCompleted = Operations has \"Purge Completed\" and not(Operations has \"Purge Failed\"),\r\n    IsInProgress = Operations has \"Purge In Progress\" and not(Operations has \"Purge Completed\") and not(Operations has \"Purge Failed\"),\r\n    IsFailed = Operations has \"Purge Failed\"\r\n| summarize \r\n    CompletedJobs = countif(IsCompleted),\r\n    InProgressJobs = countif(IsInProgress),\r\n    FailedJobs = countif(IsFailed)\r\n| extend type = 'Purge completed jobs'",
+                    "query": "SnapshotsOperations_CL\r\n| where jobType == \"Purge\"\r\n| extend resourceGroup = extract(@\"/resourcegroups/([^/]+)\", 1, tolower(sourceVmId))\r\n| where resourceGroup in~ (tolower({ResourceGroup:value}))\r\n| where TimeGenerated >= {SnapshotAge:start} and TimeGenerated <= {SnapshotAge:end}\r\n| summarize Operations = make_set(jobStatus) by jobId\r\n| extend \r\n    IsCompleted = Operations has \"Purge Completed\" and not(Operations has \"Purge Failed\"),\r\n    IsInProgress = Operations has \"Purge In Progress\" and not(Operations has \"Purge Completed\") and not(Operations has \"Purge Failed\"),\r\n    IsFailed = Operations has \"Purge Failed\"\r\n| summarize \r\n    CompletedJobs = countif(IsCompleted),\r\n    InProgressJobs = countif(IsInProgress),\r\n    FailedJobs = countif(IsFailed)\r\n| extend type = 'Purge completed jobs'",
                     "size": 3,
                     "noDataMessage": "No resources found",
                     "queryType": 0,
@@ -1787,7 +1783,7 @@
                   "type": 3,
                   "content": {
                     "version": "KqlItem/1.0",
-                    "query": "SnapshotsOperations_CL\r\n| where jobType == \"Purge\"\r\n| extend resourceGroup = extract(@\"/resourceGroups/([^/]+)\", 1, sourceVmId)\r\n| where resourceGroup in~ ({ResourceGroup:value})\r\n| where TimeGenerated >= {SnapshotAge:start} and TimeGenerated <= {SnapshotAge:end}\r\n| summarize Operations = make_set(jobStatus) by jobId\r\n| extend \r\n    IsCompleted = Operations has \"Purge Completed\" and not(Operations has \"Purge Failed\"),\r\n    IsInProgress = Operations has \"Purge In Progress\" and not(Operations has \"Purge Completed\") and not(Operations has \"Purge Failed\"),\r\n    IsFailed = Operations has \"Purge Failed\"\r\n| summarize \r\n    CompletedJobs = countif(IsCompleted),\r\n    InProgressJobs = countif(IsInProgress),\r\n    FailedJobs = countif(IsFailed)\r\n| extend type = 'Purge failed jobs'",
+                    "query": "SnapshotsOperations_CL\r\n| where jobType == \"Purge\"\r\n| extend resourceGroup = extract(@\"/resourcegroups/([^/]+)\", 1, tolower(sourceVmId))\r\n| where resourceGroup in~ (tolower({ResourceGroup:value}))\r\n| where TimeGenerated >= {SnapshotAge:start} and TimeGenerated <= {SnapshotAge:end}\r\n| summarize Operations = make_set(jobStatus) by jobId\r\n| extend \r\n    IsCompleted = Operations has \"Purge Completed\" and not(Operations has \"Purge Failed\"),\r\n    IsInProgress = Operations has \"Purge In Progress\" and not(Operations has \"Purge Completed\") and not(Operations has \"Purge Failed\"),\r\n    IsFailed = Operations has \"Purge Failed\"\r\n| summarize \r\n    CompletedJobs = countif(IsCompleted),\r\n    InProgressJobs = countif(IsInProgress),\r\n    FailedJobs = countif(IsFailed)\r\n| extend type = 'Purge failed jobs'",
                     "size": 3,
                     "noDataMessage": "No resources found",
                     "queryType": 0,
@@ -1829,7 +1825,7 @@
                   "type": 3,
                   "content": {
                     "version": "KqlItem/1.0",
-                    "query": "SnapshotsOperations_CL\r\n| where jobType == \"Purge\"\r\n| extend resourceGroup = extract(@\"/resourceGroups/([^/]+)\", 1, sourceVmId)\r\n| where resourceGroup in~ ({ResourceGroup:value})\r\n| where TimeGenerated >= {SnapshotAge:start} and TimeGenerated <= {SnapshotAge:end}\r\n| summarize Operations = make_set(jobStatus) by jobId\r\n| extend \r\n    IsCompleted = Operations has \"Purge Completed\" and not(Operations has \"Purge Failed\"),\r\n    IsInProgress = Operations has \"Purge In Progress\" and not(Operations has \"Purge Completed\") and not(Operations has \"Purge Failed\"),\r\n    IsFailed = Operations has \"Purge Failed\"\r\n| summarize \r\n    CompletedJobs = countif(IsCompleted),\r\n    InProgressJobs = countif(IsInProgress),\r\n    FailedJobs = countif(IsFailed)\r\n| extend type = 'Purge in progress jobs'",
+                    "query": "SnapshotsOperations_CL\r\n| where jobType == \"Purge\"\r\n| extend resourceGroup = extract(@\"/resourcegroups/([^/]+)\", 1, tolower(sourceVmId))\r\n| where resourceGroup in~ (tolower({ResourceGroup:value}))\r\n| where TimeGenerated >= {SnapshotAge:start} and TimeGenerated <= {SnapshotAge:end}\r\n| summarize Operations = make_set(jobStatus) by jobId\r\n| extend \r\n    IsCompleted = Operations has \"Purge Completed\" and not(Operations has \"Purge Failed\"),\r\n    IsInProgress = Operations has \"Purge In Progress\" and not(Operations has \"Purge Completed\") and not(Operations has \"Purge Failed\"),\r\n    IsFailed = Operations has \"Purge Failed\"\r\n| summarize \r\n    CompletedJobs = countif(IsCompleted),\r\n    InProgressJobs = countif(IsInProgress),\r\n    FailedJobs = countif(IsFailed)\r\n| extend type = 'Purge in progress jobs'",
                     "size": 3,
                     "noDataMessage": "No resources found",
                     "queryType": 0,
@@ -2080,7 +2076,8 @@
                           }
                         }
                       ],
-                      "rowLimit": 50,
+                      "rowLimit": 100,
+                      "filter": true,
                       "sortBy": [
                         {
                           "itemKey": "$gen_date_TimeGenerated_0",
@@ -2202,6 +2199,18 @@
                                 "operator": "==",
                                 "thresholdValue": "Error",
                                 "representation": "cancelled",
+                                "text": "{0}{1}"
+                              },
+                              {
+                                "operator": "==",
+                                "thresholdValue": "Snapshot Purge End",
+                                "representation": "Stop",
+                                "text": "{0}{1}"
+                              },
+                              {
+                                "operator": "==",
+                                "thresholdValue": "Snapshot Purge Start",
+                                "representation": "Start",
                                 "text": "{0}{1}"
                               },
                               {
@@ -2452,8 +2461,7 @@
                           "numberFormat": {
                             "unit": 25,
                             "options": {
-                              "style": "decimal",
-                              "maximumFractionDigits": 1
+                              "style": "decimal"
                             }
                           }
                         }
@@ -2579,12 +2587,6 @@
                               {
                                 "operator": "==",
                                 "thresholdValue": "Snapshot Copy End",
-                                "representation": "Stop",
-                                "text": "{0}{1}"
-                              },
-                              {
-                                "operator": "==",
-                                "thresholdValue": "Snapshot Create End",
                                 "representation": "Stop",
                                 "text": "{0}{1}"
                               },
@@ -2719,7 +2721,7 @@
     }
   ],
   "fallbackResourceIds": [
-    "/subscriptions/xxxxxxx/resourceGroups/rg"
+    "/subscriptions/xxxxxxxx-xxxxxx-xxxxxxx/resourceGroups/my-rg"
   ],
   "$schema": "https://github.com/Microsoft/Application-Insights-Workbooks/blob/master/schema/workbook.json"
 }
