@@ -80,28 +80,53 @@ export async function controlSnapshotCopy(queueItem: SnapshotCopyControl, contex
         }
 
     } catch (err) {
-        logger.error(err);
 
-        // End process
-        const msgError = `Snapshot copy control for disk ID ${queueItem.control.sourceDiskId} and snapshot ID ${queueItem.control.primarySnapshotId} failed with error ${_getString(err)}`;
-        const logEntryError: JobLogEntry = {
-            jobId: queueItem.control.jobId,
-            jobOperation: 'Error',
-            jobStatus: 'Snapshot Failed',
-            jobType: 'Snapshot',
-            message: msgError,
-            sourceVmId: queueItem.control.sourceVmId,
-            sourceDiskId: queueItem.control.sourceDiskId,
-            primarySnapshotId: queueItem.control.primarySnapshotId,
-            primaryLocation: queueItem.control.primaryLocation,
-            secondarySnapshotId: queueItem.control.secondarySnapshotId,
-            secondaryLocation: queueItem.control.secondaryLocation
+        // Normalize error text
+        const errMsg = _getString(err);
+        logger.error(errMsg);
+
+        // Detect "resource not found" style errors (RestError message, 404 status, or ARM ResourceNotFound code)
+        const isResourceNotFound =
+            /was not found/i.test(errMsg) ||
+            /ARMResourceNotFoundFix/i.test(errMsg) ||
+            (err as any)?.statusCode === 404 ||
+            (err as any)?.code === "ResourceNotFound";
+
+        // If the missing resource is the snapshot we're checking, treat as a terminal case (log and stop re-queueing)
+        const refersToThisSnapshot =
+            errMsg.includes(queueItem.snapshot.id ?? "") ||
+            errMsg.includes(queueItem.snapshot.name ?? "");
+
+        if (isResourceNotFound && refersToThisSnapshot) {
+            logger.warn(`Snapshot ${queueItem.snapshot.name} appears to be missing (resource not found). Let's requeue control message.`);
+
+            // Re-send control copy event with a visibility timeout of 1 hour
+            const retryAfter = process.env.SNAPSHOT_RETRY_CONTROL_COPY_MINUTES ? parseInt(process.env.SNAPSHOT_RETRY_CONTROL_COPY_MINUTES)*60 : 60*60; // 1 hour in seconds
+            const queueManager = new QueueManager(logger, process.env.AzureWebJobsStorage__accountname || "", 'copy-control');
+            await queueManager.sendMessage(JSON.stringify(queueItem), retryAfter);
         }
-        const logManager = new LogManager(logger);
-        await logManager.uploadLog(logEntryError);
+        else {
+            // End process
+            const msgError = `Snapshot copy control for disk ID ${queueItem.control.sourceDiskId} and snapshot ID ${queueItem.control.primarySnapshotId} failed with error ${_getString(err)}`;
+            const logEntryError: JobLogEntry = {
+                jobId: queueItem.control.jobId,
+                jobOperation: 'Error',
+                jobStatus: 'Snapshot Failed',
+                jobType: 'Snapshot',
+                message: msgError,
+                sourceVmId: queueItem.control.sourceVmId,
+                sourceDiskId: queueItem.control.sourceDiskId,
+                primarySnapshotId: queueItem.control.primarySnapshotId,
+                primaryLocation: queueItem.control.primaryLocation,
+                secondarySnapshotId: queueItem.control.secondarySnapshotId,
+                secondaryLocation: queueItem.control.secondaryLocation
+            }
+            const logManager = new LogManager(logger);
+            await logManager.uploadLog(logEntryError);
 
-        // This rethrown exception will only fail the individual invocation, instead of crashing the whole process
-        throw err;
+            // This rethrown exception will only fail the individual invocation, instead of crashing the whole process
+            throw err;
+        }
     }
 }
 

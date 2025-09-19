@@ -1,7 +1,7 @@
 import { app, InvocationContext, output } from "@azure/functions";
 
 import { AzureLogger } from '../common/logger';
-import { SnapshotSource, SnapshotCopy, JobLogEntry, SnapshotControl } from "../common/interfaces";
+import { SnapshotSource, SnapshotCopy, JobLogEntry, SnapshotControl, VmRecoveryInfo } from "../common/interfaces";
 import { generateGuid } from "../common/utils";
 import { SnapshotManager } from "../controllers/snapshot.manager";
 import { LogManager } from "../controllers/log.manager";
@@ -94,6 +94,14 @@ export async function startSnapshotCreationJob(queueItem: SnapshotSource, contex
             context.extraOutputs.set(purgeJobsQueueOutput, purgeEvent);
         }
         else {
+            // Compose VM recovery info
+            const recoveryInfo: VmRecoveryInfo = {
+                vmName: queueItem.vmName,
+                vmSize: queueItem.vmSize,
+                diskSku: queueItem.diskSku,
+                diskProfile: queueItem.diskProfile,
+                ipAddress: queueItem.ipAddress
+            };  
 
             // E. Start snapshot copy to secondary region
             const snapshotCopy: SnapshotCopy = {
@@ -102,6 +110,7 @@ export async function startSnapshotCreationJob(queueItem: SnapshotSource, contex
                 sourceDiskId: queueItem.diskId,
                 primarySnapshot: primarySnapshot,
                 secondaryLocation: process.env.SNAPSHOT_SECONDARY_LOCATION || '',
+                vmRecoveryInfo: recoveryInfo,
                 attempt: 0
             };
             // Send notification using Storage Queue

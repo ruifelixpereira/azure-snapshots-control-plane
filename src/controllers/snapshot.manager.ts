@@ -5,8 +5,8 @@ import { ResourceGraphManager } from "./graph.manager";
 import { DefaultAzureCredential } from "@azure/identity";
 import { SnapshotError, _getString } from "../common/apperror";
 import { TAG_SMCP_LOCATION_TYPE, TAG_SMCP_SOURCE_DISK_ID } from "../common/constants";
-import { SnapshotSource, Snapshot } from "../common/interfaces";
-import { extractDiskNameFromDiskId, formatDateYYYYMMDDTHHMM } from "../common/utils";
+import { SnapshotSource, Snapshot, VmRecoveryInfo } from "../common/interfaces";
+import { formatDateYYYYMMDDTHHMM } from "../common/utils";
 
  
 export class SnapshotManager {
@@ -23,6 +23,15 @@ export class SnapshotManager {
     public async createIncrementalSnapshot(source: SnapshotSource): Promise<Snapshot> {
 
         try {
+            // Compose VM recovery info
+            const recoveryInfo: VmRecoveryInfo = {
+                vmName: source.vmName,
+                vmSize: source.vmSize,
+                diskSku: source.diskSku,
+                diskProfile: source.diskProfile,
+                ipAddress: source.ipAddress
+            };  
+
             // Define the snapshot parameters
             const snapshotParams = {
                 location: source.location,
@@ -36,7 +45,8 @@ export class SnapshotManager {
                 incremental: true, // Set to true for incremental snapshot
                 tags: { 
                     "smcp-location-type": "primary",
-                    "smcp-source-disk-id": source.diskId
+                    "smcp-source-disk-id": source.diskId,
+                    "smcp-recovery-info": JSON.stringify(recoveryInfo)
                 }
             };
 
@@ -70,7 +80,7 @@ export class SnapshotManager {
     }
 
 
-    public async startCopySnapshotToAnotherRegion(sourceDiskId: string, sourceSnapshot: Snapshot, targetLocation: string): Promise<Snapshot> {
+    public async startCopySnapshotToAnotherRegion(sourceDiskId: string, sourceSnapshot: Snapshot, targetLocation: string, vmRecoveryInfo: VmRecoveryInfo): Promise<Snapshot> {
 
         try {
             const credential = new DefaultAzureCredential();
@@ -92,7 +102,8 @@ export class SnapshotManager {
                 incremental: true, // Set to true for incremental snapshot
                 tags: { 
                     "smcp-location-type": "secondary",
-                    "smcp-source-disk-id": sourceDiskId
+                    "smcp-source-disk-id": sourceDiskId,
+                    "smcp-recovery-info": JSON.stringify(vmRecoveryInfo)
                 }
             };
 

@@ -10,6 +10,17 @@ export interface SnapshotSource {
     diskId: string;
     diskName: string;
     diskSizeGB: string;
+    diskSku: string;
+    diskProfile: 'os-disk' | 'data-disk';
+    ipAddress: string;
+}
+
+export interface VmRecoveryInfo {
+    vmName: string;
+    vmSize: string;
+    diskSku: string;
+    diskProfile: 'os-disk' | 'data-disk';
+    ipAddress: string;
 }
 
 export interface Snapshot {
@@ -37,6 +48,7 @@ export interface SnapshotCopy {
     sourceDiskId: string;
     primarySnapshot: Snapshot;
     secondaryLocation: string;
+    vmRecoveryInfo: VmRecoveryInfo
     attempt: number;
 }
 
