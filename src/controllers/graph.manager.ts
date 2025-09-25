@@ -24,7 +24,7 @@ export class ResourceGraphManager {
                     | where type =~ 'microsoft.compute/virtualMachines'
                     | where tags["smcp-backup"] =~ "on"
                     | mv-expand nic=properties.networkProfile.networkInterfaces
-                    | project vmName=name, resourceGroup, vmId = tolower(id), vmSize = properties.hardwareProfile.vmSize, location, subscriptionId, osDiskId = properties.storageProfile.osDisk.managedDisk.id, nicId = tolower(tostring(nic.id))
+                    | project vmName=name, resourceGroup, vmId = tolower(id), vmSize = properties.hardwareProfile.vmSize, location, subscriptionId, osDiskId = properties.storageProfile.osDisk.managedDisk.id, nicId = tolower(tostring(nic.id)), securityType = coalesce(properties.securityProfile.securityType, "Standard")
                     | join (
                         resources
                         | where type =~ 'microsoft.compute/disks' and isnotempty(managedBy)
@@ -37,7 +37,7 @@ export class ResourceGraphManager {
                         | project nicId = tolower(id), ipAddress = tostring(ipconfig.properties.privateIPAddress)
                         ) on nicId
                     | extend diskProfile = iff(tolower(diskId) == tolower(osDiskId), 'os-disk', 'data-disk')
-                    | project subscriptionId, resourceGroup, location, vmId, vmName, vmSize, diskId, diskName, diskSizeGB, diskSku, diskProfile, ipAddress`
+                    | project subscriptionId, resourceGroup, location, vmId, vmName, vmSize, diskId, diskName, diskSizeGB, diskSku, diskProfile, ipAddress, securityType`
                 },
                 { resultFormat: "table" }
             );

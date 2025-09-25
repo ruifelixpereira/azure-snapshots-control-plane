@@ -13,6 +13,7 @@ export interface SnapshotSource {
     diskSku: string;
     diskProfile: 'os-disk' | 'data-disk';
     ipAddress: string;
+    securityType: string;
 }
 
 export interface VmRecoveryInfo {
@@ -21,6 +22,7 @@ export interface VmRecoveryInfo {
     diskSku: string;
     diskProfile: 'os-disk' | 'data-disk';
     ipAddress: string;
+    securityType: string;
 }
 
 export interface Snapshot {

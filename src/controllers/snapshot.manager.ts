@@ -29,7 +29,8 @@ export class SnapshotManager {
                 vmSize: source.vmSize,
                 diskSku: source.diskSku,
                 diskProfile: source.diskProfile,
-                ipAddress: source.ipAddress
+                ipAddress: source.ipAddress,
+                securityType: source.securityType
             };  
 
             // Define the snapshot parameters

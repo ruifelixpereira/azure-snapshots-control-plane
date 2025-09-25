@@ -109,7 +109,7 @@ FUNCAPP_ID=$(az functionapp identity show --name $funcAppName --resource-group $
 STORAGE_ACCOUNT_ID=$(az storage account show --name $storageAccountName --resource-group $resourceGroupName --query id -o tsv)
 az role assignment create --assignee $FUNCAPP_ID --role "Storage Blob Data Owner" --scope $STORAGE_ACCOUNT_ID
 az role assignment create --assignee $FUNCAPP_ID --role "Storage Queue Data Contributor" --scope $STORAGE_ACCOUNT_ID
-az role assignment create --assignee $FUNCAPP_ID --role "Storage Table Data Owner" --scope $STORAGE_ACCOUNT_ID
+az role assignment create --assignee $FUNCAPP_ID --role "Storage Table Data Contributor" --scope $STORAGE_ACCOUNT_ID
 
 #
 # Create Storage Queues

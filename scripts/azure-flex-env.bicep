@@ -8,6 +8,7 @@ param prefix string = 'snmg' // prefix for resource names
 param storageAccountName string = '${prefix}snapmngsa01'
 param funcAppName string = '${prefix}snapmng-fa01'
 param location string = resourceGroup().location
+param appInsightsName string = '${prefix}snapmng-ai01'
 param workspaceName string = '${prefix}snapmng-law01'
 param tableName string = 'SnapshotsOperations_CL'
 param dcrName string = '${prefix}snapmng-dcr01'
@@ -142,7 +143,8 @@ resource functionApp 'Microsoft.Web/sites@2024-11-01' = {
 
 }
 
-// Role Assignments
+// Role Assignments for storage
+// Check https://learn.microsoft.com/en-us/azure/role-based-access-control/built-in-roles/storage
 resource blobRoleAssignment 'Microsoft.Authorization/roleAssignments@2020-04-01-preview' = {
   name: guid(functionApp.name, storageAccount.id, 'Storage Blob Data Owner')
   scope: storageAccount
@@ -164,6 +166,17 @@ resource queueRoleAssignment 'Microsoft.Authorization/roleAssignments@2020-04-01
   }
 }
 
+resource tableRoleAssignment 'Microsoft.Authorization/roleAssignments@2020-04-01-preview' = {
+  name: guid(functionApp.name, storageAccount.id, 'Storage Table Data Contributor')
+  scope: storageAccount
+  properties: {
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '0a9a7e1f-b9d0-4cc4-a60d-0319b160aaa3') // Storage Table Data Contributor
+
+    principalId: functionApp.identity.principalId
+    principalType: 'ServicePrincipal'
+  }
+}
+
 resource logAnalytics 'Microsoft.OperationalInsights/workspaces@2021-06-01' = {
   name: workspaceName
   location: location
@@ -172,6 +185,21 @@ resource logAnalytics 'Microsoft.OperationalInsights/workspaces@2021-06-01' = {
       name: 'PerGB2018'
     }
     retentionInDays: 30
+  }
+}
+
+// Application Insights for Function App monitoring
+resource applicationInsights 'Microsoft.Insights/components@2020-02-02' = {
+  name: appInsightsName
+  location: location
+  kind: 'web'
+  properties: {
+    Application_Type: 'web'
+    WorkspaceResourceId: logAnalytics.id
+    IngestionMode: 'LogAnalytics'
+    RetentionInDays: 30
+    publicNetworkAccessForIngestion: 'Enabled'
+    publicNetworkAccessForQuery: 'Enabled'
   }
 }
 
@@ -351,6 +379,8 @@ resource appSettings 'Microsoft.Web/sites/config@2022-03-01' = {
   name: 'appsettings'
   properties: {
     AzureWebJobsStorage__accountname: storageAccount.name
+    APPLICATIONINSIGHTS_CONNECTION_STRING: applicationInsights.properties.ConnectionString
+    APPINSIGHTS_INSTRUMENTATIONKEY: applicationInsights.properties.InstrumentationKey
     LOGS_INGESTION_ENDPOINT: dce.properties.logsIngestion.endpoint
     LOGS_INGESTION_RULE_ID: dcr.properties.immutableId
     LOGS_INGESTION_STREAM_NAME: 'Custom-${tableName}-source'

@@ -100,7 +100,8 @@ export async function startSnapshotCreationJob(queueItem: SnapshotSource, contex
                 vmSize: queueItem.vmSize,
                 diskSku: queueItem.diskSku,
                 diskProfile: queueItem.diskProfile,
-                ipAddress: queueItem.ipAddress
+                ipAddress: queueItem.ipAddress,
+                securityType: queueItem.securityType
             };  
 
             // E. Start snapshot copy to secondary region
