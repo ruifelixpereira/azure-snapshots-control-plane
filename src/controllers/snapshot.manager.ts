@@ -7,6 +7,7 @@ import { SnapshotError, _getString } from "../common/apperror";
 import { TAG_SMCP_LOCATION_TYPE, TAG_SMCP_SOURCE_DISK_ID } from "../common/constants";
 import { SnapshotSource, Snapshot, VmRecoveryInfo } from "../common/interfaces";
 import { formatDateYYYYMMDDTHHMM } from "../common/utils";
+import { getSubscriptionAndResourceGroup } from '../common/azure-resource-utils';
 
  
 export class SnapshotManager {
@@ -56,18 +57,19 @@ export class SnapshotManager {
 
             // Create the snapshot
             const result = await this.computeClient.snapshots.beginCreateOrUpdateAndWait(
-                source.resourceGroup,
+                process.env.SNAPSHOT_TARGET_RESOURCE_GROUP || source.resourceGroup,
                 snapshotName,
                 snapshotParams
             );
 
             // Map the result to the Snapshot interface
+            const parsed = getSubscriptionAndResourceGroup(result.id);
             const snapshot: Snapshot = {
                 id: result.id,
                 name: result.name,
                 location: result.location,
-                resourceGroup: source.resourceGroup,
-                subscriptionId: source.subscriptionId
+                resourceGroup: parsed.resourceGroupName,
+                subscriptionId: parsed.subscriptionId
             };
 
             // Return the created snapshot
@@ -169,8 +171,10 @@ export class SnapshotManager {
     ): Promise<string[]> {
         
         try {
-            const primaryCutoff = new Date(baseDate.getTime() - primaryDays * 24 * 60 * 60 * 1000);
-            const secondaryCutoff = new Date(baseDate.getTime() - secondaryDays * 24 * 60 * 60 * 1000);
+            // Create a date with only year, month, day from baseDate and set time to 00:00
+            const baseDateMidnight = new Date(baseDate.getFullYear(), baseDate.getMonth(), baseDate.getDate());
+            const primaryCutoff = new Date(baseDateMidnight.getTime() - primaryDays * 24 * 60 * 60 * 1000);
+            const secondaryCutoff = new Date(baseDateMidnight.getTime() - secondaryDays * 24 * 60 * 60 * 1000);
 
             // List all snapshots in the resource group
             const allSnapshots: Array<any> = [];

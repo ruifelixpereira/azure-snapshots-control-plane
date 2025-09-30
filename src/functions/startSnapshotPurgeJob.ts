@@ -6,7 +6,7 @@ import { SnapshotManager } from "../controllers/snapshot.manager";
 import { LogManager } from "../controllers/log.manager";
 import { QueueManager } from "../controllers/queue.manager";
 import { _getString } from "../common/apperror";
-import { extractResourceGroupFromResourceId, extractSubscriptionIdFromResourceId } from "../common/utils";
+import { getSubscriptionAndResourceGroup } from '../common/azure-resource-utils';
 
 
 export async function startSnapshotPurgeJob(queueItem: SnapshotControl, context: InvocationContext): Promise<void> {
@@ -17,11 +17,10 @@ export async function startSnapshotPurgeJob(queueItem: SnapshotControl, context:
         const logManager = new LogManager(logger);
 
         // Get snapshots subscriptionId and resource group in primary/secondary location
-        const subscriptionId = extractSubscriptionIdFromResourceId(queueItem.sourceDiskId);
-        const resourceGroup = extractResourceGroupFromResourceId(queueItem.sourceDiskId);
+        const parsed = getSubscriptionAndResourceGroup(queueItem.primarySnapshotId);
 
         // A. Start old snapshots purge
-        const snapshotManager = new SnapshotManager(logger, subscriptionId);
+        const snapshotManager = new SnapshotManager(logger, parsed.subscriptionId);
 
         const now = new Date();
         const primaryNumberOfDays = process.env.SNAPSHOT_PURGE_PRIMARY_LOCATION_NUMBER_OF_DAYS ? parseInt(process.env.SNAPSHOT_PURGE_PRIMARY_LOCATION_NUMBER_OF_DAYS) : 5;
@@ -30,7 +29,7 @@ export async function startSnapshotPurgeJob(queueItem: SnapshotControl, context:
         logger.info(`Start purging snapshots for disk ID ${queueItem.sourceDiskId} in all locations`);
 
         const snapshotsBeingPurged = await snapshotManager.startPurgeSnapshotsOfDiskIdOlderThan(
-            resourceGroup,
+            parsed.resourceGroupName,
             queueItem.sourceDiskId,
             now,
             primaryNumberOfDays,

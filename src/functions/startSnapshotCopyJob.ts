@@ -99,7 +99,8 @@ export async function startSnapshotCopyJob(queueItem: SnapshotCopy, context: Inv
 
             // requeue the control copy message with delay (exponential backoff)
             // set visibility/time to retry later (e.g., 60s or exponential based on attempt count)
-            const randomDelay = getRandomDelaySeconds(8, 20); 
+            // former value: 8-20 minutes
+            const randomDelay = getRandomDelaySeconds(6, 12); 
             await qm.sendMessage(JSON.stringify(queueItem), randomDelay); // Delay in seconds
 
         } else {

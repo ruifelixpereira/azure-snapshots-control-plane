@@ -6,7 +6,7 @@ import { SnapshotManager } from "../controllers/snapshot.manager";
 import { LogManager } from "../controllers/log.manager";
 import { QueueManager } from "../controllers/queue.manager";
 import { _getString } from "../common/apperror";
-import { extractResourceGroupFromResourceId, extractSubscriptionIdFromResourceId } from "../common/utils";
+import { getSubscriptionAndResourceGroup } from '../common/azure-resource-utils';
 
 
 export async function controlSnapshotPurge(queueItem: SnapshotPurgeControl, context: InvocationContext): Promise<void> {
@@ -18,13 +18,12 @@ export async function controlSnapshotPurge(queueItem: SnapshotPurgeControl, cont
         logger.info(`Checking the snapshot purge for disk ID ${queueItem.source.sourceDiskId} in all locations`);
 
         // Get snapshots subscriptionId and resource group in primary/secondary location
-        const subscriptionId = extractSubscriptionIdFromResourceId( queueItem.source.sourceDiskId );
-        const resourceGroup = extractResourceGroupFromResourceId( queueItem.source.sourceDiskId);
+        const parsed = getSubscriptionAndResourceGroup(queueItem.source.primarySnapshotId);
 
         // A. Check if snapshot purge already finished
-        const snapshotManager = new SnapshotManager(logger, subscriptionId);
+        const snapshotManager = new SnapshotManager(logger, parsed.subscriptionId);
 
-        const snapshotsFinished = await snapshotManager.areSnapshotsDeleted(resourceGroup, queueItem.snapshotsNameToPurge);
+        const snapshotsFinished = await snapshotManager.areSnapshotsDeleted(parsed.resourceGroupName, queueItem.snapshotsNameToPurge);
         const finished = Object.values(snapshotsFinished).every(v => v === true);
 
         if (finished) {
