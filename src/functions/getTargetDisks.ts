@@ -16,9 +16,13 @@ export async function getTargetDisks(myTimer: Timer, context: InvocationContext)
     logger.info('Timer function getTargetDisks trigger request.');
 
     try {
+        // Get trigger tag from environment variable
+        const triggerTag = process.env['SNAPSHOT_BACKUP_TRIGGER_TAG'] ? JSON.parse(process.env['SNAPSHOT_BACKUP_TRIGGER_TAG']) : { key: 'smcp-backup', value: 'on' };
+
         // Get disks to be backed up
         const graphManager = new ResourceGraphManager(logger);
-        const disksToBackup = await graphManager.getDisksToBackup();
+        const disksToBackup = await graphManager.getDisksToBackup(triggerTag.key, triggerTag.value);
+        logger.info(`Disks to backup: ${disksToBackup.length} available.`);
 
         if (disksToBackup.length > 0) {
             // Trigger notifications using Storage Queue: to start a new job for source disk backup with snapshots

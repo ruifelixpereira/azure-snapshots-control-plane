@@ -15,14 +15,14 @@ export class ResourceGraphManager {
     }
 
     // Get all azure disks to backup using snapshots (tag smcp-backup=on)
-    public async getDisksToBackup(): Promise<Array<SnapshotSource>> {
+    public async getDisksToBackup(triggerTagKey: string, triggerTagValue: string): Promise<Array<SnapshotSource>> {
 
         try {
             const result = await this.clientGraph.resources(
                 {
                     query: `resources
                     | where type =~ 'microsoft.compute/virtualMachines'
-                    | where tags["smcp-backup"] =~ "on"
+                    | where tags["${triggerTagKey}"] =~ "${triggerTagValue}"
                     | mv-expand nic=properties.networkProfile.networkInterfaces
                     | project vmName=name, resourceGroup, vmId = tolower(id), vmSize = properties.hardwareProfile.vmSize, location, subscriptionId, osDiskId = properties.storageProfile.osDisk.managedDisk.id, nicId = tolower(tostring(nic.id)), securityType = coalesce(properties.securityProfile.securityType, "Standard")
                     | join (

@@ -32,7 +32,16 @@ export class SnapshotManager {
                 diskProfile: source.diskProfile,
                 ipAddress: source.ipAddress,
                 securityType: source.securityType
-            };  
+            };
+
+            // Add mandatory tags from environment variable
+            let allTags = {};
+            const mandatoryTags = JSON.parse(process.env.SNAPSHOT_MANDATORY_TAGS || "[]");
+            for (const tag of mandatoryTags) {
+                if (tag.key && tag.value) {
+                    allTags[tag.key] = tag.value;
+                }
+            }
 
             // Define the snapshot parameters
             const snapshotParams = {
@@ -45,7 +54,7 @@ export class SnapshotManager {
                     sourceResourceId: source.diskId,
                 },
                 incremental: true, // Set to true for incremental snapshot
-                tags: { 
+                tags: { ...allTags,
                     "smcp-location-type": "primary",
                     "smcp-source-disk-id": source.diskId,
                     "smcp-recovery-info": JSON.stringify(recoveryInfo)
@@ -92,6 +101,15 @@ export class SnapshotManager {
             // Get the source snapshot
             //const source = await computeClient.snapshots.get(sourceSnapshot.resourceGroup, sourceSnapshot.name);
 
+            // Add mandatory tags from environment variable
+            let allTags = {};
+            const mandatoryTags = JSON.parse(process.env.SNAPSHOT_MANDATORY_TAGS || "[]");
+            for (const tag of mandatoryTags) {
+                if (tag.key && tag.value) {
+                    allTags[tag.key] = tag.value;
+                }
+            }
+
             // Create the snapshot in the target region
             const targetSnapshotParams = {
                 location: targetLocation,
@@ -103,7 +121,7 @@ export class SnapshotManager {
                     sourceResourceId: sourceSnapshot.id // source.id // Use the source snapshot ID
                 },
                 incremental: true, // Set to true for incremental snapshot
-                tags: { 
+                tags: { ...allTags,
                     "smcp-location-type": "secondary",
                     "smcp-source-disk-id": sourceDiskId,
                     "smcp-recovery-info": JSON.stringify(vmRecoveryInfo)
