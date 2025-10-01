@@ -142,10 +142,13 @@ Adjust these settings in your Function app environment:
 | LOGS_INGESTION_RULE_ID                           | Immutable ID for Data collection rule         | Used to ingest logs into the log analytics workspace.          |
 | LOGS_INGESTION_STREAM_NAME                       | Name of the stream to be used for ingestion   | Used to ingest logs into the log analytics workspace.          |
 | SNAPSHOT_SECONDARY_LOCATION                      | Azure region name                             | Snapshots copy destination as a secondary region for BCDR.     |
+| SNAPSHOT_TARGET_RESOURCE_GROUP                   | Resource group name                           | Name of the resource group where the snapshots are created.    |
 | SNAPSHOT_RETRY_CONTROL_COPY_MINUTES              | Numeric value in minutes (e.g., 15)           | Delay to check if a snapshot copy is completed.                |
 | SNAPSHOT_RETRY_CONTROL_PURGE_MINUTES             | Numeric value in minutes (e.g., 15)           | Delay to check if a snapshot purge is completed.               |
 | SNAPSHOT_PURGE_PRIMARY_LOCATION_NUMBER_OF_DAYS   | Numeric value in days (e.g., 1)               | Snapshot retention period to consider in the primary region.   |
-| SNAPSHOT_PURGE_SECONDARY_LOCATION_NUMBER_OF_DAYS | Numeric value in days (e.g., 30)               | Snapshot retention period to consider in the secondary region. |
+| SNAPSHOT_PURGE_SECONDARY_LOCATION_NUMBER_OF_DAYS | Numeric value in days (e.g., 30)              | Snapshot retention period to consider in the secondary region. |
+| SNAPSHOT_MANDATORY_TAGS                          | Array of tag elements in JSON format [{"key":"tag_name","value":"tag_value"},...] (e.g., [{"key":"app","value":"xpto"},{"key":"cost-center","value":"CC1234"}]) | List of tags to add to the new snapshot resources. |
+| SNAPSHOT_BACKUP_TRIGGER_TAG                      | Tag name and value in JSON format {"key":"tag-name","value":"tag-value"} (e.g., {"key":"smcp-backup","value":"on"}) | Backup trigger tag (name and value) to identify VMs for backup. |
 
 You can go directly to Azure Portal, or you can use Azure CLI to set these settings:
 

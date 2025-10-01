@@ -15,6 +15,8 @@
     "SNAPSHOT_RETRY_CONTROL_COPY_MINUTES": 5,
     "SNAPSHOT_RETRY_CONTROL_PURGE_MINUTES": 5,
     "SNAPSHOT_PURGE_PRIMARY_LOCATION_NUMBER_OF_DAYS": 1,
-    "SNAPSHOT_PURGE_SECONDARY_LOCATION_NUMBER_OF_DAYS": 3
+    "SNAPSHOT_PURGE_SECONDARY_LOCATION_NUMBER_OF_DAYS": 3,
+    "SNAPSHOT_MANDATORY_TAGS": "[{\"key\":\"app\",\"value\":\"xpto\"},{\"key\":\"owner\",\"value\":\"xxxx\"}]",
+    "SNAPSHOT_BACKUP_TRIGGER_TAG": "{\"key\":\"smcp-backup\",\"value\":\"on\"}"
   }
 }
