@@ -174,9 +174,7 @@ You can check the monitoring guidelines at [MONITORING](docs/monitoring.md).
 
 ## Recovery of Virtual Machines using Snapshots
 
-You can use the provided Bash script (`recovery/recover-cli.sh`) to manage Azure Virtual Machines and their snapshots, supporting restore and automation scenarios. The script is designed for sysadmins and DevOps engineers who need to automate VM recovery, snapshot management, and batch operations in Azure.
-
-Check all the details on how to use this CLI at [RECOVERY](recovery/README.md)
+For virtual machine recovery at scale, based on the snapshots managed by this solution, please refer to the [Snapshot Recovery Solution](https://github.com/ruifelixpereira/azure-snapshots-recovery) that provides a recovery CLI for automation scenarios. This CLI is designed for sysadmins and DevOps engineers who need to automate VM recovery, snapshot management, and batch operations in Azure.
 
 
 ## Create New Virtual Machines from Snapshots
@@ -190,3 +188,4 @@ Check all the details on how to use this CLI at [NEW VM](new-vm/README.md)
 
 - [Azure Snapshots Insights Workbook](https://github.com/dolevshor/Azure-Snapshots-Insights)
 - [Azure Snapshots: Simplify Management and Monitoring](https://techcommunity.microsoft.com/blog/azureforisvandstartupstechnicalblog/azure-snapshots-simplify-management-and-monitoring/4255837)
+- [Azure Snapshots Recovery](https://github.com/ruifelixpereira/azure-snapshots-recovery)
