@@ -7,6 +7,7 @@ import { LogManager } from "../controllers/log.manager";
 import { QueueManager } from "../controllers/queue.manager";
 import { _getString } from "../common/apperror";
 import { getSubscriptionAndResourceGroup } from '../common/azure-resource-utils';
+import { QUEUE_PURGE_CONTROL } from "../common/constants";
 
 
 export async function controlSnapshotPurge(queueItem: SnapshotPurgeControl, context: InvocationContext): Promise<void> {
@@ -52,7 +53,7 @@ export async function controlSnapshotPurge(queueItem: SnapshotPurgeControl, cont
             // Re-send control purge event with a visibility timeout of 1 hour
             const retryAfter = process.env.SNAPSHOT_RETRY_CONTROL_PURGE_MINUTES ? parseInt(process.env.SNAPSHOT_RETRY_CONTROL_PURGE_MINUTES)*60 : 60*60; // 1 hour in seconds
             logger.info(`Snapshot purge still in progress. Re-sending control purge event for disk ID ${queueItem.source.sourceDiskId} with retry after ${retryAfter} seconds`);
-            const queueManager = new QueueManager(logger, process.env.AzureWebJobsStorage__accountname || "", 'purge-control');
+            const queueManager = new QueueManager(logger, process.env.AzureWebJobsStorage__accountname || "", QUEUE_PURGE_CONTROL);
             await queueManager.sendMessage(JSON.stringify(queueItem), retryAfter);
         }
 
@@ -83,7 +84,7 @@ export async function controlSnapshotPurge(queueItem: SnapshotPurgeControl, cont
 }
 
 app.storageQueue('controlSnapshotPurge', {
-    queueName: 'purge-control',
+    queueName: QUEUE_PURGE_CONTROL,
     connection: 'AzureWebJobsStorage',
     handler: controlSnapshotPurge
 });

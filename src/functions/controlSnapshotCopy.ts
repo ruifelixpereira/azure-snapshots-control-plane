@@ -6,10 +6,11 @@ import { SnapshotManager } from "../controllers/snapshot.manager";
 import { LogManager } from "../controllers/log.manager";
 import { QueueManager } from "../controllers/queue.manager";
 import { _getString } from "../common/apperror";
+import { QUEUE_COPY_CONTROL, QUEUE_PURGE_JOBS } from "../common/constants";
 
 
 const purgeJobsQueueOutput = output.storageQueue({
-    queueName: 'purge-jobs',
+    queueName: QUEUE_PURGE_JOBS,
     connection: 'AzureWebJobsStorage'
 });
 
@@ -75,7 +76,7 @@ export async function controlSnapshotCopy(queueItem: SnapshotCopyControl, contex
             // Re-send control copy event with a visibility timeout of 1 hour
             const retryAfter = process.env.SNAPSHOT_RETRY_CONTROL_COPY_MINUTES ? parseInt(process.env.SNAPSHOT_RETRY_CONTROL_COPY_MINUTES)*60 : 60*60; // 1 hour in seconds
             logger.info(`Snapshot copy still in progress. Re-sending control copy event for snapshot ID ${queueItem.snapshot.id} with retry after ${retryAfter} seconds`);
-            const queueManager = new QueueManager(logger, process.env.AzureWebJobsStorage__accountname || "", 'copy-control');
+            const queueManager = new QueueManager(logger, process.env.AzureWebJobsStorage__accountname || "", QUEUE_COPY_CONTROL);
             await queueManager.sendMessage(JSON.stringify(queueItem), retryAfter);
         }
 
@@ -102,7 +103,7 @@ export async function controlSnapshotCopy(queueItem: SnapshotCopyControl, contex
 
             // Re-send control copy event with a visibility timeout of 1 hour
             const retryAfter = process.env.SNAPSHOT_RETRY_CONTROL_COPY_MINUTES ? parseInt(process.env.SNAPSHOT_RETRY_CONTROL_COPY_MINUTES)*60 : 60*60; // 1 hour in seconds
-            const queueManager = new QueueManager(logger, process.env.AzureWebJobsStorage__accountname || "", 'copy-control');
+            const queueManager = new QueueManager(logger, process.env.AzureWebJobsStorage__accountname || "", QUEUE_COPY_CONTROL);
             await queueManager.sendMessage(JSON.stringify(queueItem), retryAfter);
         }
         else {
@@ -131,7 +132,7 @@ export async function controlSnapshotCopy(queueItem: SnapshotCopyControl, contex
 }
 
 app.storageQueue('controlSnapshotCopy', {
-    queueName: 'copy-control',
+    queueName: QUEUE_COPY_CONTROL,
     connection: 'AzureWebJobsStorage',
     extraOutputs: [
         purgeJobsQueueOutput

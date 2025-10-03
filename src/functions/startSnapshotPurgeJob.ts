@@ -7,6 +7,7 @@ import { LogManager } from "../controllers/log.manager";
 import { QueueManager } from "../controllers/queue.manager";
 import { _getString } from "../common/apperror";
 import { getSubscriptionAndResourceGroup } from '../common/azure-resource-utils';
+import { QUEUE_PURGE_CONTROL, QUEUE_PURGE_JOBS } from "../common/constants";
 
 
 export async function startSnapshotPurgeJob(queueItem: SnapshotControl, context: InvocationContext): Promise<void> {
@@ -38,10 +39,6 @@ export async function startSnapshotPurgeJob(queueItem: SnapshotControl, context:
 
         if (snapshotsBeingPurged.length > 0) {
 
-            // Prepare control purge event
-            const queueManager = new QueueManager(logger, process.env.AzureWebJobsStorage__accountname || "", 'purge-control');
-            const retryAfter = process.env.SNAPSHOT_RETRY_CONTROL_PURGE_MINUTES ? parseInt(process.env.SNAPSHOT_RETRY_CONTROL_PURGE_MINUTES)*60 : 60*60; // 1 hour in seconds
-
             // Log the purge operation
             const msgPurge = `Started purging snapshots for disk ID ${queueItem.sourceDiskId} in all locations`;
             logger.info(msgPurge);
@@ -63,6 +60,10 @@ export async function startSnapshotPurgeJob(queueItem: SnapshotControl, context:
 
             // B. Send control purge event with a visibility timeout
             logger.info(`Sending control purge event for disk ID ${queueItem.sourceDiskId} in all locations`);
+
+            // Prepare control purge event
+            const queueManager = new QueueManager(logger, process.env.AzureWebJobsStorage__accountname || "", QUEUE_PURGE_CONTROL);
+            const retryAfter = process.env.SNAPSHOT_RETRY_CONTROL_PURGE_MINUTES ? parseInt(process.env.SNAPSHOT_RETRY_CONTROL_PURGE_MINUTES)*60 : 60*60; // 1 hour in seconds
 
             const purgeControl: SnapshotPurgeControl = {
                 source: queueItem,
@@ -99,7 +100,7 @@ export async function startSnapshotPurgeJob(queueItem: SnapshotControl, context:
 }
 
 app.storageQueue('startSnapshotPurgeJob', {
-    queueName: 'purge-jobs',
+    queueName: QUEUE_PURGE_JOBS,
     connection: 'AzureWebJobsStorage',
     handler: startSnapshotPurgeJob
 });

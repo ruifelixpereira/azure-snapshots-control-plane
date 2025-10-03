@@ -7,6 +7,7 @@ import { LogManager } from "../controllers/log.manager";
 import { QueueManager } from "../controllers/queue.manager";
 import { _getString } from "../common/apperror";
 import { getRandomDelaySeconds } from "../common/utils";
+import { QUEUE_COPY_CONTROL, QUEUE_COPY_JOBS } from "../common/constants";
 
 
 export async function startSnapshotCopyJob(queueItem: SnapshotCopy, context: InvocationContext): Promise<void> {
@@ -56,7 +57,7 @@ export async function startSnapshotCopyJob(queueItem: SnapshotCopy, context: Inv
             snapshot: secondarySnapshot
         };
 
-        const queueManager = new QueueManager(logger, process.env.AzureWebJobsStorage__accountname || "", 'copy-control');
+        const queueManager = new QueueManager(logger, process.env.AzureWebJobsStorage__accountname || "", QUEUE_COPY_CONTROL);
         await queueManager.sendMessage(JSON.stringify(snapshotControl), retryAfter);
     } catch (err) {
         const errMsg = _getString(err);
@@ -95,7 +96,7 @@ export async function startSnapshotCopyJob(queueItem: SnapshotCopy, context: Inv
             // Requeue the copy message with delay
             logger.warn(`CopyStart limit reached. Re-scheduling copy ${queueItem.primarySnapshot.id} (attempt ${attempt})`);
 
-            const qm = new QueueManager(logger, process.env.AzureWebJobsStorage__accountname || "", 'copy-jobs');
+            const qm = new QueueManager(logger, process.env.AzureWebJobsStorage__accountname || "", QUEUE_COPY_JOBS);
 
             // requeue the control copy message with delay (exponential backoff)
             // set visibility/time to retry later (e.g., 60s or exponential based on attempt count)
@@ -129,7 +130,7 @@ export async function startSnapshotCopyJob(queueItem: SnapshotCopy, context: Inv
 }
 
 app.storageQueue('startSnapshotCopyJob', {
-    queueName: 'copy-jobs',
+    queueName: QUEUE_COPY_JOBS,
     connection: 'AzureWebJobsStorage',
     handler: startSnapshotCopyJob
 });

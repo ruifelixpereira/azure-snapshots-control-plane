@@ -189,10 +189,10 @@ export class SnapshotManager {
     ): Promise<string[]> {
         
         try {
-            // Create a date with only year, month, day from baseDate and set time to 00:00
-            const baseDateMidnight = new Date(baseDate.getFullYear(), baseDate.getMonth(), baseDate.getDate());
-            const primaryCutoff = new Date(baseDateMidnight.getTime() - primaryDays * 24 * 60 * 60 * 1000);
-            const secondaryCutoff = new Date(baseDateMidnight.getTime() - secondaryDays * 24 * 60 * 60 * 1000);
+            // Create a date with only year, month, day from baseDate and set time to 23:59:59
+            const baseDateEndOfDay = new Date(baseDate.getFullYear(), baseDate.getMonth(), baseDate.getDate(), 23, 59, 59, 999);
+            const primaryCutoff = new Date(baseDateEndOfDay.getTime() - primaryDays * 24 * 60 * 60 * 1000);
+            const secondaryCutoff = new Date(baseDateEndOfDay.getTime() - secondaryDays * 24 * 60 * 60 * 1000);
 
             // List all snapshots in the resource group
             const allSnapshots: Array<any> = [];
