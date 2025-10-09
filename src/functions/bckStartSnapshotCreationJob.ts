@@ -1,10 +1,10 @@
 import { app, InvocationContext, output } from "@azure/functions";
 
 import { AzureLogger } from '../common/logger';
-import { SnapshotSource, SnapshotCopy, JobLogEntry, SnapshotControl, VmRecoveryInfo } from "../common/interfaces";
+import { SnapshotSource, SnapshotCopy, BackupJobLogEntry, SnapshotControl, VmRecoveryInfo } from "../common/interfaces";
 import { generateGuid } from "../common/utils";
 import { SnapshotManager } from "../controllers/snapshot.manager";
-import { LogManager } from "../controllers/log.manager";
+import { BackupLogManager } from "../controllers/log.manager";
 import { _getString } from "../common/apperror";
 
 const copyJobsQueueOutput = output.storageQueue({
@@ -22,7 +22,7 @@ const deadLetterQueueOutput = output.storageQueue({
     connection: 'AzureWebJobsStorage'
 });
 
-export async function startSnapshotCreationJob(queueItem: SnapshotSource, context: InvocationContext): Promise<void> {
+export async function bckStartSnapshotCreationJob(queueItem: SnapshotSource, context: InvocationContext): Promise<void> {
 
     const logger = new AzureLogger(context);
 
@@ -30,12 +30,12 @@ export async function startSnapshotCreationJob(queueItem: SnapshotSource, contex
     const jobId = generateGuid();
 
     try {
-        const logManager = new LogManager(logger);
+        const logManager = new BackupLogManager(logger);
         
         // Start process
         const msgStartProcess = `Starting the snapshot job ID ${jobId} for disk ID ${queueItem.diskId}`
         logger.info(msgStartProcess);
-        const logEntryStartProcess: JobLogEntry = {
+        const logEntryStartProcess: BackupJobLogEntry = {
             jobId: jobId,
             jobOperation: 'Start',
             jobStatus: 'Snapshot In Progress',
@@ -53,7 +53,7 @@ export async function startSnapshotCreationJob(queueItem: SnapshotSource, contex
         logger.info(msgSnapshotCreated);
 
         // B. Ingest telemetry
-        const logEntrySnapshotCreated: JobLogEntry = { 
+        const logEntrySnapshotCreated: BackupJobLogEntry = { 
             ...logEntryStartProcess,
             jobOperation: 'Snapshot Create',
             message: msgSnapshotCreated,
@@ -64,12 +64,12 @@ export async function startSnapshotCreationJob(queueItem: SnapshotSource, contex
 
         // Check if we only want snapshots in the primary region 
         // and we don't need to copy it to the secondary region
-        const secondaryNumberOfDays = process.env.SNAPSHOT_PURGE_SECONDARY_LOCATION_NUMBER_OF_DAYS ? parseInt(process.env.SNAPSHOT_PURGE_SECONDARY_LOCATION_NUMBER_OF_DAYS) : 10;
+        const secondaryNumberOfDays = process.env.SMCP_BCK_PURGE_SECONDARY_LOCATION_NUMBER_OF_DAYS ? parseInt(process.env.SMCP_BCK_PURGE_SECONDARY_LOCATION_NUMBER_OF_DAYS) : 10;
 
         if (secondaryNumberOfDays <= 0) {
 
             // No copy is needed in the secondary region so the snapshot backup process is completed
-            const logEntryCompleted: JobLogEntry = {
+            const logEntryCompleted: BackupJobLogEntry = {
                 ...logEntrySnapshotCreated,
                 jobOperation: 'Snapshot Create End',
                 jobStatus: 'Snapshot Completed',
@@ -110,7 +110,7 @@ export async function startSnapshotCreationJob(queueItem: SnapshotSource, contex
                 sourceVmId: queueItem.vmId,
                 sourceDiskId: queueItem.diskId,
                 primarySnapshot: primarySnapshot,
-                secondaryLocation: process.env.SNAPSHOT_SECONDARY_LOCATION || '',
+                secondaryLocation: process.env.SMCP_BCK_SECONDARY_LOCATION || '',
                 vmRecoveryInfo: recoveryInfo,
                 attempt: 0
             };
@@ -123,7 +123,7 @@ export async function startSnapshotCreationJob(queueItem: SnapshotSource, contex
 
         // End process
         const msgError = `Disk snapshot job ID ${jobId} for disk ID ${queueItem.diskId} failed with error ${_getString(err)}`;
-        const logEntryError: JobLogEntry = {
+        const logEntryError: BackupJobLogEntry = {
             jobId: jobId,
             jobOperation: 'Error',
             jobStatus: 'Snapshot Failed',
@@ -132,7 +132,7 @@ export async function startSnapshotCreationJob(queueItem: SnapshotSource, contex
             sourceVmId: queueItem.vmId,
             sourceDiskId: queueItem.diskId
         }
-        const logManager = new LogManager(logger);
+        const logManager = new BackupLogManager(logger);
         await logManager.uploadLog(logEntryError);
 
         // This rethrown exception will only fail the individual invocation, instead of crashing the whole process
@@ -148,7 +148,7 @@ export async function startSnapshotCreationJob(queueItem: SnapshotSource, contex
     }
 }
 
-app.storageQueue('startSnapshotCreationJob', {
+app.storageQueue('bckStartSnapshotCreationJob', {
     queueName: 'snapshot-jobs',
     connection: 'AzureWebJobsStorage',
     extraOutputs: [
@@ -156,5 +156,5 @@ app.storageQueue('startSnapshotCreationJob', {
         deadLetterQueueOutput,
         copyJobsQueueOutput
     ],
-    handler: startSnapshotCreationJob
+    handler: bckStartSnapshotCreationJob
 });

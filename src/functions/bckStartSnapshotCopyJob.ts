@@ -1,21 +1,21 @@
 import { app, InvocationContext } from "@azure/functions";
 
 import { AzureLogger } from '../common/logger';
-import { SnapshotCopy, SnapshotCopyControl, JobLogEntry } from "../common/interfaces";
+import { SnapshotCopy, SnapshotCopyControl, BackupJobLogEntry } from "../common/interfaces";
 import { SnapshotManager } from "../controllers/snapshot.manager";
-import { LogManager } from "../controllers/log.manager";
+import { BackupLogManager } from "../controllers/log.manager";
 import { QueueManager } from "../controllers/queue.manager";
 import { _getString } from "../common/apperror";
 import { getRandomDelaySeconds } from "../common/utils";
 import { QUEUE_COPY_CONTROL, QUEUE_COPY_JOBS } from "../common/constants";
 
 
-export async function startSnapshotCopyJob(queueItem: SnapshotCopy, context: InvocationContext): Promise<void> {
+export async function bckStartSnapshotCopyJob(queueItem: SnapshotCopy, context: InvocationContext): Promise<void> {
 
     const logger = new AzureLogger(context);
 
     try {
-        const logManager = new LogManager(logger);
+        const logManager = new BackupLogManager(logger);
 
         // A. Start snapshot copy to secondary region
         const snapshotManager = new SnapshotManager(logger, queueItem.primarySnapshot.subscriptionId);
@@ -25,7 +25,7 @@ export async function startSnapshotCopyJob(queueItem: SnapshotCopy, context: Inv
         const msgStartCopy = `Started snapshot copy ${queueItem.primarySnapshot.id} to location ${queueItem.secondaryLocation}`;
         logger.info(msgStartCopy);
 
-        const logEntryStartCopy: JobLogEntry = {
+        const logEntryStartCopy: BackupJobLogEntry = {
             jobId: queueItem.jobId,
             jobStatus: 'Snapshot In Progress',
             jobType: 'Snapshot',
@@ -41,7 +41,7 @@ export async function startSnapshotCopyJob(queueItem: SnapshotCopy, context: Inv
         await logManager.uploadLog(logEntryStartCopy);
 
         // B. Send control copy event with a visibility timeout of 1 hour
-        const retryAfter = process.env.SNAPSHOT_RETRY_CONTROL_COPY_MINUTES ? parseInt(process.env.SNAPSHOT_RETRY_CONTROL_COPY_MINUTES) * 60 : 60*60; // 1 hour in seconds
+        const retryAfter = process.env.SMCP_BCK_RETRY_CONTROL_COPY_MINUTES ? parseInt(process.env.SMCP_BCK_RETRY_CONTROL_COPY_MINUTES) * 60 : 60*60; // 1 hour in seconds
         logger.info(`Sending control copy event for disk ID ${queueItem.sourceDiskId} and snapshot ID ${queueItem.primarySnapshot.id} with retry after ${retryAfter} seconds`);
 
         const snapshotControl: SnapshotCopyControl = {
@@ -77,7 +77,7 @@ export async function startSnapshotCopyJob(queueItem: SnapshotCopy, context: Inv
                 logger.error(maxRetryMsg);
 
                 // End process
-                const logEntryError: JobLogEntry = {
+                const logEntryError: BackupJobLogEntry = {
                     jobId: queueItem.jobId,
                     jobOperation: 'Error',
                     jobStatus: 'Snapshot Failed',
@@ -86,8 +86,8 @@ export async function startSnapshotCopyJob(queueItem: SnapshotCopy, context: Inv
                     sourceVmId: queueItem.sourceVmId,
                     sourceDiskId: queueItem.sourceDiskId
                 }
-                const logManager = new LogManager(logger);
-                await logManager.uploadLog(logEntryError);                
+                const BackupLogManager = new BackupLogManager(logger);
+                await BackupLogManager.uploadLog(logEntryError);                
                 
                 throw err;
             }
@@ -110,7 +110,7 @@ export async function startSnapshotCopyJob(queueItem: SnapshotCopy, context: Inv
 
             // End process
             const msgError = `Disk snapshot copy with job ID ${queueItem.jobId} for disk ID ${queueItem.sourceDiskId} failed with error ${_getString(err)}`;
-            const logEntryError: JobLogEntry = {
+            const logEntryError: BackupJobLogEntry = {
                 jobId: queueItem.jobId,
                 jobOperation: 'Error',
                 jobStatus: 'Snapshot Failed',
@@ -119,7 +119,7 @@ export async function startSnapshotCopyJob(queueItem: SnapshotCopy, context: Inv
                 sourceVmId: queueItem.sourceVmId,
                 sourceDiskId: queueItem.sourceDiskId
             }
-            const logManager = new LogManager(logger);
+            const logManager = new BackupLogManager(logger);
             await logManager.uploadLog(logEntryError);
 
             // This rethrown exception will only fail the individual invocation, instead of crashing the whole process
@@ -129,8 +129,8 @@ export async function startSnapshotCopyJob(queueItem: SnapshotCopy, context: Inv
             
 }
 
-app.storageQueue('startSnapshotCopyJob', {
+app.storageQueue('bckStartSnapshotCopyJob', {
     queueName: QUEUE_COPY_JOBS,
     connection: 'AzureWebJobsStorage',
-    handler: startSnapshotCopyJob
+    handler: bckStartSnapshotCopyJob
 });

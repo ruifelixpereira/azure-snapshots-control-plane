@@ -2,7 +2,7 @@
 import { ILogger } from '../common/logger';
 import { DefaultAzureCredential } from "@azure/identity";
 import { ResourceGraphClient } from "@azure/arm-resourcegraph";
-import { SnapshotSource, SnapshotToPurge } from "../common/interfaces";
+import { SnapshotSource, SnapshotToPurge, RecoverySnapshot } from "../common/interfaces";
 import { ResourceGraphError, _getString } from "../common/apperror";
 
 export class ResourceGraphManager {
@@ -114,6 +114,51 @@ export class ResourceGraphManager {
             return result.data;
         } catch (error) {
             const message = `Unable to query snapshots by source and date with error: ${_getString(error)}`;
+            this.logger.error(message);
+            throw new ResourceGraphError(message);
+        }
+    }
+
+
+    // Get the most recent snapshots in a certain region for all VMs
+    public async getMostRecentSnapshotsInRegions(regions: string[], maxTimeGenerated: Date, vmFilter?: string[]): Promise<Array<RecoverySnapshot>> {
+
+        try {
+
+            const filterForVms = vmFilter && vmFilter.length > 0 
+                ? `| where vmName in (${vmFilter.map(vm => `'${vm}'`).join(", ")})`
+                : "";
+
+            const query = `resources
+                    | where type == 'microsoft.compute/snapshots'
+                    | where location in (${regions.map(region => `'${region}'`).join(", ")})
+                    | extend timeCreated = todatetime(properties.timeCreated)
+                    | where timeCreated <= todatetime('${maxTimeGenerated.toISOString()}')
+                    | where tags['smcp-recovery-info'] != ''
+                    | extend smcpRecoveryInfo = tostring(tags['smcp-recovery-info'])
+                    | extend vmName = extract('vmName\\\":\\\"([^\\\"]+)', 1, smcpRecoveryInfo) ${filterForVms}
+                    | project snapshotName = name, vmName, timeCreated
+                    | summarize latestSnapshotTime = max(timeCreated) by vmName
+                    | join kind=inner (
+                        resources
+                        | where type == 'microsoft.compute/snapshots'
+                        | where tags['smcp-recovery-info'] != ''
+                        | extend smcpRecoveryInfo = tostring(tags['smcp-recovery-info']) 
+                        | extend vmName = extract('vmName\\\":\\\"([^\\\"]+)', 1, smcpRecoveryInfo), vmSize = extract('vmSize\\\":\\\"([^\\\"]+)', 1, smcpRecoveryInfo), diskSku = extract('diskSku\\\":\\\"([^\\\"]+)', 1, smcpRecoveryInfo), diskProfile = extract('diskProfile\\\":\\\"([^\\\"]+)', 1, smcpRecoveryInfo), ipAddress = extract('ipAddress\\\":\\\"([^\\\"]+)', 1, smcpRecoveryInfo), securityType = coalesce(extract('securityType\\\":\\\"([^\\\"]+)', 1, smcpRecoveryInfo), 'Standard')
+                        | project snapshotName = name, vmName, vmSize, diskSku, diskProfile, ipAddress, timeCreated = todatetime(properties.timeCreated), resourceGroup, id, location, securityType
+                        ) on vmName, $left.latestSnapshotTime == $right.timeCreated
+                    | project snapshotName, resourceGroup, id, location, timeCreated, vmName, vmSize, diskSku, diskProfile, ipAddress, securityType`;
+
+            const result = await this.clientGraph.resources(
+                {
+                    query: query
+                },
+                { resultFormat: "table" }
+            );
+
+            return result.data;
+        } catch (error) {
+            const message = `Unable to query resource graph with error: ${_getString(error)}`;
             this.logger.error(message);
             throw new ResourceGraphError(message);
         }

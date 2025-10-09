@@ -1,21 +1,21 @@
 import { app, InvocationContext } from "@azure/functions";
 
 import { AzureLogger } from '../common/logger';
-import { SnapshotPurgeControl, JobLogEntry } from "../common/interfaces";
+import { SnapshotPurgeControl, BackupJobLogEntry } from "../common/interfaces";
 import { SnapshotManager } from "../controllers/snapshot.manager";
-import { LogManager } from "../controllers/log.manager";
+import { BackupLogManager } from "../controllers/log.manager";
 import { QueueManager } from "../controllers/queue.manager";
 import { _getString } from "../common/apperror";
 import { getSubscriptionAndResourceGroup } from '../common/azure-resource-utils';
 import { QUEUE_PURGE_CONTROL } from "../common/constants";
 
 
-export async function controlSnapshotPurge(queueItem: SnapshotPurgeControl, context: InvocationContext): Promise<void> {
+export async function bckControlSnapshotPurge(queueItem: SnapshotPurgeControl, context: InvocationContext): Promise<void> {
 
     const logger = new AzureLogger(context);
 
     try {
-        const logManager = new LogManager(logger);
+        const logManager = new BackupLogManager(logger);
         logger.info(`Checking the snapshot purge for disk ID ${queueItem.source.sourceDiskId} in all locations`);
 
         // Get snapshots subscriptionId and resource group in primary/secondary location
@@ -32,7 +32,7 @@ export async function controlSnapshotPurge(queueItem: SnapshotPurgeControl, cont
             const msgPurgeFinished = `Snapshot purge finished for disk ID ${queueItem.source.sourceDiskId}`;
             logger.info(msgPurgeFinished);
 
-            const logEntryPurgeFinished: JobLogEntry = {
+            const logEntryPurgeFinished: BackupJobLogEntry = {
                 jobId: queueItem.source.jobId,
                 jobOperation: 'Snapshot Purge End',
                 jobStatus: 'Purge Completed',
@@ -51,7 +51,7 @@ export async function controlSnapshotPurge(queueItem: SnapshotPurgeControl, cont
             // B. Still in progress
 
             // Re-send control purge event with a visibility timeout of 1 hour
-            const retryAfter = process.env.SNAPSHOT_RETRY_CONTROL_PURGE_MINUTES ? parseInt(process.env.SNAPSHOT_RETRY_CONTROL_PURGE_MINUTES)*60 : 60*60; // 1 hour in seconds
+            const retryAfter = process.env.SMCP_BCK_RETRY_CONTROL_PURGE_MINUTES ? parseInt(process.env.SMCP_BCK_RETRY_CONTROL_PURGE_MINUTES)*60 : 60*60; // 1 hour in seconds
             logger.info(`Snapshot purge still in progress. Re-sending control purge event for disk ID ${queueItem.source.sourceDiskId} with retry after ${retryAfter} seconds`);
             const queueManager = new QueueManager(logger, process.env.AzureWebJobsStorage__accountname || "", QUEUE_PURGE_CONTROL);
             await queueManager.sendMessage(JSON.stringify(queueItem), retryAfter);
@@ -62,7 +62,7 @@ export async function controlSnapshotPurge(queueItem: SnapshotPurgeControl, cont
 
         // End process
         const msgError = `Snapshot purge control for disk ID ${queueItem.source.sourceDiskId} failed with error ${_getString(err)}`;
-        const logEntryError: JobLogEntry = {
+        const logEntryError: BackupJobLogEntry = {
             jobId: queueItem.source.jobId,
             jobOperation: 'Error',
             jobStatus: 'Purge Failed',
@@ -75,7 +75,7 @@ export async function controlSnapshotPurge(queueItem: SnapshotPurgeControl, cont
             secondarySnapshotId: queueItem.source.secondarySnapshotId,
             secondaryLocation: queueItem.source.secondaryLocation
         }
-        const logManager = new LogManager(logger);
+        const logManager = new BackupLogManager(logger);
         await logManager.uploadLog(logEntryError);
 
         // This rethrown exception will only fail the individual invocation, instead of crashing the whole process
@@ -83,8 +83,8 @@ export async function controlSnapshotPurge(queueItem: SnapshotPurgeControl, cont
     }
 }
 
-app.storageQueue('controlSnapshotPurge', {
+app.storageQueue('bckControlSnapshotPurge', {
     queueName: QUEUE_PURGE_CONTROL,
     connection: 'AzureWebJobsStorage',
-    handler: controlSnapshotPurge
+    handler: bckControlSnapshotPurge
 });

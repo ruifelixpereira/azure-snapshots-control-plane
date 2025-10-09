@@ -3,6 +3,7 @@ import { ILogger } from '../common/logger';
 import { QueueServiceClient } from "@azure/storage-queue"
 import { DefaultAzureCredential } from "@azure/identity";
 import { StorageQueueError, _getString } from "../common/apperror";
+import { VmCreationPollMessage } from '../common/interfaces';
 
 
 export class QueueManager {
@@ -43,7 +44,34 @@ export class QueueManager {
         }
 
     }
-
+    
+    /**
+     * Send a message to retry VM polling after a delay
+     */
+    async scheduleVmPollRetry(message: VmCreationPollMessage, delaySeconds: number = 60): Promise<void> {
+        try {
+            this.logger.info(`Scheduling VM poll retry for: ${message.vmName} in ${delaySeconds} seconds`);
+            
+            // Update retry count
+            const retryMessage = {
+                ...message,
+                retryCount: (message.retryCount || 0) + 1
+            };
+            
+            const messageText = JSON.stringify(retryMessage);
+            const encodedMessage = Buffer.from(messageText).toString('base64');
+            
+            // Send message - delay will be handled by the polling function
+            const queueClient = await this.queueServiceClient.getQueueClient(this.queueName);
+            await queueClient.sendMessage(encodedMessage);
+            
+            this.logger.info(`Scheduled VM poll retry for: ${message.vmName}, retry count: ${retryMessage.retryCount}`);
+            
+        } catch (error) {
+            this.logger.error(`Failed to schedule VM poll retry for ${message.vmName}:`, error);
+            throw error;
+        }
+    }
 }
 
 

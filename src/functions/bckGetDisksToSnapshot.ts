@@ -10,14 +10,14 @@ const snapshotsQueueOutput = output.storageQueue({
 });
 
 
-export async function getTargetDisks(myTimer: Timer, context: InvocationContext): Promise<void> {
+export async function bckGetDisksToSnapshot(myTimer: Timer, context: InvocationContext): Promise<void> {
 
     const logger = new AzureLogger(context);
-    logger.info('Timer function getTargetDisks trigger request.');
+    logger.info('Timer function bckGetDisksToSnapshot trigger request.');
 
     try {
         // Get trigger tag from environment variable
-        const triggerTag = process.env['SNAPSHOT_BACKUP_TRIGGER_TAG'] ? JSON.parse(process.env['SNAPSHOT_BACKUP_TRIGGER_TAG']) : { key: 'smcp-backup', value: 'on' };
+        const triggerTag = process.env['SMCP_BCK_BACKUP_TRIGGER_TAG'] ? JSON.parse(process.env['SMCP_BCK_BACKUP_TRIGGER_TAG']) : { key: 'smcp-backup', value: 'on' };
 
         // Get disks to be backed up
         const graphManager = new ResourceGraphManager(logger);
@@ -36,10 +36,10 @@ export async function getTargetDisks(myTimer: Timer, context: InvocationContext)
     }
 }
 
-app.timer('getTargetDisks', {
+app.timer('bckGetDisksToSnapshot', {
     schedule: '0 30 1 * * *', // every day at 01:30 in the morning
     extraOutputs: [
         snapshotsQueueOutput
     ],
-    handler: getTargetDisks
+    handler: bckGetDisksToSnapshot
 });

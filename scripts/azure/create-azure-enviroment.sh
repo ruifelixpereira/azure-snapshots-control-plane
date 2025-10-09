@@ -62,7 +62,7 @@ fi
 DEPLOYMENT_OUTPUT=$(az deployment group create \
   --resource-group $resourceGroupName \
   --template-file azure-flex-env.bicep \
-  --parameters prefix="$prefix" workbookJson=@snapshots-insights-workbook.json \
+  --parameters prefix="$prefix" backupWorkbookJson=@snapshots-insights-workbook.json recoveryWorkbookJson=@snapshots-recovery-workbook.json \
   --query "properties.outputs" \
   --output json)
 

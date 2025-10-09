@@ -36,7 +36,7 @@ export class SnapshotManager {
 
             // Add mandatory tags from environment variable
             let allTags = {};
-            const mandatoryTags = JSON.parse(process.env.SNAPSHOT_MANDATORY_TAGS || "[]");
+            const mandatoryTags = JSON.parse(process.env.SMCP_MANDATORY_TAGS || "[]");
             for (const tag of mandatoryTags) {
                 if (tag.key && tag.value) {
                     allTags[tag.key] = tag.value;
@@ -66,7 +66,7 @@ export class SnapshotManager {
 
             // Create the snapshot
             const result = await this.computeClient.snapshots.beginCreateOrUpdateAndWait(
-                process.env.SNAPSHOT_TARGET_RESOURCE_GROUP || source.resourceGroup,
+                process.env.SMCP_BCK_TARGET_RESOURCE_GROUP || source.resourceGroup,
                 snapshotName,
                 snapshotParams
             );
@@ -103,7 +103,7 @@ export class SnapshotManager {
 
             // Add mandatory tags from environment variable
             let allTags = {};
-            const mandatoryTags = JSON.parse(process.env.SNAPSHOT_MANDATORY_TAGS || "[]");
+            const mandatoryTags = JSON.parse(process.env.SMCP_MANDATORY_TAGS || "[]");
             for (const tag of mandatoryTags) {
                 if (tag.key && tag.value) {
                     allTags[tag.key] = tag.value;

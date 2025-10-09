@@ -7,22 +7,24 @@ Configure your local environment and install Azure Function Core tools following
 
 ## Setup Azure resources
 
-To create Azure resources, you can use the provided `scripts/create-azure-env.sh` file. Copy `template.env` to a new file named `.env` and customize the settings according to your environment.
-After this customization, just run the provided file in the `scripts` directory:
+To create Azure resources, you can use the provided `scripts/azure/create-azure-environment.sh` file. Copy `template.env` to a new file named `.env` and customize the settings according to your environment.
+After this customization, just run the provided file in the `scripts/azure` directory:
 
 ```bash
-./create-azure-env.sh
+./create-azure-environment.sh
 ```
 
 In the end you should have the following resources created:
 
 ![alt text](images/resources.png)
 
-Additionally, for running the function app locally and access other Azure resources, you need to have a service principal, give the proper role assignements to the service principal and configure it locally in the `local.settings.json` file. The provided script `scripts\pre-dev-local.sh` helps to automate all these steps.
+Additionally, for running the function app locally and access other Azure resources, you need to have a service principal, give the proper role assignements to the service principal and configure it locally in the `local.settings.json` file. The provided script `scripts/development/create-service-principal-local-dev.sh` helps to automate all these steps. Copy `template.env` to a new file named `.env` and customize the settings according to your environment. After this customization, just run the provided file in the `scripts/development` directory:
 
 ```bash
-./prep-dev-local.sh
+./create-service-principal-local-dev.sh
 ```
+
+Run the `scripts/development/permissions-az-login.sh` script to give permissions to the logged-in user in the newly created storage account (only if you need to browse data).
 
 ## Create a local functions project
 
@@ -52,7 +54,7 @@ Add Azure Storage connection information in `local.settings.json` and adjust the
 }
 ```
 
-If you used the script `prep-dev-local.sh`, the `local.settings.json` file should already be configured with the correct values.
+If you used the script `create-service-principal-local-dev`, the `local.settings.json` file should already be configured with the correct values.
 
 
 ## Run the function locally for testing
@@ -77,10 +79,10 @@ func azure functionapp publish <the name of your function app Azure resource> --
 
 ```bash
 # Test timer trigger locally
-curl --request POST -H "Content-Type:application/json" -H "x-functions-key:xxxxxxxxxxxxx" --data '{"input":""}'  http://localhost:7071/admin/functions/getTargetDisks
+curl --request POST -H "Content-Type:application/json" -H "x-functions-key:xxxxxxxxxxxxx" --data '{"input":""}'  http://localhost:7071/admin/functions/bckGetDisksToSnapshot
 
 # Test timer trigger remotely
-curl --request POST -H "Content-Type:application/json" -H "x-functions-key:xxxxxxxxxxxxx" --data '{"input":""}'  https://xpto.azurewebsites.net/admin/functions/getTargetDisks
+curl --request POST -H "Content-Type:application/json" -H "x-functions-key:xxxxxxxxxxxxx" --data '{"input":""}'  https://xpto.azurewebsites.net/admin/functions/bckGetDisksToSnapshot
 
 # Test http functions locally
 curl --request POST -H "Content-Type:application/json" -H "x-functions-key:xxxxxxxxxxxxx" --data '{"input":""}'  http://localhost:7071/api/hello

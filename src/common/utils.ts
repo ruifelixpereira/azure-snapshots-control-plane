@@ -57,6 +57,18 @@ export function extractDiskNameFromDiskId(diskId: string): string | null {
     return diskName;
 }
 
+export function extractVmNameFromResourceId(vmId: string): string | null {
+    if (!vmId) {
+        return null;
+    }
+    // Split the VM ID by '/' and find the VM name
+    const parts = vmId.split("/");
+    const vmNameIndex = parts.indexOf("virtualMachines");
+    const vmName = vmNameIndex !== -1 ? parts[vmNameIndex + 1] : null;
+    return vmName;
+}
+
+
 export function extractSnapshotNameFromSnapshotId(snapshotId: string): string | null {
     if (!snapshotId) {
         return null;

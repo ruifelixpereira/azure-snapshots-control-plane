@@ -1,0 +1,9 @@
+{
+    "targetSubnetIds": [
+        "/subscriptions/xxx-xxx-xxx-xxx/resourceGroups/recovery-rg/providers/Microsoft.Network/virtualNetworks/recovery-vnet/subnets/default"
+    ],
+    "targetResourceGroup": "recovery-snap-rg",
+    "maxTimeGenerated": "2025-09-27T10:30:00.000Z",
+    "useOriginalIpAddress": true,
+    "waitForVmCreationCompletion": false
+}

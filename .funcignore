@@ -4,11 +4,16 @@
 .vscode
 .github
 local.settings.json
+local.settings.dev.json
 test
+tests
+examples
 getting_started.md
 node_modules/@types/
 node_modules/azure-functions-core-tools/
 node_modules/typescript/
+node_modules/rimraf/
+node_modules/copyfiles/
 scripts
 docs
 MYLOG.md

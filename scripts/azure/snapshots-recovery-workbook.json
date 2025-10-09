@@ -1,0 +1,764 @@
+{
+  "version": "Notebook/1.0",
+  "items": [
+    {
+      "type": 1,
+      "content": {
+        "json": "# Azure Snapshots Recovery Insights\r\nUse this workbook to analyze and monitor all your Azure Snapshot restores."
+      },
+      "name": "text - Main"
+    },
+    {
+      "type": 9,
+      "content": {
+        "version": "KqlParameterItem/1.0",
+        "parameters": [
+          {
+            "id": "1f74ed9a-e3ed-498d-bd5b-f68f3836a117",
+            "version": "KqlParameterItem/1.0",
+            "name": "Subscription",
+            "type": 6,
+            "description": "All subscriptions with Snapshots",
+            "isRequired": true,
+            "multiSelect": true,
+            "quote": "'",
+            "delimiter": ",",
+            "query": "where type =~ \"microsoft.compute/snapshots\"\r\n| summarize Count = count() by subscriptionId\r\n| order by Count desc\r\n| extend Rank = row_number()\r\n| project value = subscriptionId, label = subscriptionId, selected = Rank == 1",
+            "crossComponentResources": [
+              "value::selected"
+            ],
+            "typeSettings": {
+              "additionalResourceOptions": [
+                "value::all"
+              ],
+              "showDefault": false
+            },
+            "queryType": 1
+          },
+          {
+            "id": "029a03e0-bbe8-49ab-929f-c1026d1b8e40",
+            "version": "KqlParameterItem/1.0",
+            "name": "RestoreAge",
+            "label": "Time Range",
+            "type": 4,
+            "description": "This allow you to filter snapshot by time created.",
+            "isRequired": true,
+            "typeSettings": {
+              "selectableValues": [
+                {
+                  "durationMs": 43200000
+                },
+                {
+                  "durationMs": 86400000
+                },
+                {
+                  "durationMs": 172800000
+                },
+                {
+                  "durationMs": 259200000
+                },
+                {
+                  "durationMs": 604800000
+                },
+                {
+                  "durationMs": 1209600000
+                },
+                {
+                  "durationMs": 2419200000
+                },
+                {
+                  "durationMs": 2592000000
+                },
+                {
+                  "durationMs": 5184000000
+                },
+                {
+                  "durationMs": 7776000000
+                }
+              ],
+              "allowCustom": true
+            },
+            "value": {
+              "durationMs": 43200000
+            }
+          },
+          {
+            "id": "ca79f268-3857-4ac7-a7ae-a0dd21e309a2",
+            "version": "KqlParameterItem/1.0",
+            "name": "LogAnalyticsWorkspace",
+            "label": "Log Analytics Workspace",
+            "type": 5,
+            "description": "All Log Analytics Workspaces",
+            "isRequired": true,
+            "multiSelect": true,
+            "quote": "'",
+            "delimiter": ",",
+            "query": "where type == 'microsoft.operationalinsights/workspaces'\r\n| summarize Count = count() by id\r\n| order by Count desc\r\n| extend Rank = row_number()\r\n| project value = id, label = id, selected = Rank == 1",
+            "typeSettings": {
+              "additionalResourceOptions": [
+                "value::all"
+              ],
+              "showDefault": false
+            },
+            "queryType": 1,
+            "resourceType": "microsoft.resourcegraph/resources",
+            "value": [
+              "/subscriptions/xxxxxxx/resourceGroups/snapshots-mng/providers/Microsoft.OperationalInsights/workspaces/snmjsnapmng-law01"
+            ]
+          }
+        ],
+        "style": "above",
+        "queryType": 0,
+        "resourceType": "microsoft.resourcegraph/resources"
+      },
+      "name": "Workbook Parameters",
+      "styleSettings": {
+        "margin": "15px 0 0 0"
+      }
+    },
+    {
+      "type": 12,
+      "content": {
+        "version": "NotebookGroup/1.0",
+        "groupType": "template",
+        "loadFromTemplateId": "community-Workbooks/Common/noSubscriptions",
+        "items": []
+      },
+      "conditionalVisibility": {
+        "parameterName": "Subscription",
+        "comparison": "isEqualTo",
+        "value": ""
+      },
+      "name": "No Subscriptions group"
+    },
+    {
+      "type": 12,
+      "content": {
+        "version": "NotebookGroup/1.0",
+        "groupType": "editable",
+        "items": [
+          {
+            "type": 11,
+            "content": {
+              "version": "LinkItem/1.0",
+              "style": "tabs",
+              "links": [
+                {
+                  "id": "311bebc4-f846-40e2-92a7-6e6e28ad5ba4",
+                  "cellValue": "selectedTab",
+                  "linkTarget": "parameter",
+                  "linkLabel": "Summary",
+                  "subTarget": "Summary",
+                  "style": "link"
+                },
+                {
+                  "id": "a758229e-9ea1-406a-9df4-f500de1aea2e",
+                  "cellValue": "selectedTab",
+                  "linkTarget": "parameter",
+                  "linkLabel": "Restore Jobs",
+                  "subTarget": "RestoreBatches",
+                  "style": "link"
+                }
+              ]
+            },
+            "name": "links - Navigation links",
+            "styleSettings": {
+              "margin": "10px 0 0 0"
+            }
+          },
+          {
+            "type": 11,
+            "content": {
+              "version": "LinkItem/1.0",
+              "style": "bullets",
+              "links": []
+            },
+            "name": "links - 3"
+          },
+          {
+            "type": 12,
+            "content": {
+              "version": "NotebookGroup/1.0",
+              "groupType": "editable",
+              "items": [
+                {
+                  "type": 1,
+                  "content": {
+                    "json": "### Snapshots Recovery Insights\r\n\r\nOverview of your Snapshots recovery main metrics.",
+                    "style": "upsell"
+                  },
+                  "name": "text - Summary -Main Title"
+                },
+                {
+                  "type": 3,
+                  "content": {
+                    "version": "KqlItem/1.0",
+                    "query": "SnapshotsRecoveryJobs_CL \r\n| where jobType == \"Restore\"\r\n| where TimeGenerated >= {RestoreAge:start} and TimeGenerated <= {RestoreAge:end}\r\n| summarize Operations = make_set(jobStatus) by jobId\r\n| extend \r\n    IsCompleted = Operations has \"Restore Completed\",\r\n    IsInProgress = Operations has \"Restore In Progress\" and not(Operations has \"Restore Completed\") and not(Operations has \"Restore Failed\"),\r\n    IsFailed = Operations has \"Restore Failed\" and not(Operations has \"Restore Completed\")\r\n| summarize \r\n    AllJobs = countif(IsCompleted) + countif(IsInProgress) + countif(IsFailed)\r\n| extend type = 'All restore jobs'\r\n",
+                    "size": 3,
+                    "noDataMessage": "No resources found",
+                    "queryType": 0,
+                    "resourceType": "microsoft.operationalinsights/workspaces",
+                    "crossComponentResources": [
+                      "{LogAnalyticsWorkspace}"
+                    ],
+                    "visualization": "tiles",
+                    "tileSettings": {
+                      "titleContent": {
+                        "columnMatch": "type",
+                        "formatter": 1
+                      },
+                      "leftContent": {
+                        "columnMatch": "AllJobs",
+                        "formatter": 12,
+                        "formatOptions": {
+                          "palette": "auto"
+                        },
+                        "numberFormat": {
+                          "unit": 17,
+                          "options": {
+                            "style": "decimal",
+                            "maximumFractionDigits": 2,
+                            "maximumSignificantDigits": 3
+                          }
+                        }
+                      },
+                      "showBorder": true,
+                      "sortCriteriaField": "count_",
+                      "sortOrderField": 2
+                    }
+                  },
+                  "customWidth": "25",
+                  "name": "query - Summary - Backup Jobs"
+                },
+                {
+                  "type": 3,
+                  "content": {
+                    "version": "KqlItem/1.0",
+                    "query": "SnapshotsRecoveryJobs_CL \r\n| where jobType == \"Restore\"\r\n| where TimeGenerated >= {RestoreAge:start} and TimeGenerated <= {RestoreAge:end}\r\n| summarize Operations = make_set(jobStatus) by jobId\r\n| extend \r\n    IsCompleted = Operations has \"Restore Completed\",\r\n    IsInProgress = Operations has \"Restore In Progress\" and not(Operations has \"Restore Completed\") and not(Operations has \"Restore Failed\"),\r\n    IsFailed = Operations has \"Restore Failed\" and not(Operations has \"Restore Completed\")\r\n| summarize \r\n    CompletedJobs = countif(IsCompleted),\r\n    InProgressJobs = countif(IsInProgress),\r\n    FailedJobs = countif(IsFailed)\r\n| extend type = 'Restore completed jobs'",
+                    "size": 3,
+                    "noDataMessage": "No resources found",
+                    "queryType": 0,
+                    "resourceType": "microsoft.operationalinsights/workspaces",
+                    "crossComponentResources": [
+                      "{LogAnalyticsWorkspace}"
+                    ],
+                    "visualization": "tiles",
+                    "tileSettings": {
+                      "titleContent": {
+                        "columnMatch": "type",
+                        "formatter": 1
+                      },
+                      "leftContent": {
+                        "columnMatch": "CompletedJobs",
+                        "formatter": 12,
+                        "formatOptions": {
+                          "min": 0,
+                          "palette": "green"
+                        },
+                        "numberFormat": {
+                          "unit": 17,
+                          "options": {
+                            "style": "decimal",
+                            "maximumFractionDigits": 2,
+                            "maximumSignificantDigits": 3
+                          }
+                        }
+                      },
+                      "showBorder": true,
+                      "sortCriteriaField": "count_",
+                      "sortOrderField": 2
+                    }
+                  },
+                  "customWidth": "25",
+                  "name": "query - Summary - Backup Completed Jobs"
+                },
+                {
+                  "type": 3,
+                  "content": {
+                    "version": "KqlItem/1.0",
+                    "query": "SnapshotsRecoveryJobs_CL \r\n| where jobType == \"Restore\"\r\n| where TimeGenerated >= {RestoreAge:start} and TimeGenerated <= {RestoreAge:end}\r\n| summarize Operations = make_set(jobStatus) by jobId\r\n| extend \r\n    IsCompleted = Operations has \"Restore Completed\",\r\n    IsInProgress = Operations has \"Restore In Progress\" and not(Operations has \"Restore Completed\") and not(Operations has \"Restore Failed\"),\r\n    IsFailed = Operations has \"Restore Failed\" and not(Operations has \"Restore Completed\")\r\n| summarize \r\n    CompletedJobs = countif(IsCompleted),\r\n    InProgressJobs = countif(IsInProgress),\r\n    FailedJobs = countif(IsFailed)\r\n| extend type = 'Restore failed jobs'",
+                    "size": 3,
+                    "noDataMessage": "No resources found",
+                    "queryType": 0,
+                    "resourceType": "microsoft.operationalinsights/workspaces",
+                    "crossComponentResources": [
+                      "{LogAnalyticsWorkspace}"
+                    ],
+                    "visualization": "tiles",
+                    "tileSettings": {
+                      "titleContent": {
+                        "columnMatch": "type",
+                        "formatter": 1
+                      },
+                      "leftContent": {
+                        "columnMatch": "FailedJobs",
+                        "formatter": 12,
+                        "formatOptions": {
+                          "min": 0,
+                          "palette": "red"
+                        },
+                        "numberFormat": {
+                          "unit": 17,
+                          "options": {
+                            "style": "decimal",
+                            "maximumFractionDigits": 2,
+                            "maximumSignificantDigits": 3
+                          }
+                        }
+                      },
+                      "showBorder": true,
+                      "sortCriteriaField": "count_",
+                      "sortOrderField": 2
+                    }
+                  },
+                  "customWidth": "25",
+                  "name": "query - Summary - Backup Failed Jobs"
+                },
+                {
+                  "type": 3,
+                  "content": {
+                    "version": "KqlItem/1.0",
+                    "query": "SnapshotsRecoveryJobs_CL \r\n| where jobType == \"Restore\"\r\n| where TimeGenerated >= {RestoreAge:start} and TimeGenerated <= {RestoreAge:end}\r\n| summarize Operations = make_set(jobStatus) by jobId\r\n| extend \r\n    IsCompleted = Operations has \"Restore Completed\",\r\n    IsInProgress = Operations has \"Restore In Progress\" and not(Operations has \"Restore Completed\") and not(Operations has \"Restore Failed\"),\r\n    IsFailed = Operations has \"Restore Failed\" and not(Operations has \"Restore Completed\")\r\n| summarize \r\n    CompletedJobs = countif(IsCompleted),\r\n    InProgressJobs = countif(IsInProgress),\r\n    FailedJobs = countif(IsFailed)\r\n| extend type = 'Restore in progress jobs'",
+                    "size": 3,
+                    "noDataMessage": "No resources found",
+                    "queryType": 0,
+                    "resourceType": "microsoft.operationalinsights/workspaces",
+                    "crossComponentResources": [
+                      "{LogAnalyticsWorkspace}"
+                    ],
+                    "visualization": "tiles",
+                    "tileSettings": {
+                      "titleContent": {
+                        "columnMatch": "type",
+                        "formatter": 1
+                      },
+                      "leftContent": {
+                        "columnMatch": "InProgressJobs",
+                        "formatter": 12,
+                        "formatOptions": {
+                          "min": 0,
+                          "palette": "yellow"
+                        },
+                        "numberFormat": {
+                          "unit": 17,
+                          "options": {
+                            "style": "decimal",
+                            "maximumFractionDigits": 2,
+                            "maximumSignificantDigits": 3
+                          }
+                        }
+                      },
+                      "showBorder": true,
+                      "sortCriteriaField": "count_",
+                      "sortOrderField": 2
+                    }
+                  },
+                  "customWidth": "25",
+                  "name": "query - Summary - Backup In Progress Jobs"
+                }
+              ]
+            },
+            "conditionalVisibility": {
+              "parameterName": "selectedTab",
+              "comparison": "isEqualTo",
+              "value": "Summary"
+            },
+            "name": "group - Summary Group"
+          },
+          {
+            "type": 12,
+            "content": {
+              "version": "NotebookGroup/1.0",
+              "groupType": "editable",
+              "items": [
+                {
+                  "type": 1,
+                  "content": {
+                    "json": "### Snapshots Restore Jobs\r\n\r\nOverview of Snaphots Restore Jobs and Operations.\r\n",
+                    "style": "upsell"
+                  },
+                  "name": "text - Main Title"
+                },
+                {
+                  "type": 9,
+                  "content": {
+                    "version": "KqlParameterItem/1.0",
+                    "crossComponentResources": [
+                      "/subscriptions/xxxxxxxxx/resourceGroups/snapshots-mng"
+                    ],
+                    "parameters": [
+                      {
+                        "id": "4c8eafae-2513-452f-bab8-082250027f58",
+                        "version": "KqlParameterItem/1.0",
+                        "name": "SourceVmName",
+                        "label": "Virtual Machine name",
+                        "type": 1,
+                        "description": "Filter the backup jobs",
+                        "typeSettings": {
+                          "isSearchBox": true
+                        }
+                      },
+                      {
+                        "id": "bf800817-0f5d-4bfe-b5be-a6226d5da613",
+                        "version": "KqlParameterItem/1.0",
+                        "name": "JobStatusFilter",
+                        "label": "Job Status",
+                        "type": 2,
+                        "multiSelect": true,
+                        "quote": "'",
+                        "delimiter": ",",
+                        "typeSettings": {
+                          "additionalResourceOptions": [],
+                          "showDefault": false
+                        },
+                        "jsonData": "[\r\n    { \"value\":\"Restore Completed\", \"label\": \"Restore Completed\"},\r\n    { \"value\":\"Restore Failed\", \"label\": \"Restore Failed\"}\r\n]",
+                        "timeContext": {
+                          "durationMs": 86400000
+                        },
+                        "value": [
+                          "Restore Completed",
+                          "Restore Failed"
+                        ]
+                      }
+                    ],
+                    "style": "above",
+                    "queryType": 0,
+                    "resourceType": "microsoft.operationalinsights/workspaces"
+                  },
+                  "name": "backup jobs - parameters"
+                },
+                {
+                  "type": 3,
+                  "content": {
+                    "version": "KqlItem/1.0",
+                    "query": "let FirstOps = SnapshotsRecoveryJobs_CL \r\n| where jobType == \"Restore\" \r\n| where TimeGenerated >= {RestoreAge:start} and TimeGenerated <= {RestoreAge:end}\r\n| where isempty('{SourceVmName:value}') or tolower(vmName) contains tolower(tostring('{SourceVmName:value}'))\r\n| summarize arg_min(TimeGenerated, *) by jobId;\r\n\r\nSnapshotsRecoveryJobs_CL\r\n| join kind=inner (FirstOps) on jobId\r\n| where jobType == \"Restore\"\r\n| summarize arg_max(TimeGenerated, *) by jobId\r\n| where jobStatus in~ (split(\"{JobStatusFilter:label}\", \", \"))\r\n| extend DurationMinutes = datetime_diff(\"minute\", TimeGenerated, TimeGenerated1)\r\n| project TimeGenerated, batchId, vmId, ipAddress, jobStatus, DurationMinutes, vmName, vmSize, diskSku, snapshotId, jobId\r\n| sort by TimeGenerated desc",
+                    "size": 3,
+                    "exportFieldName": "jobId",
+                    "exportParameterName": "SelectedJob",
+                    "showExportToExcel": true,
+                    "exportToExcelOptions": "all",
+                    "queryType": 0,
+                    "resourceType": "microsoft.operationalinsights/workspaces",
+                    "crossComponentResources": [
+                      "{LogAnalyticsWorkspace}"
+                    ],
+                    "visualization": "table",
+                    "gridSettings": {
+                      "formatters": [
+                        {
+                          "columnMatch": "$gen_group",
+                          "formatter": 6,
+                          "dateFormat": {
+                            "formatName": "shortDateTimeNoMsPattern"
+                          }
+                        },
+                        {
+                          "columnMatch": "batchId",
+                          "formatter": 5
+                        },
+                        {
+                          "columnMatch": "jobStatus",
+                          "formatter": 18,
+                          "formatOptions": {
+                            "thresholdsOptions": "icons",
+                            "thresholdsGrid": [
+                              {
+                                "operator": "==",
+                                "thresholdValue": "Restore Completed",
+                                "representation": "success",
+                                "text": "{0}{1}"
+                              },
+                              {
+                                "operator": "==",
+                                "thresholdValue": "Restore In Progress",
+                                "representation": "pending",
+                                "text": "{0}{1}"
+                              },
+                              {
+                                "operator": "==",
+                                "thresholdValue": "Restore Failed",
+                                "representation": "3",
+                                "text": "{0}{1}"
+                              },
+                              {
+                                "operator": "Default",
+                                "thresholdValue": null,
+                                "representation": "unknown",
+                                "text": "{0}{1}"
+                              }
+                            ]
+                          }
+                        },
+                        {
+                          "columnMatch": "DurationMinutes",
+                          "formatter": 0,
+                          "numberFormat": {
+                            "unit": 25,
+                            "options": {
+                              "style": "decimal"
+                            }
+                          }
+                        },
+                        {
+                          "columnMatch": "vmName",
+                          "formatter": 5
+                        }
+                      ],
+                      "rowLimit": 50,
+                      "hierarchySettings": {
+                        "treeType": 1,
+                        "groupBy": [
+                          "batchId"
+                        ],
+                        "expandTopLevel": true,
+                        "finalBy": "TimeGenerated"
+                      },
+                      "labelSettings": [
+                        {
+                          "columnId": "TimeGenerated",
+                          "label": "Date Time"
+                        },
+                        {
+                          "columnId": "batchId",
+                          "label": "Batch"
+                        },
+                        {
+                          "columnId": "vmId",
+                          "label": "Virtual machine"
+                        },
+                        {
+                          "columnId": "ipAddress",
+                          "label": "IP address"
+                        },
+                        {
+                          "columnId": "jobStatus",
+                          "label": "Job Status"
+                        },
+                        {
+                          "columnId": "DurationMinutes",
+                          "label": "Duration"
+                        },
+                        {
+                          "columnId": "vmName",
+                          "label": "VM name"
+                        },
+                        {
+                          "columnId": "vmSize",
+                          "label": "VM size"
+                        },
+                        {
+                          "columnId": "diskSku",
+                          "label": "Disk sku"
+                        },
+                        {
+                          "columnId": "snapshotId",
+                          "label": "Source snapshot"
+                        },
+                        {
+                          "columnId": "jobId",
+                          "label": "Job ID"
+                        }
+                      ]
+                    },
+                    "sortBy": []
+                  },
+                  "name": "query - All Backup Jobs"
+                },
+                {
+                  "type": 3,
+                  "content": {
+                    "version": "KqlItem/1.0",
+                    "query": "SnapshotsRecoveryJobs_CL\r\n| where jobId == \"{SelectedJob}\"\r\n| where jobType == \"Restore\"\r\n| extend Details = pack_all()\r\n| project TimeGenerated, jobId, jobOperation, jobStatus, vmId, ipAddress, message, vmName, snapshotId, vmSize, diskSku, Details\r\n| sort by TimeGenerated desc",
+                    "size": 0,
+                    "title": "Job Details",
+                    "queryType": 0,
+                    "resourceType": "microsoft.operationalinsights/workspaces",
+                    "crossComponentResources": [
+                      "{LogAnalyticsWorkspace}"
+                    ],
+                    "gridSettings": {
+                      "formatters": [
+                        {
+                          "columnMatch": "$gen_group",
+                          "formatter": 6,
+                          "dateFormat": {
+                            "formatName": "shortDateTimeNoMsPattern"
+                          }
+                        },
+                        {
+                          "columnMatch": "TimeGenerated",
+                          "formatter": 5
+                        },
+                        {
+                          "columnMatch": "jobId",
+                          "formatter": 5
+                        },
+                        {
+                          "columnMatch": "jobOperation",
+                          "formatter": 18,
+                          "formatOptions": {
+                            "thresholdsOptions": "icons",
+                            "thresholdsGrid": [
+                              {
+                                "operator": "==",
+                                "thresholdValue": "Error",
+                                "representation": "cancelled",
+                                "text": "{0}{1}"
+                              },
+                              {
+                                "operator": "==",
+                                "thresholdValue": "VM Create Start",
+                                "representation": "Start",
+                                "text": "{0}{1}"
+                              },
+                              {
+                                "operator": "==",
+                                "thresholdValue": "VM Create End",
+                                "representation": "Stop",
+                                "text": "{0}{1}"
+                              },
+                              {
+                                "operator": "==",
+                                "thresholdValue": "VM Create Polling",
+                                "representation": "Pending",
+                                "text": "{0}{1}"
+                              },
+                              {
+                                "operator": "Default",
+                                "thresholdValue": null,
+                                "representation": "unknown",
+                                "text": "{0}{1}"
+                              }
+                            ]
+                          }
+                        },
+                        {
+                          "columnMatch": "jobStatus",
+                          "formatter": 18,
+                          "formatOptions": {
+                            "thresholdsOptions": "icons",
+                            "thresholdsGrid": [
+                              {
+                                "operator": "==",
+                                "thresholdValue": "Restore In Progress",
+                                "representation": "pending",
+                                "text": "{0}{1}"
+                              },
+                              {
+                                "operator": "==",
+                                "thresholdValue": "Restore Completed",
+                                "representation": "success",
+                                "text": "{0}{1}"
+                              },
+                              {
+                                "operator": "==",
+                                "thresholdValue": "Restore Failed",
+                                "representation": "3",
+                                "text": "{0}{1}"
+                              },
+                              {
+                                "operator": "Default",
+                                "thresholdValue": null,
+                                "representation": "unknown",
+                                "text": "{0}{1}"
+                              }
+                            ]
+                          }
+                        },
+                        {
+                          "columnMatch": "vmName",
+                          "formatter": 5
+                        },
+                        {
+                          "columnMatch": "Details",
+                          "formatter": 7,
+                          "formatOptions": {
+                            "linkTarget": "CellDetails",
+                            "linkLabel": "🔍 View Details",
+                            "linkIsContextBlade": true
+                          }
+                        }
+                      ],
+                      "rowLimit": 50,
+                      "hierarchySettings": {
+                        "treeType": 1,
+                        "groupBy": [
+                          "jobId"
+                        ],
+                        "expandTopLevel": true,
+                        "finalBy": "TimeGenerated"
+                      },
+                      "labelSettings": [
+                        {
+                          "columnId": "TimeGenerated",
+                          "label": "Date time"
+                        },
+                        {
+                          "columnId": "jobId",
+                          "label": "Job ID"
+                        },
+                        {
+                          "columnId": "jobOperation",
+                          "label": "Operation"
+                        },
+                        {
+                          "columnId": "jobStatus",
+                          "label": "Status"
+                        },
+                        {
+                          "columnId": "vmId",
+                          "label": "Virtual machine"
+                        },
+                        {
+                          "columnId": "ipAddress",
+                          "label": "IP address"
+                        },
+                        {
+                          "columnId": "message",
+                          "label": "Message"
+                        },
+                        {
+                          "columnId": "vmName",
+                          "label": "VM name"
+                        },
+                        {
+                          "columnId": "snapshotId",
+                          "label": "Source snapshot"
+                        },
+                        {
+                          "columnId": "vmSize",
+                          "label": "VM size"
+                        },
+                        {
+                          "columnId": "diskSku",
+                          "label": "Disk sku"
+                        }
+                      ]
+                    },
+                    "sortBy": []
+                  },
+                  "name": "query - Backup Job Operations"
+                }
+              ]
+            },
+            "conditionalVisibility": {
+              "parameterName": "selectedTab",
+              "comparison": "isEqualTo",
+              "value": "RestoreBatches"
+            },
+            "name": "group - Restore Batches Group"
+          }
+        ]
+      },
+      "conditionalVisibility": {
+        "parameterName": "Subscription",
+        "comparison": "isNotEqualTo"
+      },
+      "name": "group - Azure Snapshots"
+    }
+  ],
+  "fallbackResourceIds": [
+    "/subscriptions/xxxxxxx/resourceGroups/snapshots-mng"
+  ],
+  "$schema": "https://github.com/Microsoft/Application-Insights-Workbooks/blob/master/schema/workbook.json"
+}
