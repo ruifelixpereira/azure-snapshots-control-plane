@@ -30,13 +30,13 @@ export async function bckStartSnapshotPurgeJob(queueItem: SnapshotControl, conte
 
         // Check Test use cases
         const vmName = extractVmNameFromResourceId(queueItem.sourceVmId);
-        if (vmName.toLowerCase() === process.env.UC01_VM_NAME.toLowerCase()) {
+        if (vmName.toLowerCase() === (process.env.UC01_VM_NAME || "").toLowerCase()) {
             primaryNumberOfDays = process.env.UC01_BCK_PURGE_PRIMARY_LOCATION_NUMBER_OF_DAYS ? parseInt(process.env.UC01_BCK_PURGE_PRIMARY_LOCATION_NUMBER_OF_DAYS) : 0;
             secondaryNumberOfDays = process.env.UC01_BCK_PURGE_SECONDARY_LOCATION_NUMBER_OF_DAYS ? parseInt(process.env.UC01_BCK_PURGE_SECONDARY_LOCATION_NUMBER_OF_DAYS) : 7;
-        } else if (vmName.toLowerCase() === process.env.UC02_VM_NAME.toLowerCase()) {
+        } else if (vmName.toLowerCase() === (process.env.UC02_VM_NAME || "").toLowerCase()) {
             primaryNumberOfDays = process.env.UC02_BCK_PURGE_PRIMARY_LOCATION_NUMBER_OF_DAYS ? parseInt(process.env.UC02_BCK_PURGE_PRIMARY_LOCATION_NUMBER_OF_DAYS) : 1;
             secondaryNumberOfDays = process.env.UC02_BCK_PURGE_SECONDARY_LOCATION_NUMBER_OF_DAYS ? parseInt(process.env.UC02_BCK_PURGE_SECONDARY_LOCATION_NUMBER_OF_DAYS) : 7;
-        } else if (vmName.toLowerCase() === process.env.UC03_VM_NAME.toLowerCase()) {
+        } else if (vmName.toLowerCase() === (process.env.UC03_VM_NAME || "").toLowerCase()) {
             primaryNumberOfDays = process.env.UC03_BCK_PURGE_PRIMARY_LOCATION_NUMBER_OF_DAYS ? parseInt(process.env.UC03_BCK_PURGE_PRIMARY_LOCATION_NUMBER_OF_DAYS) : 1;
             secondaryNumberOfDays = process.env.UC03_BCK_PURGE_SECONDARY_LOCATION_NUMBER_OF_DAYS ? parseInt(process.env.UC03_BCK_PURGE_SECONDARY_LOCATION_NUMBER_OF_DAYS) : 7;
         }

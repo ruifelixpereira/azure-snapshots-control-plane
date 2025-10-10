@@ -62,8 +62,8 @@ export function extractVmNameFromResourceId(vmId: string): string | null {
         return null;
     }
     // Split the VM ID by '/' and find the VM name
-    const parts = vmId.split("/");
-    const vmNameIndex = parts.indexOf("virtualMachines");
+    const parts = vmId.toLowerCase().split("/");
+    const vmNameIndex = parts.indexOf("virtualmachines");
     const vmName = vmNameIndex !== -1 ? parts[vmNameIndex + 1] : null;
     return vmName;
 }

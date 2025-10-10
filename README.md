@@ -141,7 +141,7 @@ Use the provided GitHub Action workflow file `.github/workflows/azure-deploy.yml
 
 ### 2.1. Create a Service principal to deploy Function app and configure Secrets in GitHub
 
-Run the provided script `scripts/development/setup-github-actions-identity.sh` to create a Service Principal. Copy `template.env` to a new file named `.env` and customize the settings according to your environment. After this customization, just run the provided file in the `scripts/azure` directory. The command should output a JSON object similar to this:
+Run the provided script `scripts/development/setup-github-actions-identity.sh` to create a Service Principal. Copy `template.env` to a new file named `.env` and customize the settings according to your environment. After this customization, just run the provided file in the `scripts/development` directory. The command should output a JSON object similar to this:
 
 ```json
   {
@@ -219,7 +219,7 @@ You can go directly to Azure Portal, or you can use Azure CLI to set these setti
 az functionapp config appsettings set --name <function-app-name> --resource-group <resource-group-name> --settings KEY1="value1" KEY2="value2"
 ```
 
-If you used the provided script `scripts/create-azure-env.sh`, these settings are already set in your Function app environment.
+If you used the provided script `scripts/azure/create-azure-environment.sh`, these settings are already set in your Function app environment.
 
 
 ## Development
