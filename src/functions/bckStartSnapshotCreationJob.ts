@@ -2,10 +2,11 @@ import { app, InvocationContext, output } from "@azure/functions";
 
 import { AzureLogger } from '../common/logger';
 import { SnapshotSource, SnapshotCopy, BackupJobLogEntry, SnapshotControl, VmRecoveryInfo } from "../common/interfaces";
-import { generateGuid } from "../common/utils";
+import { generateGuid, extractVmNameFromResourceId } from "../common/utils";
 import { SnapshotManager } from "../controllers/snapshot.manager";
 import { BackupLogManager } from "../controllers/log.manager";
 import { _getString } from "../common/apperror";
+
 
 const copyJobsQueueOutput = output.storageQueue({
     queueName: 'copy-jobs',
@@ -64,7 +65,17 @@ export async function bckStartSnapshotCreationJob(queueItem: SnapshotSource, con
 
         // Check if we only want snapshots in the primary region 
         // and we don't need to copy it to the secondary region
-        const secondaryNumberOfDays = process.env.SMCP_BCK_PURGE_SECONDARY_LOCATION_NUMBER_OF_DAYS ? parseInt(process.env.SMCP_BCK_PURGE_SECONDARY_LOCATION_NUMBER_OF_DAYS) : 10;
+        let secondaryNumberOfDays = process.env.SMCP_BCK_PURGE_SECONDARY_LOCATION_NUMBER_OF_DAYS ? parseInt(process.env.SMCP_BCK_PURGE_SECONDARY_LOCATION_NUMBER_OF_DAYS) : 10;
+
+        // Check Test use cases
+        const vmName = extractVmNameFromResourceId(queueItem.vmId);
+        if (vmName.toLowerCase() === (process.env.UC01_VM_NAME || "").toLowerCase()) {
+            secondaryNumberOfDays = process.env.UC01_BCK_PURGE_SECONDARY_LOCATION_NUMBER_OF_DAYS ? parseInt(process.env.UC01_BCK_PURGE_SECONDARY_LOCATION_NUMBER_OF_DAYS) : 7;
+        } else if (vmName.toLowerCase() === (process.env.UC02_VM_NAME || "").toLowerCase()) {
+            secondaryNumberOfDays = process.env.UC02_BCK_PURGE_SECONDARY_LOCATION_NUMBER_OF_DAYS ? parseInt(process.env.UC02_BCK_PURGE_SECONDARY_LOCATION_NUMBER_OF_DAYS) : 7;
+        } else if (vmName.toLowerCase() === (process.env.UC03_VM_NAME || "").toLowerCase()) {
+            secondaryNumberOfDays = process.env.UC03_BCK_PURGE_SECONDARY_LOCATION_NUMBER_OF_DAYS ? parseInt(process.env.UC03_BCK_PURGE_SECONDARY_LOCATION_NUMBER_OF_DAYS) : 7;
+        }
 
         if (secondaryNumberOfDays <= 0) {
 

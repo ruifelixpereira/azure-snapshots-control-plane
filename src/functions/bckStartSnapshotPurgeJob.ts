@@ -92,7 +92,7 @@ export async function bckStartSnapshotPurgeJob(queueItem: SnapshotControl, conte
         const errMsg = _getString(err);
 
         // Detect too many requests limit error (service message)
-        const isTooManyRequestsLimitError = /too many requests|Please try after/i.test(errMsg);
+        const isTooManyRequestsLimitError = /too many requests|Please try after|Please retry the request later|The service is unavailable now/i.test(errMsg);
 
         if (isTooManyRequestsLimitError) {
             // attempt counter kept inside payload
