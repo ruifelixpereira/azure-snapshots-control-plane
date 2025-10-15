@@ -35,19 +35,21 @@ The solution is built using **Azure Functions** and **Azure Storage**, enabling 
 
 This modular and asynchronous design ensures reliable execution, scalability, and clear separation of concerns between scheduling, orchestration, and snapshot lifecycle management.
 
-![alt text](docs/images/arch.png)
+![alt text](docs/images/arch-backup.png)
 
-1. The snapshots creation process runs periodically (e.g., daily), triggered by a scheduler. All the disks belonging to a VM tagged with "smcp-backup=on" are considered for snapshot creation.
+1. The snapshots creation process runs periodically (e.g., daily), triggered by a scheduler. All the disks belonging to a VM tagged with "smcp-backup=on" are considered for snapshot creation. For tagged VM disks, a snapshot job creation message is sent to the snapshot-jobs storage queue.
 
-2. For tagged VM disks, a snapshot job creation message is sent to the snapshot-jobs storage queue.
-
-3. The snapshot creation job function collects snapshot creation messages and starts a new job with the following actions:
+2. The start snapshot creation job function collects snapshot creation messages and starts a new job with the following actions:
    - Creates a new incremental snapshot of the disk.
    - IF the snapshot is to be copied to a secondary region (configurable), THEN:
-     1. Starts the snapshot copy to the secondary region. This is made asynchronously, since it can take some time depending on the snapshot size.
-     2. Sends a new snapshot copy control message to the copy-control storage queue. This allows to trigger the control check if the copy ends without errors.
+     1. Sends an event to start the snapshot copy to the secondary region. This is made asynchronously, since it can take some time depending on the snapshot size.
    - IF the snapshot is only created in the primary region, THEN:
      1. Sends a purge job event to the purge-jobs storage queue. This will trigger a job to purge snapshots in the primary and secondary regions that are older than x days (configurable).
+   - Sends job operations to Log Analytics workspace.
+
+3. The start snapshot copy job function collects snapshot copy messages and starts a new job with the following actions:
+   - Starts the snapshot copy to the secondary region. This is made asynchronously, since it can take some time depending on the snapshot size.
+   - Sends a new snapshot copy control message to the copy-control storage queue. This allows to trigger the control check if the copy ends without errors.
    - Sends job operations to Log Analytics workspace.
 
 4. The snapshot copy control function checks if a copy operation is complete or is still in progress.
@@ -56,8 +58,8 @@ This modular and asynchronous design ensures reliable execution, scalability, an
    - Updates the snapshot copy operation state in Log Analytics workspace.
    - Sends a purge job event to the purge-jobs storage queue. This will trigger a jobs to purge the snapshot in the primary region used as a source in the copy operation and to purge snapshots in the secondary region that are older than x days (configurable).
 
-5. The snapshot purge job function collects snapshot purge messages and starts a new purge job with the following actions:
-   - Checks if there are snapshots to be deleted and start the delete operations in the requested region (it can be primary or secondary region)
+5. The start snapshot purge job function collects snapshot purge messages and starts a new purge job with the following actions:
+   - Checks if there are snapshots to be deleted and starts the delete operations in the requested region (it can be primary or secondary region)
    - Sends a new snapshot purge control message to the purge-control storage queue. This allows to trigger the control check if the purge ends without errors.
    - Sends purge job operations to Log Analytics workspace.
 
@@ -73,52 +75,57 @@ This modular and asynchronous design ensures reliable execution, scalability, an
 
 ### Recovery scenario
 
-This project creates Azure VMs in parallel from snapshots using Durable Functions (TypeScript), with batching, retry logic, and Azure Monitor integration.
+The goal is to create Azure VMs in parallel from snapshots using Durable Functions (TypeScript), with batching, retry logic, and Azure Monitor integration.
 
+- The **client Azure Function**, triggered by a **message sent to a storage queue**, starts the recovery process orchestrator with a trigger message that defines which VMs to recover, which snapshot dates to consider, and whether the VMs should maintain the original IP or be given a new one.
 
-- A **primary Azure Function**, triggered by a **daily timer**, scans all Azure Virtual Machines for a specific **smcp-backup tag**. For each VM identified, it enqueues a message in an **Azure Storage Queue**, signaling the need to initiate a **snapshot job**.
-
-- A **secondary Azure Function**, triggered by the queue message, performs the following tasks:
-  - Creates a **new incremental snapshot** of the VM's disk.
-  - **Replicates the snapshot** to a **secondary Azure region** to support disaster recovery scenarios.
-  - **Evaluates snapshot age** and **purges outdated snapshots** based on the organization's retention policies, ensuring cost efficiency and compliance.
+- The **recovery orchestrator Durable Function** performs the following tasks:
+  - Runs the **GetSnapshotsActivity** that collects the snapshots required for the recovery process.
+  - For each snapshot, runs a **CreateVmActivity** or a **CreateVmAsyncActivty**, depending on if the activity needs to wait for the VM creation completion or not.
+  - If the VMs are created with the **CreateVmAsyncActivty**, the final **ControlVmCreation** controls when the VMs are created to log the final result.
 
 This modular and asynchronous design ensures reliable execution, scalability, and clear separation of concerns between scheduling, orchestration, and snapshot lifecycle management.
 
-![alt text](docs/images/arch.png)
+![alt text](docs/images/arch-recovery.png)
 
-1. The snapshots creation process runs periodically (e.g., daily), triggered by a scheduler. All the disks belonging to a VM tagged with "smcp-backup=on" are considered for snapshot creation.
+1. The snapshots recovery process is triggered by a message sent to a storage queue. The message defines which VMs to recover, which snapshot dates to consider, which subnets to use, whether the VMs should maintain the original IP or be given a new one and if the VM creation activities should wait for the creation completion or not. This is an example of a trigger message:
 
-2. For tagged VM disks, a snapshot job creation message is sent to the snapshot-jobs storage queue.
+   ```json
+   {
+      "targetSubnetIds": [
+         "/subscriptions/f42687d4-5f50-4f38-956b-7fcfa755ff58/resourceGroups/scale-test-rg/providers/Microsoft.Network/virtualNetworks/scale-test2-vnet/subnets/default"
+      ],
+      "targetResourceGroup": "snap-second",
+      "maxTimeGenerated": "2025-09-27T10:30:00.000Z",
+      "useOriginalIpAddress": true,
+      "waitForVmCreationCompletion": true,
+      "vmFilter": ["scale-test2-vm-005", "scale-test2-vm-006"]
+   }
+   ```
 
-3. The snapshot creation job function collects snapshot creation messages and starts a new job with the following actions:
-   - Creates a new incremental snapshot of the disk.
-   - IF the snapshot is to be copied to a secondary region (configurable), THEN:
-     1. Starts the snapshot copy to the secondary region. This is made asynchronously, since it can take some time depending on the snapshot size.
-     2. Sends a new snapshot copy control message to the copy-control storage queue. This allows to trigger the control check if the copy ends without errors.
-   - IF the snapshot is only created in the primary region, THEN:
-     1. Sends a purge job event to the purge-jobs storage queue. This will trigger a job to purge snapshots in the primary and secondary regions that are older than x days (configurable).
-   - Sends job operations to Log Analytics workspace.
+   **Properties description**:
+   - `targetSubnetIds`: List of subnet resource IDs to use in the new VMs. Each snapshot resides in a specific region and the recovered VM will be created and use a subnet in the same region. In most cases this array of subnets will have only one element if all VMs are to be recovered to the same region. In cases where we have several snapshots in different regions, we need to define one subnet per region.
+   - `targetResourceGroup`: Name of the resource group where the new VMs will be created.
+   - `maxTimeGenerated`: The maximum time generated to consider when selecting the snapshot to recover. The most recent snapshots prior to this date will be considered for recovery.
+   - `useOriginalIpAddress`: If true, the new VM will try to use the same private IP address as the original VM. If false, a new private IP address will be assigned to the new VM.
+   - `waitForVmCreationCompletion`: If true, the activity that creates the VM will wait for the VM creation to be completed before returning. If false, the activity will return immediately after starting the VM creation.
+   - `vmFilter`: List of VM names to recover. If empty or not defined, all VMs with snapshots prior to the `maxTimeGenerated` date will be recovered.
 
-4. The snapshot copy control function checks if a copy operation is complete or is still in progress.
-   - Check the snapshot copy state.
-   - If the copy is still in progress, re-sends a copy control event to the copy-control storage queue with a visibility timeout set for the message to be visible after some minutes (configurable).
-   - Updates the snapshot copy operation state in Log Analytics workspace.
-   - Sends a purge job event to the purge-jobs storage queue. This will trigger a jobs to purge the snapshot in the primary region used as a source in the copy operation and to purge snapshots in the secondary region that are older than x days (configurable).
+2. The **StartRecoveryOrchestrator** collects the recovery message and starts the recovery process.
 
-5. The snapshot purge job function collects snapshot purge messages and starts a new purge job with the following actions:
-   - Checks if there are snapshots to be deleted and start the delete operations in the requested region (it can be primary or secondary region)
-   - Sends a new snapshot purge control message to the purge-control storage queue. This allows to trigger the control check if the purge ends without errors.
-   - Sends purge job operations to Log Analytics workspace.
+3. The **RecoveryOrchestratorSnapshot** as name implies is the orchestrator of the recovery process and executes the activities in a certain sequence.
 
-6. The snapshot purge control function checks if a purge operation is complete or is still in progress.
-   - Check if the snapshot still exists.
-   - If the purge is still in progress, re-sends a purge control event to the purge-control storage queue with a visibility timeout set for the message to be visible after some minutes (configurable).
-   - Updates the snapshot purge operation state in Log Analytics workspace.
+4. The **RecoveryOrchestratorSnapshot** starts by calling the **GetSnapshotsActivity** to get the most recent snapshots that are older than the `maxTimeGenerated` property and that map to the list of VMs to recover defined by the `vmFilter` property. Both these properties are passed in the triggering message.
 
-7. All the logging regarding snapshot job operations are stored in a Log Analytics workspace.
+5. For each snapshot returned by the **GetSnapshotsActivity**, the orchestrator calls the **CreateVmActivity** if the property `waitForVmCreationCompletion` is `true`. In this case the activity waits for the VM creation to be completed.
 
-8. The snapshots insights workbook provides visibility of all snapshots job operations, starting from a high-level view and the ability to drill-down into the details of each operation.
+6. For each snapshot returned by the **GetSnapshotsActivity**, the orchestrator calls the **CreateVmAsyncActivity** if the property `waitForVmCreationCompletion` is `false`. In this case the activity returns immediately, without waiting for the VM creation to complete. This activity sends a message to a storage queue that allows to control later if the VM creation is completed.
+
+7. The **ControlVMCreation** subscribes messages to control if a VM creation is completed successfully or not. This allows to have a complete tracking and monitoring of all operations in the recovery process.
+
+8. All the logging regarding snapshot recovery operations are stored in a Log Analytics workspace.
+
+9. The snapshots recovery insights workbook provides visibility of all snapshot recovery operations, starting from a high-level view and the ability to drill-down into the details of each operation.
 
 
 ## Step 1. Setup Azure resources
