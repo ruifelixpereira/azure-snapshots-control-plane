@@ -1,16 +1,15 @@
 import { app, InvocationContext } from "@azure/functions";
 
 import { AzureLogger } from '../common/logger';
-import { SnapshotPurgeControl, BackupJobLogEntry } from "../common/interfaces";
+import { SnapshotPurge, BackupJobLogEntry } from "../common/interfaces";
 import { SnapshotManager } from "../controllers/snapshot.manager";
 import { BackupLogManager } from "../controllers/log.manager";
 import { QueueManager } from "../controllers/queue.manager";
 import { _getString } from "../common/apperror";
-import { getSubscriptionAndResourceGroup } from '../common/azure-resource-utils';
 import { QUEUE_PURGE_CONTROL } from "../common/constants";
 
 
-export async function bckControlSnapshotPurge(queueItem: SnapshotPurgeControl, context: InvocationContext): Promise<void> {
+export async function bckControlSnapshotPurge(queueItem: SnapshotPurge, context: InvocationContext): Promise<void> {
 
     const logger = new AzureLogger(context);
 
@@ -18,18 +17,15 @@ export async function bckControlSnapshotPurge(queueItem: SnapshotPurgeControl, c
         const logManager = new BackupLogManager(logger);
         logger.info(`Checking the snapshot purge for disk ID ${queueItem.source.sourceDiskId} in all locations`);
 
-        // Get snapshots subscriptionId and resource group in primary/secondary location
-        const parsed = getSubscriptionAndResourceGroup(queueItem.source.primarySnapshotId);
-
         // A. Check if snapshot purge already finished
-        const snapshotManager = new SnapshotManager(logger, parsed.subscriptionId);
+        const snapshotManager = new SnapshotManager(logger, queueItem.subscriptionId);
 
-        const snapshotsFinished = await snapshotManager.areSnapshotsDeleted(parsed.resourceGroupName, queueItem.snapshotsNameToPurge);
+        const snapshotsFinished = await snapshotManager.isSnapshotDeleted(queueItem.resourceGroupName, queueItem.snapshotNameToPurge);
         const finished = Object.values(snapshotsFinished).every(v => v === true);
 
         if (finished) {
             // Purge is done
-            const msgPurgeFinished = `Snapshot purge finished for disk ID ${queueItem.source.sourceDiskId}`;
+            const msgPurgeFinished = `Snapshot ${queueItem.snapshotNameToPurge} purge finished for disk ID ${queueItem.source.sourceDiskId}`;
             logger.info(msgPurgeFinished);
 
             const logEntryPurgeFinished: BackupJobLogEntry = {
@@ -61,7 +57,7 @@ export async function bckControlSnapshotPurge(queueItem: SnapshotPurgeControl, c
         logger.error(err);
 
         // End process
-        const msgError = `Snapshot purge control for disk ID ${queueItem.source.sourceDiskId} failed with error ${_getString(err)}`;
+        const msgError = `Snapshot ${queueItem.snapshotNameToPurge} purge control for disk ID ${queueItem.source.sourceDiskId} failed with error ${_getString(err)}`;
         const logEntryError: BackupJobLogEntry = {
             jobId: queueItem.source.jobId,
             jobOperation: 'Error',

@@ -2,10 +2,11 @@ import { app, InvocationContext, Timer, output } from "@azure/functions";
 
 import { AzureLogger } from "../common/logger";
 import { ResourceGraphManager } from "../controllers/graph.manager";
+import { QUEUE_SNAPSHOT_JOBS } from "../common/constants";
 
 
 const snapshotsQueueOutput = output.storageQueue({
-    queueName: 'snapshot-jobs',
+    queueName: QUEUE_SNAPSHOT_JOBS,
     connection: 'AzureWebJobsStorage'
 });
 

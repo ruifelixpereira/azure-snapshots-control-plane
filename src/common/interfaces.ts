@@ -65,14 +65,16 @@ export interface SnapshotControl {
     attempt?: number;
 }
 
+export interface SnapshotPurge {
+    source: SnapshotControl;
+    subscriptionId: string;
+    resourceGroupName: string;
+    snapshotNameToPurge: string;
+}
+
 export interface SnapshotCopyControl {
     control: SnapshotControl;
     snapshot: Snapshot;
-}
-
-export interface SnapshotPurgeControl {
-    source: SnapshotControl;
-    snapshotsNameToPurge: string[];
 }
 
 export interface BackupJobLogEntry {

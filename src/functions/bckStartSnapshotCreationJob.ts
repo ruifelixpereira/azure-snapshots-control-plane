@@ -6,20 +6,21 @@ import { generateGuid, extractVmNameFromResourceId } from "../common/utils";
 import { SnapshotManager } from "../controllers/snapshot.manager";
 import { BackupLogManager } from "../controllers/log.manager";
 import { _getString } from "../common/apperror";
+import { QUEUE_COPY_JOBS, QUEUE_DEAD_LETTER, QUEUE_PURGE_JOBS, QUEUE_SNAPSHOT_JOBS } from "../common/constants";
 
 
 const copyJobsQueueOutput = output.storageQueue({
-    queueName: 'copy-jobs',
+    queueName: QUEUE_COPY_JOBS,
     connection: 'AzureWebJobsStorage'
 });
 
 const purgeJobsQueueOutput = output.storageQueue({
-    queueName: 'purge-jobs',
+    queueName: QUEUE_PURGE_JOBS,
     connection: 'AzureWebJobsStorage'
 });
 
 const deadLetterQueueOutput = output.storageQueue({
-    queueName: 'dead-letter-snapshot-creation-jobs',
+    queueName: QUEUE_DEAD_LETTER,
     connection: 'AzureWebJobsStorage'
 });
 
@@ -160,7 +161,7 @@ export async function bckStartSnapshotCreationJob(queueItem: SnapshotSource, con
 }
 
 app.storageQueue('bckStartSnapshotCreationJob', {
-    queueName: 'snapshot-jobs',
+    queueName: QUEUE_SNAPSHOT_JOBS,
     connection: 'AzureWebJobsStorage',
     extraOutputs: [
         purgeJobsQueueOutput,

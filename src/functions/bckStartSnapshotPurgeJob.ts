@@ -1,14 +1,20 @@
-import { app, InvocationContext } from "@azure/functions";
+import { app, InvocationContext, output } from "@azure/functions";
 
 import { AzureLogger } from '../common/logger';
-import { SnapshotControl, SnapshotPurgeControl, BackupJobLogEntry } from "../common/interfaces";
+import { SnapshotControl, BackupJobLogEntry, SnapshotPurge } from "../common/interfaces";
 import { SnapshotManager } from "../controllers/snapshot.manager";
 import { BackupLogManager } from "../controllers/log.manager";
 import { QueueManager } from "../controllers/queue.manager";
 import { _getString } from "../common/apperror";
 import { getSubscriptionAndResourceGroup } from '../common/azure-resource-utils';
-import { QUEUE_PURGE_CONTROL, QUEUE_PURGE_JOBS } from "../common/constants";
+import { QUEUE_PURGE_JOBS, QUEUE_PURGE_SNAPSHOTS } from "../common/constants";
 import { extractVmNameFromResourceId, getRandomDelaySeconds } from "../common/utils";
+
+
+const purgeSnapshotsQueueOutput = output.storageQueue({
+    queueName: QUEUE_PURGE_SNAPSHOTS,
+    connection: 'AzureWebJobsStorage'
+});
 
 
 export async function bckStartSnapshotPurgeJob(queueItem: SnapshotControl, context: InvocationContext): Promise<void> {
@@ -43,7 +49,7 @@ export async function bckStartSnapshotPurgeJob(queueItem: SnapshotControl, conte
         
         logger.info(`Start purging snapshots for disk ID ${queueItem.sourceDiskId} in all locations`);
 
-        const snapshotsBeingPurged = await snapshotManager.startPurgeSnapshotsOfDiskIdOlderThan(
+        const snapshotsBeingPurged = await snapshotManager.GetSnapshotsOfDiskIdOlderThan(
             parsed.resourceGroupName,
             queueItem.sourceDiskId,
             now,
@@ -54,7 +60,7 @@ export async function bckStartSnapshotPurgeJob(queueItem: SnapshotControl, conte
         if (snapshotsBeingPurged.length > 0) {
 
             // Log the purge operation
-            const msgPurge = `Started purging snapshots for disk ID ${queueItem.sourceDiskId} in all locations`;
+            const msgPurge = `Started purging ${snapshotsBeingPurged.length} snapshots for disk ID ${queueItem.sourceDiskId} in all locations`;
             logger.info(msgPurge);
 
             const logEntryPurge: BackupJobLogEntry = {
@@ -72,19 +78,19 @@ export async function bckStartSnapshotPurgeJob(queueItem: SnapshotControl, conte
             }
             await logManager.uploadLog(logEntryPurge);
 
-            // B. Send control purge event with a visibility timeout
-            logger.info(`Sending control purge event for disk ID ${queueItem.sourceDiskId} in all locations`);
+            // B. Send purge individual snapshot event
+            logger.info(`Sending individual purge events for disk ID ${queueItem.sourceDiskId} in all locations`);
 
-            // Prepare control purge event
-            const queueManager = new QueueManager(logger, process.env.AzureWebJobsStorage__accountname || "", QUEUE_PURGE_CONTROL);
-            const retryAfter = process.env.SMCP_BCK_RETRY_CONTROL_PURGE_MINUTES ? parseInt(process.env.SMCP_BCK_RETRY_CONTROL_PURGE_MINUTES)*60 : 60*60; // 1 hour in seconds
-
-            const purgeControl: SnapshotPurgeControl = {
+            // Prepare individual purge events
+            const snapshotsToPurge: SnapshotPurge[] = snapshotsBeingPurged.map(snapshot => ({
                 source: queueItem,
-                snapshotsNameToPurge: snapshotsBeingPurged
-            };
+                subscriptionId: parsed.subscriptionId,
+                resourceGroupName: parsed.resourceGroupName,
+                snapshotNameToPurge: snapshot
+            }));
 
-            await queueManager.sendMessage(JSON.stringify(purgeControl), retryAfter);
+            // Send notification using Storage Queue
+            context.extraOutputs.set(purgeSnapshotsQueueOutput, snapshotsToPurge);
         }
 
     } catch (err) {
@@ -163,5 +169,8 @@ export async function bckStartSnapshotPurgeJob(queueItem: SnapshotControl, conte
 app.storageQueue('bckStartSnapshotPurgeJob', {
     queueName: QUEUE_PURGE_JOBS,
     connection: 'AzureWebJobsStorage',
+    extraOutputs: [
+        purgeSnapshotsQueueOutput
+    ],
     handler: bckStartSnapshotPurgeJob
 });

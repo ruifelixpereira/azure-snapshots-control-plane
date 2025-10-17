@@ -32,6 +32,7 @@ var queuesToCreate = [
   'copy-control'
   'purge-jobs'
   'purge-control'
+  'purge-snapshots'
   'dead-letter-snapshot-creation-jobs'
   'recovery-jobs'
   'vm-creation-control'
