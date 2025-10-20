@@ -19,12 +19,12 @@ export class VmManager {
         this.networkClient = new NetworkManagementClient(credential, subscriptionId);
     }
 
-    public async createDiskFromSnapshot(source: NewVmDetails, jobId: string): Promise<VmDisk> {
+    public async createDiskFromSnapshot(source: NewVmDetails, jobId: string, uniqueSuffix: string): Promise<VmDisk> {
 
         try {
             let newDisk: VmDisk = null;
             let diskExists = false;
-            const diskName = `${source.sourceSnapshot.vmName}-${source.sourceSnapshot.diskProfile}-${formatDateYYYYMMDDTHHMM(new Date())}`;
+            const diskName = `${source.sourceSnapshot.vmName}-${source.sourceSnapshot.diskProfile}-${formatDateYYYYMMDDTHHMM(new Date())}${uniqueSuffix}`;
 
             // Add mandatory tags from environment variable
             let allTags = {};
@@ -162,7 +162,7 @@ export class VmManager {
     }
 
 
-    public async createVirtualMachine(source: NewVmDetails, osDisk: VmDisk, jobId: string): Promise<VmInfo> {
+    public async createVirtualMachine(source: NewVmDetails, osDisk: VmDisk, jobId: string, uniqueSuffix: string): Promise<VmInfo> {
 
         try {
             let newVm: VmInfo = null;
@@ -177,7 +177,7 @@ export class VmManager {
             const nic = await this.createNetworkInterface(
                 tracking,
                 source.targetResourceGroup,
-                `${source.sourceSnapshot.vmName}-nic`,
+                `${source.sourceSnapshot.vmName}-nic${uniqueSuffix}`,
                 source.targetSubnetId,
                 source.sourceSnapshot.location,
                 source.useOriginalIpAddress,
@@ -236,7 +236,7 @@ export class VmManager {
                 //this.logger.info(`Adding TrustedLaunch security profile to VM: ${source.sourceSnapshot.vmName}`);
             }
 
-            const result = await this.computeClient.virtualMachines.beginCreateOrUpdateAndWait(source.targetResourceGroup, source.sourceSnapshot.vmName, vmConfig);
+            const result = await this.computeClient.virtualMachines.beginCreateOrUpdateAndWait(source.targetResourceGroup, `${source.sourceSnapshot.vmName}${uniqueSuffix}`, vmConfig);
 
             newVm = {
                 id: result.id,
@@ -256,7 +256,7 @@ export class VmManager {
     }
 
 
-    public async createVirtualMachineAsync(source: NewVmDetails, osDisk: VmDisk, jobId: string): Promise<VmCreationResult> {
+    public async createVirtualMachineAsync(source: NewVmDetails, osDisk: VmDisk, jobId: string, uniqueSuffix: string): Promise<VmCreationResult> {
 
         try {
 
@@ -270,7 +270,7 @@ export class VmManager {
             const nic = await this.createNetworkInterface(
                 tracking,
                 source.targetResourceGroup,
-                `${source.sourceSnapshot.vmName}-nic`,
+                `${source.sourceSnapshot.vmName}-nic${uniqueSuffix}`,
                 source.targetSubnetId,
                 source.sourceSnapshot.location,
                 source.useOriginalIpAddress,
@@ -321,7 +321,7 @@ export class VmManager {
             }
 
             // Start the async VM creation operation
-            const poller = await this.computeClient.virtualMachines.beginCreateOrUpdate(source.targetResourceGroup, source.sourceSnapshot.vmName, vmConfig);
+            const poller = await this.computeClient.virtualMachines.beginCreateOrUpdate(source.targetResourceGroup, `${source.sourceSnapshot.vmName}${uniqueSuffix}`, vmConfig);
             const operationState = poller.getOperationState();
             
             // Generate a unique operation ID for tracking
@@ -333,7 +333,7 @@ export class VmManager {
             const pollMessage: VmCreationPollMessage = {
                 pollerUrl: poller.toString(), // This may contain serialized poller info
                 operationId: operationId,
-                vmName: source.sourceSnapshot.vmName,
+                vmName: `${source.sourceSnapshot.vmName}${uniqueSuffix}`,
                 targetResourceGroup: source.targetResourceGroup,
                 sourceSnapshot: source.sourceSnapshot,
                 nicInfo: nic,

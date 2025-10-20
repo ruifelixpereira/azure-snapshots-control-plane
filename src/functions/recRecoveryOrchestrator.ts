@@ -26,6 +26,7 @@ const recRecoveryOrchestrator: OrchestrationHandler = function* (context: Orches
             maxTimeGenerated: input.maxTimeGenerated,
             useOriginalIpAddress: input.useOriginalIpAddress,
             waitForVmCreationCompletion: input.waitForVmCreationCompletion,
+            appendUniqueStringToVmName: input.appendUniqueStringToVmName,
             vmFilterCount: input.vmFilter?.length || 0,
             batchId: input.batchId
         });
@@ -115,6 +116,7 @@ const recRecoveryOrchestrator: OrchestrationHandler = function* (context: Orches
                         targetSubnetId: matchingSubnet.subnetId,
                         targetResourceGroup: input.targetResourceGroup,
                         useOriginalIpAddress: input.useOriginalIpAddress,
+                        appendUniqueStringToVmName: input.appendUniqueStringToVmName,
                         sourceSnapshot: snapshot,
                         batchId: input.batchId
                     });
@@ -124,6 +126,7 @@ const recRecoveryOrchestrator: OrchestrationHandler = function* (context: Orches
                         targetSubnetId: matchingSubnet.subnetId,
                         targetResourceGroup: input.targetResourceGroup,
                         useOriginalIpAddress: input.useOriginalIpAddress,
+                        appendUniqueStringToVmName: input.appendUniqueStringToVmName,
                         sourceSnapshot: snapshot,
                         batchId: input.batchId
                     });

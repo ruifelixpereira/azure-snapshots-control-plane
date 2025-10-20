@@ -5,6 +5,7 @@ import { SnapshotControl, BackupJobLogEntry, SnapshotPurge } from "../common/int
 import { SnapshotManager } from "../controllers/snapshot.manager";
 import { BackupLogManager } from "../controllers/log.manager";
 import { QueueManager } from "../controllers/queue.manager";
+import { ResourceGraphManager } from "../controllers/graph.manager";
 import { _getString } from "../common/apperror";
 import { getSubscriptionAndResourceGroup } from '../common/azure-resource-utils';
 import { QUEUE_PURGE_JOBS, QUEUE_PURGE_SNAPSHOTS } from "../common/constants";
@@ -49,6 +50,7 @@ export async function bckStartSnapshotPurgeJob(queueItem: SnapshotControl, conte
         
         logger.info(`Start purging snapshots for disk ID ${queueItem.sourceDiskId} in all locations`);
 
+        /*
         const snapshotsBeingPurged = await snapshotManager.GetSnapshotsOfDiskIdOlderThan(
             parsed.resourceGroupName,
             queueItem.sourceDiskId,
@@ -56,11 +58,27 @@ export async function bckStartSnapshotPurgeJob(queueItem: SnapshotControl, conte
             primaryNumberOfDays,
             secondaryNumberOfDays
         );
+        */
 
-        if (snapshotsBeingPurged.length > 0) {
+        // Calculate cutoff dates
+        const baseDate = now;
+        const baseDateEndOfDay = new Date(baseDate.getFullYear(), baseDate.getMonth(), baseDate.getDate(), 23, 59, 59, 999);
+        const primaryCutoff = new Date(baseDateEndOfDay.getTime() - primaryNumberOfDays * 24 * 60 * 60 * 1000);
+        const secondaryCutoff = new Date(baseDateEndOfDay.getTime() - secondaryNumberOfDays * 24 * 60 * 60 * 1000);
+
+        // Get snapshots to delete
+        const graphManager = new ResourceGraphManager(logger);
+        const snapshotsToPurge = await graphManager.getSnapshotsBySourceAndDate(
+            parsed.resourceGroupName,
+            queueItem.sourceDiskId,
+            primaryCutoff.toISOString(),
+            secondaryCutoff.toISOString()
+        );
+
+        if (snapshotsToPurge.length > 0) {
 
             // Log the purge operation
-            const msgPurge = `Started purging ${snapshotsBeingPurged.length} snapshots for disk ID ${queueItem.sourceDiskId} in all locations`;
+            const msgPurge = `Started purging ${snapshotsToPurge.length} snapshots for disk ID ${queueItem.sourceDiskId} in all locations`;
             logger.info(msgPurge);
 
             const logEntryPurge: BackupJobLogEntry = {
@@ -82,15 +100,15 @@ export async function bckStartSnapshotPurgeJob(queueItem: SnapshotControl, conte
             logger.info(`Sending individual purge events for disk ID ${queueItem.sourceDiskId} in all locations`);
 
             // Prepare individual purge events
-            const snapshotsToPurge: SnapshotPurge[] = snapshotsBeingPurged.map(snapshot => ({
+            const snapshots: SnapshotPurge[] = snapshotsToPurge.map(snapshot => ({
                 source: queueItem,
-                subscriptionId: parsed.subscriptionId,
-                resourceGroupName: parsed.resourceGroupName,
-                snapshotNameToPurge: snapshot
+                subscriptionId: snapshot.subscriptionId,
+                resourceGroupName: snapshot.resourceGroup,
+                snapshotNameToPurge: snapshot.name
             }));
 
             // Send notification using Storage Queue
-            context.extraOutputs.set(purgeSnapshotsQueueOutput, snapshotsToPurge);
+            context.extraOutputs.set(purgeSnapshotsQueueOutput, snapshots);
         }
 
     } catch (err) {

@@ -5,7 +5,7 @@ import { CREATE_VM_ACTIVITY } from '../common/constants';
 import { AzureLogger } from '../common/logger';
 import { RecoveryJobLogEntry, NewVmDetails, VmInfo, VmDisk } from '../common/interfaces';
 import { VmManager } from '../controllers/vm.manager';
-import { extractSubscriptionIdFromResourceId, generateGuid } from '../common/utils';
+import { extractSubscriptionIdFromResourceId, generateGuid, generateUniqueString } from '../common/utils';
 import { _getString } from '../common/apperror';
 import { RecoveryLogManager } from "../controllers/log.manager";
 import { PermanentError, TransientError, BusinessError, AzureError, classifyError } from '../common/errors';
@@ -38,8 +38,14 @@ const recCreateVmActivity: ActivityHandler = async (input: NewVmDetails, context
             throw new BusinessError(`Cannot create VM from ${input.sourceSnapshot.diskProfile} snapshot. Only os-disk snapshots are supported.`);
         }
 
+        // Generate unique suffix for VM name if needed
+        let uniqueSuffix = "";
+        if (input.appendUniqueStringToVmName) {
+            uniqueSuffix = `-${generateUniqueString(5)}-`;
+        }
+
         // Log start
-        const msgStart = `Starting the creation of VM ${input.sourceSnapshot.vmName} from ${input.sourceSnapshot.id}`
+        const msgStart = `Starting the creation of VM ${input.sourceSnapshot.vmName} with unique suffix "${uniqueSuffix}" from ${input.sourceSnapshot.id}`
         const logEntryStart: RecoveryJobLogEntry = {
             batchId: input.batchId,
             jobId: jobId,
@@ -63,7 +69,7 @@ const recCreateVmActivity: ActivityHandler = async (input: NewVmDetails, context
         
         let osDisk: VmDisk;
         try {
-            osDisk = await vmManager.createDiskFromSnapshot(input, jobId);
+            osDisk = await vmManager.createDiskFromSnapshot(input, jobId, uniqueSuffix);
             logger.info(`✅ Successfully created new disk: ${osDisk.id}`);
         } catch (error) {
             const classifiedError = classifyVmManagerError(error, 'disk creation');
@@ -73,7 +79,7 @@ const recCreateVmActivity: ActivityHandler = async (input: NewVmDetails, context
         // Create VM in subnet (can have transient failures)
         let vm: VmInfo;
         try {
-            vm = await vmManager.createVirtualMachine(input, osDisk, jobId);
+            vm = await vmManager.createVirtualMachine(input, osDisk, jobId, uniqueSuffix);
             logger.info(`✅ Successfully created VM: ${vm.name}`);
         } catch (error) {
             const classifiedError = classifyVmManagerError(error, 'VM creation');

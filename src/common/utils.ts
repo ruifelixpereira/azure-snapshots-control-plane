@@ -9,6 +9,33 @@ export function generateGuid(): string {
     });
 }
 
+/**
+ * Generate a unique string containing only lowercase letters (a-z) and numbers (0-9)
+ * @param length The desired length of the string (default: 8)
+ * @returns A random string of the specified length
+ */
+export function generateUniqueString(length: number = 8): string {
+    const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
+    let result = '';
+    
+    for (let i = 0; i < length; i++) {
+        result += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    
+    return result;
+}
+
+/**
+ * Generate a unique string with timestamp prefix for better uniqueness
+ * @param length The desired length of the random part (default: 6)
+ * @returns A string with timestamp + random characters
+ */
+export function generateUniqueStringWithTimestamp(length: number = 6): string {
+    const timestamp = Date.now().toString(36); // Convert timestamp to base36
+    const randomPart = generateUniqueString(length);
+    return `${timestamp}${randomPart}`;
+}
+
 export function formatDateYYYYMMDDTHHMMSS(date: Date): string {
     const pad = (n: number) => n.toString().padStart(2, '0');
     return `${date.getFullYear()}${pad(date.getMonth() + 1)}${pad(date.getDate())}T${pad(date.getHours())}${pad(date.getMinutes())}${pad(date.getSeconds())}`;

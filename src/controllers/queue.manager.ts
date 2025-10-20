@@ -72,6 +72,31 @@ export class QueueManager {
             throw error;
         }
     }
+
+    public async receiveMessages(maxMessages: number = 32): Promise<any[]> {
+        try {
+            const queueClient = await this.queueServiceClient.getQueueClient(this.queueName);
+            const response = await queueClient.receiveMessages({ numberOfMessages: maxMessages });
+            return response.receivedMessageItems || [];
+        } catch (error) {
+            const message = `Unable to receive messages from queue '${this.queueName}' with error: ${_getString(error)}`;
+            this.logger.error(message);
+            throw new StorageQueueError(message);
+        }
+    }
+
+    public async deleteMessage(message: any): Promise<void> {
+        try {
+            const queueClient = await this.queueServiceClient.getQueueClient(this.queueName);
+            await queueClient.deleteMessage(message.messageId, message.popReceipt);
+            this.logger.info(`Deleted message ${message.messageId} from queue '${this.queueName}'`);
+        } catch (error) {
+            const message = `Unable to delete message from queue '${this.queueName}' with error: ${_getString(error)}`;
+            this.logger.error(message);
+            throw new StorageQueueError(message);
+        }
+    }
+
 }
 
 

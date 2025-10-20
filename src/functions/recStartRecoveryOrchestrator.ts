@@ -56,6 +56,7 @@ const recStartRecoveryOrchestrator = async (queueItem: RecoveryBatch, context: I
                 targetResourceGroup: input.targetResourceGroup,
                 useOriginalIpAddress: input.useOriginalIpAddress,
                 waitForVmCreationCompletion: input.waitForVmCreationCompletion,
+                appendUniqueStringToVmName: input.appendUniqueStringToVmName,
                 hasVmFilters: !!input.vmFilter,
                 vmFilterCount: input.vmFilter ? input.vmFilter.length : 0
             });

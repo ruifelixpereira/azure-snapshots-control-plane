@@ -6,7 +6,7 @@ import { CREATE_VM_ASYNC_ACTIVITY, QUEUE_CONTROL_VM_CREATION } from '../common/c
 import { RecoveryJobLogEntry, NewVmDetails, VmCreationResult, VmDisk } from '../common/interfaces';
 import { VmManager } from '../controllers/vm.manager';
 import { QueueManager } from "../controllers/queue.manager";
-import { extractSubscriptionIdFromResourceId, generateGuid } from '../common/utils';
+import { extractSubscriptionIdFromResourceId, generateGuid, generateUniqueString } from '../common/utils';
 import { _getString } from '../common/apperror';
 import { RecoveryLogManager } from "../controllers/log.manager";
 import { PermanentError, TransientError, BusinessError, classifyError } from '../common/errors';
@@ -40,8 +40,14 @@ const recCreateVmAsyncActivity: ActivityHandler = async (input: NewVmDetails, co
             throw new BusinessError(`Cannot create VM from ${input.sourceSnapshot.diskProfile} snapshot. Only os-disk snapshots are supported.`);
         }
 
+        // Generate unique suffix for VM name if needed
+        let uniqueSuffix = "";
+        if (input.appendUniqueStringToVmName) {
+            uniqueSuffix = `-${generateUniqueString(5)}-`;
+        }
+
         // Log start
-        const msgStart = `Starting async VM creation for ${input.sourceSnapshot.vmName} from ${input.sourceSnapshot.id}`;
+        const msgStart = `Starting async VM creation for ${input.sourceSnapshot.vmName} with unique suffix "${uniqueSuffix}" from ${input.sourceSnapshot.id}`;
         const logEntryStart: RecoveryJobLogEntry = {
             jobId: jobId,
             jobOperation: 'VM Create Start',
@@ -65,7 +71,7 @@ const recCreateVmAsyncActivity: ActivityHandler = async (input: NewVmDetails, co
         
         let osDisk: VmDisk;
         try {
-            osDisk = await vmManager.createDiskFromSnapshot(input, jobId);
+            osDisk = await vmManager.createDiskFromSnapshot(input, jobId, uniqueSuffix);
             logger.info(`✅ Successfully created new disk: ${osDisk.id}`);
         } catch (error) {
             const classifiedError = classifyVmManagerError(error, 'disk creation');
@@ -76,7 +82,7 @@ const recCreateVmAsyncActivity: ActivityHandler = async (input: NewVmDetails, co
         let vmCreationResult: VmCreationResult;
         try {
 
-            vmCreationResult = await vmManager.createVirtualMachineAsync(input, osDisk, jobId);
+            vmCreationResult = await vmManager.createVirtualMachineAsync(input, osDisk, jobId, uniqueSuffix);
             
             if (vmCreationResult.success && vmCreationResult.pollerMessage) {
                 // VM creation started successfully, send to polling queue

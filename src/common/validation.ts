@@ -17,6 +17,7 @@ export function isBatchOrchestratorInput(obj: any): obj is RecoveryBatch {
            typeof obj.maxTimeGenerated === 'string' &&
            typeof obj.useOriginalIpAddress === 'boolean' &&
            typeof obj.waitForVmCreationCompletion === 'boolean' &&
+           typeof obj.appendUniqueStringToVmName === 'boolean' &&
            (obj.vmFilter === undefined || Array.isArray(obj.vmFilter));
 }
 
@@ -188,7 +189,13 @@ export function validateBatchOrchestratorInput(obj: any): RecoveryBatch {
       } else if (typeof obj.waitForVmCreationCompletion !== 'boolean') {
         errors.push('waitForVmCreationCompletion must be a boolean (true or false)');
       }
-      
+
+        if (obj.appendUniqueStringToVmName === undefined || obj.appendUniqueStringToVmName === null) {
+        errors.push('appendUniqueStringToVmName is required');
+      } else if (typeof obj.appendUniqueStringToVmName !== 'boolean') {
+        errors.push('appendUniqueStringToVmName must be a boolean (true or false)');
+      }
+
       if (obj.vmFilter !== undefined && !Array.isArray(obj.vmFilter)) {
         errors.push('vmFilter must be an array if provided');
       }
@@ -204,6 +211,7 @@ export function validateBatchOrchestratorInput(obj: any): RecoveryBatch {
     maxTimeGenerated: validateMaxTimeGenerated(obj.maxTimeGenerated),
     useOriginalIpAddress: obj.useOriginalIpAddress,
     waitForVmCreationCompletion: obj.waitForVmCreationCompletion,
+    appendUniqueStringToVmName: obj.appendUniqueStringToVmName,
     vmFilter: obj.vmFilter
   };
   
@@ -277,6 +285,7 @@ export function createDefaultBatchOrchestratorInput(): RecoveryBatch {
     maxTimeGenerated: new Date().toISOString(), // Current datetime as ISO string
     useOriginalIpAddress: false, // Default to false for dynamic IP allocation
     waitForVmCreationCompletion: false,
+    appendUniqueStringToVmName: true,
     vmFilter: ["vm-01", "vm-02"]
   };
 }
@@ -329,7 +338,8 @@ export function sanitizeBatchOrchestratorInput(input: any): RecoveryBatch {
     targetResourceGroup: String(input.targetResourceGroup || '').trim(),
     maxTimeGenerated: validatedMaxTime,
     useOriginalIpAddress: Boolean(input.useOriginalIpAddress), // Convert to boolean
-    waitForVmCreationCompletion: Boolean(input.waitForVmCreationCompletion) // Convert to boolean
+    waitForVmCreationCompletion: Boolean(input.waitForVmCreationCompletion), // Convert to boolean
+    appendUniqueStringToVmName: Boolean(input.appendUniqueStringToVmName) // Convert to boolean
   };
 
   // Only include vmFilter if it's a valid array

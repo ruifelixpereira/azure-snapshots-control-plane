@@ -100,6 +100,7 @@ export interface RecoveryBatch {
     maxTimeGenerated: string; // ISO datetime string
     useOriginalIpAddress: boolean; // Whether to preserve original IP addresses
     waitForVmCreationCompletion: boolean; // Whether to wait for VM creation to complete
+    appendUniqueStringToVmName: boolean; // Whether to append a unique string to the VM and NIC name
     vmFilter?: string[];
     batchId?: string;
 }
@@ -122,6 +123,7 @@ export interface NewVmDetails {
     targetSubnetId: string; // Single subnet ID for individual VM creation
     targetResourceGroup: string;
     useOriginalIpAddress: boolean; // Whether to preserve original IP addresses
+    appendUniqueStringToVmName: boolean; // Whether to append a unique string to the VM and NIC name
     sourceSnapshot: RecoverySnapshot;
     batchId: string;
 }

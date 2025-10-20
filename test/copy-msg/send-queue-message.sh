@@ -11,6 +11,7 @@ set -a && source .env && set +a
 # Required variables
 required_vars=(
     "STORAGE_ACCOUNT_NAME"
+    "SOURCE_QUEUE_NAME"
 )
 
 # Set the current directory to where the script lives.
@@ -48,14 +49,13 @@ check_required_arguments
 
 ####################################################################################
 
-QUEUE_NAME="recovery-jobs"
 
 # Function to send message to queue using Entra ID authentication
 send_message() {
     local message_content="$1"
     local message_file="$2"
     
-    echo "📨 Sending message to queue: $QUEUE_NAME"
+    echo "📨 Sending message to queue: $SOURCE_QUEUE_NAME"
     echo "🔐 Using Entra ID authentication"
     echo "📄 Message preview: ${message_content:0:200}..."
     
@@ -77,7 +77,7 @@ send_message() {
     echo "🔐 Message encoded as Base64"
     
     az storage message put \
-        --queue-name "$QUEUE_NAME" \
+        --queue-name "$SOURCE_QUEUE_NAME" \
         --content "$ENCODED_CONTENT" \
         --account-name "$STORAGE_ACCOUNT_NAME" \
         --auth-mode login
@@ -115,7 +115,6 @@ else
     "maxTimeGenerated": "2025-09-27T10:30:00.000Z",
     "useOriginalIpAddress": false,
     "waitForVmCreationCompletion": false,
-    "appendUniqueStringToVmName": true,
     "vmFilter": [
         { "vm": "vm-001" },
         { "vm": "vm-002" }
@@ -127,7 +126,7 @@ fi
 
 #echo ""
 #echo "📋 Queue Information:"
-#echo "   Queue Name: $QUEUE_NAME"
+#echo "   Queue Name: $SOURCE_QUEUE_NAME"
 #echo "   Storage Account: $STORAGE_ACCOUNT_NAME"
 #echo "   Authentication: Entra ID (Azure AD)"
 #echo ""
