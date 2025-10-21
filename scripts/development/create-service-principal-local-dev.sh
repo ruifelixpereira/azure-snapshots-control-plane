@@ -12,7 +12,6 @@ set -a && source .env && set +a
 required_vars=(
     "prefix"
     "resourceGroupName" 
-    "storageAccountName"
 )
 
 # Set the current directory to where the script lives

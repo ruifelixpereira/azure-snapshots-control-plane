@@ -1,12 +1,12 @@
 import { app, InvocationContext, output } from "@azure/functions";
 
 import { AzureLogger } from '../common/logger';
-import { SnapshotControl, BackupJobLogEntry, SnapshotPurge } from "../common/interfaces";
+import { SnapshotControl, BackupJobLogEntry, SnapshotPurge, SnapshotToPurge } from "../common/interfaces";
 import { SnapshotManager } from "../controllers/snapshot.manager";
 import { BackupLogManager } from "../controllers/log.manager";
 import { QueueManager } from "../controllers/queue.manager";
 import { ResourceGraphManager } from "../controllers/graph.manager";
-import { _getString } from "../common/apperror";
+import { _getString, isRetryableError } from "../common/apperror";
 import { getSubscriptionAndResourceGroup } from '../common/azure-resource-utils';
 import { QUEUE_PURGE_JOBS, QUEUE_PURGE_SNAPSHOTS } from "../common/constants";
 import { extractVmNameFromResourceId, getRandomDelaySeconds } from "../common/utils";
@@ -113,20 +113,18 @@ export async function bckStartSnapshotPurgeJob(queueItem: SnapshotControl, conte
 
     } catch (err) {
 
-        const errMsg = _getString(err);
+        logger.error(err);
+        logger.error(_getString(err));
+        logger.error("Status code of the error:", err?.statusCode);
 
-        // Detect too many requests limit error (service message)
-        const isTooManyRequestsLimitError = /too many requests|Please try after|Please retry the request later|The service is unavailable now/i.test(errMsg);
-
-        if (isTooManyRequestsLimitError) {
+        if ( isRetryableError(err) ) {
             // attempt counter kept inside payload
             const attempt = ((queueItem as any).attempt ?? 0) + 1;
             (queueItem as any).attempt = attempt;
 
-            /*
-            if (attempt > 20) {
+            if (attempt > 1000) {
                 // Max attempts reached
-                const maxRetryMsg = `Exceeded max retry attempts (20) for purge ${queueItem.primarySnapshot.id}. Recording failure and not requeuing.`;
+                const maxRetryMsg = `Exceeded max retry attempts (1000) for purge disk Id ${queueItem.sourceDiskId}. Recording failure and not requeuing.`;
                 logger.error(maxRetryMsg);
 
                 // End process
@@ -137,17 +135,20 @@ export async function bckStartSnapshotPurgeJob(queueItem: SnapshotControl, conte
                     jobType: 'Purge',
                     message: maxRetryMsg,
                     sourceVmId: queueItem.sourceVmId,
-                    sourceDiskId: queueItem.sourceDiskId
+                    sourceDiskId: queueItem.sourceDiskId,
+                    primarySnapshotId: queueItem.primarySnapshotId,
+                    primaryLocation: queueItem.primaryLocation,
+                    secondarySnapshotId: queueItem.secondarySnapshotId,
+                    secondaryLocation: queueItem.secondaryLocation
                 }
-                const BackupLogManager = new BackupLogManager(logger);
-                await BackupLogManager.uploadLog(logEntryError);                
+                const backupLogManager = new BackupLogManager(logger);
+                await backupLogManager.uploadLog(logEntryError);                
                 
                 throw err;
             }
-            */
 
             // Requeue the copy message with delay
-            logger.warn(`Too many requests limit reached. Re-scheduling purge for snapshots from vm ${queueItem.sourceVmId} (attempt ${attempt})`);
+            logger.warn(`Retryable error occurred. Re-scheduling purge for snapshots from vm ${queueItem.sourceVmId} (attempt ${attempt})`);
 
             const qm = new QueueManager(logger, process.env.AzureWebJobsStorage__accountname || "", QUEUE_PURGE_JOBS);
 
@@ -192,3 +193,5 @@ app.storageQueue('bckStartSnapshotPurgeJob', {
     ],
     handler: bckStartSnapshotPurgeJob
 });
+
+

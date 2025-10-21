@@ -38,7 +38,7 @@ export async function bckGetDisksToSnapshot(myTimer: Timer, context: InvocationC
 }
 
 app.timer('bckGetDisksToSnapshot', {
-    schedule: '0 30 1 * * *', // every day at 01:30 in the morning
+    schedule: '0 25 5 * * *', // every day at 05:25 in the morning
     extraOutputs: [
         snapshotsQueueOutput
     ],

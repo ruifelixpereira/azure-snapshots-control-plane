@@ -42,6 +42,31 @@ export function ensureErrorType(err: unknown): Error {
     }
 }
 
+
+export function isRetryableError(error: any): boolean {
+    const message = error.message || error.toString();
+
+    // Check transient status code
+    let isTransientStatusCode = false;
+    
+    if (error.statusCode) {
+
+        isTransientStatusCode = [
+            408, // Request Timeout
+            429, // Too Many Requests
+            500, // Internal Server Error
+            502, // Bad Gateway
+            503, // Service Unavailable
+            504  // Gateway Timeout
+            ].includes(error.statusCode);
+    }
+
+    // Detect too many requests limit error (service message)
+    const isRetryableError = /too many requests|try after|retry the request later|quota|rate limit|throttle|limit|timeout|service is unavailable now|Please provide below info when asking for support/i.test(message);
+    
+    return (isRetryableError || isTransientStatusCode);
+}
+
 export class ResourceGroupTagsError extends AppComponentError {
     
     constructor(error: any) {
