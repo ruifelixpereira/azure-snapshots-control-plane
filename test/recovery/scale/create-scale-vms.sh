@@ -150,6 +150,7 @@ create_vm() {
         --location "$LOCATION" \
         --size "$VM_SIZE" \
         --image "${IMAGE_PUBLISHER}:${IMAGE_OFFER}:${IMAGE_SKU}:${IMAGE_VERSION}" \
+        --storage-sku Standard_LRS \
         --admin-username "$ADMIN_USERNAME" \
         --ssh-key-values "$SSH_KEY_PATH" \
         --nics "$nic_name" \
