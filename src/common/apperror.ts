@@ -62,7 +62,7 @@ export function isRetryableError(error: any): boolean {
     }
 
     // Detect too many requests limit error (service message)
-    const isRetryableError = /too many requests|try after|retry the request later|quota|rate limit|throttle|limit|timeout|service is unavailable now|Please provide below info when asking for support/i.test(message);
+    const isRetryableError = /too many requests|try after|retry the request later|quota|rate limit|throttle|limit|timeout|service is unavailable now|getaddrinfo|EAI_AGAIN|Please provide below info when asking for support/i.test(message);
     
     return (isRetryableError || isTransientStatusCode);
 }
