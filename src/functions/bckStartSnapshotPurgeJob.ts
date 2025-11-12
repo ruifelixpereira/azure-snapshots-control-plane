@@ -7,7 +7,7 @@ import { BackupLogManager } from "../controllers/log.manager";
 import { QueueManager } from "../controllers/queue.manager";
 import { ResourceGraphManager } from "../controllers/graph.manager";
 import { _getString, isRetryableError } from "../common/apperror";
-import { getSubscriptionAndResourceGroup } from '../common/azure-resource-utils';
+import { getSubscriptionAndResourceGroups } from '../common/azure-resource-utils';
 import { QUEUE_PURGE_JOBS, QUEUE_PURGE_SNAPSHOTS } from "../common/constants";
 import { extractVmNameFromResourceId, getRandomDelaySeconds } from "../common/utils";
 
@@ -26,7 +26,7 @@ export async function bckStartSnapshotPurgeJob(queueItem: SnapshotControl, conte
         const logManager = new BackupLogManager(logger);
 
         // Get snapshots subscriptionId and resource group in primary/secondary location
-        const parsed = getSubscriptionAndResourceGroup(queueItem.primarySnapshotId);
+        const parsed = getSubscriptionAndResourceGroups(queueItem.primarySnapshotId, queueItem.sourceVmId);
 
         // A. Start old snapshots purge
         const snapshotManager = new SnapshotManager(logger, parsed.subscriptionId);
@@ -35,19 +35,6 @@ export async function bckStartSnapshotPurgeJob(queueItem: SnapshotControl, conte
         let primaryNumberOfDays = process.env.SMCP_BCK_PURGE_PRIMARY_LOCATION_NUMBER_OF_DAYS ? parseInt(process.env.SMCP_BCK_PURGE_PRIMARY_LOCATION_NUMBER_OF_DAYS) : 5;
         let secondaryNumberOfDays = process.env.SMCP_BCK_PURGE_SECONDARY_LOCATION_NUMBER_OF_DAYS ? parseInt(process.env.SMCP_BCK_PURGE_SECONDARY_LOCATION_NUMBER_OF_DAYS) : 30;
 
-        // Check Test use cases
-        const vmName = extractVmNameFromResourceId(queueItem.sourceVmId);
-        if (vmName.toLowerCase() === (process.env.UC01_VM_NAME || "").toLowerCase()) {
-            primaryNumberOfDays = process.env.UC01_BCK_PURGE_PRIMARY_LOCATION_NUMBER_OF_DAYS ? parseInt(process.env.UC01_BCK_PURGE_PRIMARY_LOCATION_NUMBER_OF_DAYS) : 0;
-            secondaryNumberOfDays = process.env.UC01_BCK_PURGE_SECONDARY_LOCATION_NUMBER_OF_DAYS ? parseInt(process.env.UC01_BCK_PURGE_SECONDARY_LOCATION_NUMBER_OF_DAYS) : 7;
-        } else if (vmName.toLowerCase() === (process.env.UC02_VM_NAME || "").toLowerCase()) {
-            primaryNumberOfDays = process.env.UC02_BCK_PURGE_PRIMARY_LOCATION_NUMBER_OF_DAYS ? parseInt(process.env.UC02_BCK_PURGE_PRIMARY_LOCATION_NUMBER_OF_DAYS) : 1;
-            secondaryNumberOfDays = process.env.UC02_BCK_PURGE_SECONDARY_LOCATION_NUMBER_OF_DAYS ? parseInt(process.env.UC02_BCK_PURGE_SECONDARY_LOCATION_NUMBER_OF_DAYS) : 7;
-        } else if (vmName.toLowerCase() === (process.env.UC03_VM_NAME || "").toLowerCase()) {
-            primaryNumberOfDays = process.env.UC03_BCK_PURGE_PRIMARY_LOCATION_NUMBER_OF_DAYS ? parseInt(process.env.UC03_BCK_PURGE_PRIMARY_LOCATION_NUMBER_OF_DAYS) : 1;
-            secondaryNumberOfDays = process.env.UC03_BCK_PURGE_SECONDARY_LOCATION_NUMBER_OF_DAYS ? parseInt(process.env.UC03_BCK_PURGE_SECONDARY_LOCATION_NUMBER_OF_DAYS) : 7;
-        }
-        
         logger.info(`Start purging snapshots for disk ID ${queueItem.sourceDiskId} in all locations`);
 
         /*
@@ -69,7 +56,7 @@ export async function bckStartSnapshotPurgeJob(queueItem: SnapshotControl, conte
         // Get snapshots to delete
         const graphManager = new ResourceGraphManager(logger);
         const snapshotsToPurge = await graphManager.getSnapshotsBySourceAndDate(
-            parsed.resourceGroupName,
+            parsed.resourceGroups,
             queueItem.sourceDiskId,
             primaryCutoff.toISOString(),
             secondaryCutoff.toISOString()

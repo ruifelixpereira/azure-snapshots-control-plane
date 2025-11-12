@@ -1,6 +1,6 @@
 // Azure location resolver - gets actual location from Azure APIs
 import { DefaultAzureCredential } from '@azure/identity';
-import { parseSubnetId, getSubscriptionAndResourceGroup } from './azure-resource-utils';
+import { parseSubnetId, getSubscriptionAndResourceGroups } from './azure-resource-utils';
 import { ILogger } from './logger';
 import { SubnetLocation } from './interfaces';
 
@@ -194,8 +194,8 @@ export class AzureLocationResolver {
       
       try {
         // Fallback to getting location from resource group
-        const { subscriptionId, resourceGroupName } = getSubscriptionAndResourceGroup(resourceId);
-        return await this.getResourceGroupLocation(subscriptionId, resourceGroupName);
+        const { subscriptionId, resourceGroups } = getSubscriptionAndResourceGroups(resourceId);
+        return await this.getResourceGroupLocation(subscriptionId, resourceGroups[0]);
       } catch (fallbackError) {
         this.logger.error(`Both direct and fallback location lookups failed:`, fallbackError);
         throw new Error(`Could not determine location for resource ${resourceId} using any method`);

@@ -60,17 +60,19 @@ export class ResourceGraphManager {
      * @returns Array of snapshot objects.
      */
     public async getSnapshotsBySourceAndDate(
-        resourceGroup: string,
+        resourceGroups: string[],
         sourceResourceId: string,
         primaryCutoffDate: string,
         secondaryCutoffDate: string
     ): Promise<Array<SnapshotToPurge>> {
         try {
+
+            const resourceGroupsFilter = resourceGroups.map(rg => `'${rg.toLowerCase()}'`).join(", ");
             const result = await this.clientGraph.resources(
                 {
                     query: `resources
                     | where type =~ 'microsoft.compute/snapshots'
-                    | where tolower(resourceGroup) =~ tolower('${resourceGroup}')
+                    | where tolower(resourceGroup) in (${resourceGroupsFilter})
                     | where (tolower(name) !endswith "-sec" and todatetime(properties.timeCreated) <= todatetime('${primaryCutoffDate}')) or (tolower(name) endswith "-sec" and todatetime(properties.timeCreated) <= todatetime('${secondaryCutoffDate}'))
                     | extend primarySourceResourceId = tolower(properties.creationData.sourceResourceId)
                     | extend secondarySourceResourceId = tolower(tags['smcp-source-disk-id'])

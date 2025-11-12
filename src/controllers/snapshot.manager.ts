@@ -7,7 +7,7 @@ import { SnapshotError, _getString } from "../common/apperror";
 import { TAG_SMCP_LOCATION_TYPE, TAG_SMCP_SOURCE_DISK_ID } from "../common/constants";
 import { SnapshotSource, Snapshot, VmRecoveryInfo } from "../common/interfaces";
 import { formatDateYYYYMMDDTHHMM } from "../common/utils";
-import { getSubscriptionAndResourceGroup } from '../common/azure-resource-utils';
+import { getSubscriptionAndResourceGroups } from '../common/azure-resource-utils';
 
  
 export class SnapshotManager {
@@ -72,12 +72,12 @@ export class SnapshotManager {
             );
 
             // Map the result to the Snapshot interface
-            const parsed = getSubscriptionAndResourceGroup(result.id);
+            const parsed = getSubscriptionAndResourceGroups(result.id);
             const snapshot: Snapshot = {
                 id: result.id,
                 name: result.name,
                 location: result.location,
-                resourceGroup: parsed.resourceGroupName,
+                resourceGroup: parsed.resourceGroups[0],
                 subscriptionId: parsed.subscriptionId
             };
 

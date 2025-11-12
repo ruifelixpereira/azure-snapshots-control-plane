@@ -68,16 +68,6 @@ export async function bckStartSnapshotCreationJob(queueItem: SnapshotSource, con
         // and we don't need to copy it to the secondary region
         let secondaryNumberOfDays = process.env.SMCP_BCK_PURGE_SECONDARY_LOCATION_NUMBER_OF_DAYS ? parseInt(process.env.SMCP_BCK_PURGE_SECONDARY_LOCATION_NUMBER_OF_DAYS) : 10;
 
-        // Check Test use cases
-        const vmName = extractVmNameFromResourceId(queueItem.vmId);
-        if (vmName.toLowerCase() === (process.env.UC01_VM_NAME || "").toLowerCase()) {
-            secondaryNumberOfDays = process.env.UC01_BCK_PURGE_SECONDARY_LOCATION_NUMBER_OF_DAYS ? parseInt(process.env.UC01_BCK_PURGE_SECONDARY_LOCATION_NUMBER_OF_DAYS) : 7;
-        } else if (vmName.toLowerCase() === (process.env.UC02_VM_NAME || "").toLowerCase()) {
-            secondaryNumberOfDays = process.env.UC02_BCK_PURGE_SECONDARY_LOCATION_NUMBER_OF_DAYS ? parseInt(process.env.UC02_BCK_PURGE_SECONDARY_LOCATION_NUMBER_OF_DAYS) : 7;
-        } else if (vmName.toLowerCase() === (process.env.UC03_VM_NAME || "").toLowerCase()) {
-            secondaryNumberOfDays = process.env.UC03_BCK_PURGE_SECONDARY_LOCATION_NUMBER_OF_DAYS ? parseInt(process.env.UC03_BCK_PURGE_SECONDARY_LOCATION_NUMBER_OF_DAYS) : 7;
-        }
-
         if (secondaryNumberOfDays <= 0) {
 
             // No copy is needed in the secondary region so the snapshot backup process is completed

@@ -92,11 +92,12 @@ export function parseSubnetId(subnetId: string): AzureResourceId {
  * @param resourceId Azure resource ID
  * @returns Object with subscriptionId and resourceGroupName
  */
-export function getSubscriptionAndResourceGroup(resourceId: string): { subscriptionId: string; resourceGroupName: string } {
-  const parsed = parseAzureResourceId(resourceId);
+export function getSubscriptionAndResourceGroups(snapshotResourceId: string, sourceVmResourceId?: string): { subscriptionId: string; resourceGroups: string[] } {
+  const parsedSnap = parseAzureResourceId(snapshotResourceId);
+  const parsedVm = sourceVmResourceId ? parseAzureResourceId(sourceVmResourceId) : undefined;
   return {
-    subscriptionId: parsed.subscriptionId,
-    resourceGroupName: parsed.resourceGroupName
+    subscriptionId: parsedSnap.subscriptionId,
+    resourceGroups: parsedVm ? [ parsedSnap.resourceGroupName, parsedVm.resourceGroupName ] : [ parsedSnap.resourceGroupName ]
   };
 }
 
