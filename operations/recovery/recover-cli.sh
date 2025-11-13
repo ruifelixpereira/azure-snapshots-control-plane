@@ -179,9 +179,9 @@ create_sample_data_file() {
 
     MESSAGE_CONTENT='{
     "targetSubnetIds": [
-        "/subscriptions/f42687d4-5f50-4f38-956b-7fcfa755ff58/resourceGroups/snap-second/providers/Microsoft.Network/virtualNetworks/vnet-sweden/subnets/default"
+        "/subscriptions/xxx-xxx-xxx-xxx/resourceGroups/recovery-rg/providers/Microsoft.Network/virtualNetworks/recovery-vnet/subnets/default"
     ],
-    "targetResourceGroup": "snap-second",
+    "targetResourceGroup": "recovery-rg",
     "maxTimeGenerated": "2025-09-27T10:30:00.000Z",
     "useOriginalIpAddress": false,
     "waitForVmCreationCompletion": false,

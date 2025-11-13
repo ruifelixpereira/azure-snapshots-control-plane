@@ -69,14 +69,15 @@ cd recovery
 
 ## Recovery Data File
 
-The recovery data file used to trigger a recovery process for single, multiple or all VMs includes the following fields:
+The recovery JSON data file used to trigger a recovery process for single, multiple or all VMs includes the following fields:
 
-    Parameters:
-    - `--original-vm-group`: Comma-separated list of original VM names to get the available snapshots. By default, the most recent snapshot is used to create the new recovered VMs. If you want to specify a different snapshot, you can use a custom metadata file (passing the parameter `--custom-metadata-file`) to specify a specific snapshot.
-    - `--resource-group`: Resource group of the VMs.
-    - `--subnet-id`: Subnet ID for the new VMs.
-    - `--restore-primary-region`: Optional parameter to define that the restore should use the most recent snapshots (or the ones specified in the custom metadata file) in the primary region. If not specified, the new VMs are created in the secondary region (used for failover), with a snapshot also in the secondary region.
-    - `--custom-metadata-file`: Name of the custom metadata file that can be used to specifiy the snaphshots to create the new VMs. This file can be exported using the `export-metadata` command.
+- `targetSubnetIds`: The list of target subnets where the recovered VMs will be created.
+- `targetResourceGroup`: The target resource group where the recovered VMs will be created.
+- `maxTimeGenerated`: The maximum time for the snapshots to be considered for recovery.
+- `useOriginalIpAddress`: Value `true` or `false` depending if you want the restored VM to keep the original IP address.
+- `waitForVmCreationCompletion`: Value `true` or `false` depending if you want the script to wait for the VM creation to complete before proceeding.
+- `appendUniqueStringToVmName`: Value `true` or `false` depending if you want to append a unique string to the VM name during recovery.
+- `vmFilter`: Optional filter to specify which VMs to recover. This can be a list of VM names. If omitted, all VMs for which there is a snapshot will be recovered.
 
 This is an example of the custom metadata file:
 
@@ -88,8 +89,19 @@ This is an example of the custom metadata file:
     "targetResourceGroup": "recovery-snap-rg",
     "maxTimeGenerated": "2025-09-27T10:30:00.000Z",
     "useOriginalIpAddress": true,
-    "waitForVmCreationCompletion": false
+    "waitForVmCreationCompletion": false,
+    "appendUniqueStringToVmName": false,
+    "vmFilter": [
+        "vm-01",
+        "vm-02"
+    ]
 }
+```
+
+You can use this command to generate a sample data file:
+
+```bash
+./recover-cli.sh --operation create-sample-data-file
 ```
 
 ## Logging
@@ -103,11 +115,10 @@ When restoring multiple VMs, the script launches each restore as a background pr
 - Make sure `jq` and `az` are installed and in your PATH.
 - Check the log output for error messages.
 
---------------
 
+## Test Examples
 
-Tested
-
+```bash
 ./recover-cli.sh --operation list-most-recent-snapshots
 
 ./recover-cli.sh --operation list-vm-snapshots --vm-name scale-test-vm-001 --resource-group scale-test-rg
@@ -121,3 +132,4 @@ Tested
 ./recover-cli.sh --operation restore-vms --storage-account snmjsnaprecsa01 --data test-02-recover-all-vms-nowait.json
 
 ./recover-cli.sh --operation restore-vms --storage-account smcpsnapmngsa01 --data test-03-recover-all-vms-nowait-anyip.json
+```
