@@ -30,11 +30,11 @@ export function parseAzureResourceId(resourceId: string): AzureResourceId {
   const parts = resourceId.split('/').filter(part => part.length > 0);
   
   if (parts.length < 8) {
-    throw new Error(`Invalid Azure resource ID format: ${resourceId}`);
+    throw new Error(`Invalid Azure resource ID format (length): ${resourceId}`);
   }
 
   const subscriptionIndex = parts.indexOf('subscriptions');
-  const resourceGroupIndex = parts.indexOf('resourceGroups');
+  const resourceGroupIndex = parts.findIndex(part => part.toLowerCase() === 'resourcegroups');
   const providersIndex = parts.indexOf('providers');
 
   if (subscriptionIndex === -1 || resourceGroupIndex === -1 || providersIndex === -1) {
