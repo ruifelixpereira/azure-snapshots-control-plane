@@ -185,10 +185,8 @@ create_sample_data_file() {
     "maxTimeGenerated": "2025-09-27T10:30:00.000Z",
     "useOriginalIpAddress": false,
     "waitForVmCreationCompletion": false,
-    "vmFilter": [
-        { "vm": "vm-001" },
-        { "vm": "vm-002" }
-    ]
+    "appendUniqueStringToVmName": false,
+    "vmFilter": ["vm-001","vm-002"]
     }'
 
     echo $MESSAGE_CONTENT

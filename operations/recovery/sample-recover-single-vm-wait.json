@@ -6,5 +6,6 @@
     "maxTimeGenerated": "2025-09-27T10:30:00.000Z",
     "useOriginalIpAddress": true,
     "waitForVmCreationCompletion": true,
+    "appendUniqueStringToVmName": false,
     "vmFilter": ["vm-01"]
 }
