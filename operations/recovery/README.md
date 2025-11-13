@@ -16,7 +16,7 @@ This repository provides a Bash script (`recovery-cli/recover-cli.sh`) to recove
 - Azure CLI (`az`)
 - `jq` (for JSON processing)
 - Bash (Linux/macOS)
-- Sufficient Azure permissions to manage VMs, disks, and snapshots
+- Sufficient Azure permissions to manage VMs, disks, and snapshots in the right subscription and resource group(s).
 
 ## Setup
 
@@ -79,7 +79,7 @@ The recovery JSON data file used to trigger a recovery process for single, multi
 - `appendUniqueStringToVmName`: Value `true` or `false` depending if you want to append a unique string to the VM name during recovery.
 - `vmFilter`: Optional filter to specify which VMs to recover. This can be a list of VM names. If omitted, all VMs for which there is a snapshot will be recovered.
 
-This is an example of the custom metadata file:
+This is an example of the json data file that contains the configuration details for the recovery process:
 
 ```json
 {
