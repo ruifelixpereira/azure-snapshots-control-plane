@@ -3,9 +3,9 @@
         "/subscriptions/xxx-xxx-xxx-xxx/resourceGroups/recovery-rg/providers/Microsoft.Network/virtualNetworks/recovery-vnet/subnets/default"
     ],
     "targetResourceGroup": "recovery-snap-rg",
-    "maxTimeGenerated": "2025-09-27T10:30:00.000Z",
+    "maxSnapshotTimeGenerated": "2025-09-27T10:30:00.000Z",
     "useOriginalIpAddress": true,
     "waitForVmCreationCompletion": false,
     "appendUniqueStringToVmName": false,
-    "vmFilter": ["vm-01","vm-02"]
+    "sourceVmFilter": ["vm-01","vm-02"]
 }

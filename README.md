@@ -93,29 +93,31 @@ This modular and asynchronous design ensures reliable execution, scalability, an
    ```json
    {
       "targetSubnetIds": [
-         "/subscriptions/f42687d4-5f50-4f38-956b-7fcfa755ff58/resourceGroups/scale-test-rg/providers/Microsoft.Network/virtualNetworks/scale-test2-vnet/subnets/default"
+         "/subscriptions/xxxxxxxxxxxxxxxx/resourceGroups/scale-test-rg/providers/Microsoft.Network/virtualNetworks/scale-test2-vnet/subnets/default"
       ],
       "targetResourceGroup": "snap-second",
-      "maxTimeGenerated": "2025-09-27T10:30:00.000Z",
+      "maxSnapshotTimeGenerated": "2025-09-27T10:30:00.000Z",
       "useOriginalIpAddress": true,
       "waitForVmCreationCompletion": true,
-      "vmFilter": ["scale-test2-vm-005", "scale-test2-vm-006"]
+      "sourceVmFilter": ["scale-test2-vm-005", "scale-test2-vm-006"],
+      "sourceSubnetIdFilter": ["/subscriptions/xxxxxxxxxxxxxxxx/resourceGroups/scale-test-rg/providers/Microsoft.Network/virtualNetworks/scale-test2-vnet/subnets/default"]
    }
    ```
 
    **Properties description**:
    - `targetSubnetIds`: List of subnet resource IDs to use in the new VMs. Each snapshot resides in a specific region and the recovered VM will be created and use a subnet in the same region. In most cases this array of subnets will have only one element if all VMs are to be recovered to the same region. In cases where we have several snapshots in different regions, we need to define one subnet per region.
    - `targetResourceGroup`: Name of the resource group where the new VMs will be created.
-   - `maxTimeGenerated`: The maximum time generated to consider when selecting the snapshot to recover. The most recent snapshots prior to this date will be considered for recovery.
+   - `maxSnapshotTimeGenerated`: The maximum time generated to consider when selecting the snapshot to recover. The most recent snapshots prior to this date will be considered for recovery.
    - `useOriginalIpAddress`: If true, the new VM will try to use the same private IP address as the original VM. If false, a new private IP address will be assigned to the new VM.
    - `waitForVmCreationCompletion`: If true, the activity that creates the VM will wait for the VM creation to be completed before returning. If false, the activity will return immediately after starting the VM creation.
-   - `vmFilter`: List of VM names to recover. If empty or not defined, all VMs with snapshots prior to the `maxTimeGenerated` date will be recovered.
+   - `sourceVmFilter`: List of VM names to recover. If empty or not defined, all VMs with snapshots prior to the `maxSnapshotTimeGenerated` date are considered, applying the filter for subnets.
+   - `sourceSubnetIdFilter`: List of subnet resource IDs to filter the snapshots by their original subnet. If empty or not defined, all snapshots prior to the `maxSnapshotTimeGenerated` date are considered, applying the filter for VMs.
 
 2. The **StartRecoveryOrchestrator** collects the recovery message and starts the recovery process.
 
 3. The **RecoveryOrchestratorSnapshot** as name implies is the orchestrator of the recovery process and executes the activities in a certain sequence.
 
-4. The **RecoveryOrchestratorSnapshot** starts by calling the **GetSnapshotsActivity** to get the most recent snapshots that are older than the `maxTimeGenerated` property and that map to the list of VMs to recover defined by the `vmFilter` property. Both these properties are passed in the triggering message.
+4. The **RecoveryOrchestratorSnapshot** starts by calling the **GetSnapshotsActivity** to get the most recent snapshots that are older than the `maxSnapshotTimeGenerated` property and that map to the list of VMs to recover defined by the `sourceVmFilter` property. Both these properties are passed in the triggering message.
 
 5. For each snapshot returned by the **GetSnapshotsActivity**, the orchestrator calls the **CreateVmActivity** if the property `waitForVmCreationCompletion` is `true`. In this case the activity waits for the VM creation to be completed.
 

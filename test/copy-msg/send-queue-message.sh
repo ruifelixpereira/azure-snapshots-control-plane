@@ -109,15 +109,18 @@ else
     
     MESSAGE_CONTENT='{
     "targetSubnetIds": [
-        "/subscriptions/f42687d4-5f50-4f38-956b-7fcfa755ff58/resourceGroups/snap-second/providers/Microsoft.Network/virtualNetworks/vnet-sweden/subnets/default"
+        "/subscriptions/xxxxxxxxxxxxxxxx/resourceGroups/target-rg/providers/Microsoft.Network/virtualNetworks/target-vnet/subnets/default"
     ],
     "targetResourceGroup": "snap-second",
-    "maxTimeGenerated": "2025-09-27T10:30:00.000Z",
+    "maxSnapshotTimeGenerated": "2025-09-27T10:30:00.000Z",
     "useOriginalIpAddress": false,
     "waitForVmCreationCompletion": false,
-    "vmFilter": [
+    "sourceVmFilter": [
         { "vm": "vm-001" },
         { "vm": "vm-002" }
+    ],
+    "sourceSubnetIdFilter": [
+        "/subscriptions/xxxxxxxxxxxxxxxx/resourceGroups/source-rg/providers/Microsoft.Network/virtualNetworks/source-vnet/subnets/default"
     ]
 }'
 

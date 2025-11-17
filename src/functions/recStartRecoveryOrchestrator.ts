@@ -57,8 +57,10 @@ const recStartRecoveryOrchestrator = async (queueItem: RecoveryBatch, context: I
                 useOriginalIpAddress: input.useOriginalIpAddress,
                 waitForVmCreationCompletion: input.waitForVmCreationCompletion,
                 appendUniqueStringToVmName: input.appendUniqueStringToVmName,
-                hasVmFilters: !!input.vmFilter,
-                vmFilterCount: input.vmFilter ? input.vmFilter.length : 0
+                hasSourceVmFilters: !!input.sourceVmFilter,
+                sourceVmFilterCount: input.sourceVmFilter ? input.sourceVmFilter.length : 0,
+                hasSourceSubnetIdFilters: !!input.sourceSubnetIdFilter,
+                sourceSubnetIdFilterCount: input.sourceSubnetIdFilter ? input.sourceSubnetIdFilter.length : 0
             });
             
         } catch (error) {

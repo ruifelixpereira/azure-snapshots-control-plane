@@ -14,11 +14,12 @@ export function isBatchOrchestratorInput(obj: any): obj is RecoveryBatch {
            Array.isArray(obj.targetSubnetIds) &&
            obj.targetSubnetIds.every((id: any) => typeof id === 'string') &&
            typeof obj.targetResourceGroup === 'string' &&
-           typeof obj.maxTimeGenerated === 'string' &&
+           typeof obj.maxSnapshotTimeGenerated === 'string' &&
            typeof obj.useOriginalIpAddress === 'boolean' &&
            typeof obj.waitForVmCreationCompletion === 'boolean' &&
            typeof obj.appendUniqueStringToVmName === 'boolean' &&
-           (obj.vmFilter === undefined || Array.isArray(obj.vmFilter));
+           (obj.sourceVmFilter === undefined || Array.isArray(obj.sourceVmFilter)) &&
+           (obj.sourceSubnetIdFilter === undefined || Array.isArray(obj.sourceSubnetIdFilter));
 }
 
 /**
@@ -62,15 +63,15 @@ export function parseISODateString(dateString: string): Date {
 }
 
 /**
- * Validates maxTimeGenerated field as an ISO string or Date object and returns ISO string
+ * Validates maxSnapshotTimeGenerated field as an ISO string or Date object and returns ISO string
  * @param value ISO string or Date object (required)
  * @returns ISO string
  * @throws Error if the value is invalid or missing
  */
-export function validateMaxTimeGenerated(value: any): string {
+export function validateMaxSnapshotTimeGenerated(value: any): string {
     if (typeof value === 'string') {
         if (!isValidISODateString(value)) {
-            throw new Error(`Invalid maxTimeGenerated: Invalid ISO date string: ${value}. Expected format: YYYY-MM-DDTHH:mm:ss.sssZ or YYYY-MM-DDTHH:mm:ssZ`);
+            throw new Error(`Invalid maxSnapshotTimeGenerated: Invalid ISO date string: ${value}. Expected format: YYYY-MM-DDTHH:mm:ss.sssZ or YYYY-MM-DDTHH:mm:ssZ`);
         }
         
         const date = new Date(value);
@@ -85,7 +86,7 @@ export function validateMaxTimeGenerated(value: any): string {
         return value.toISOString(); // Convert Date to ISO string
     }
     
-    throw new Error(`Invalid maxTimeGenerated type: ${typeof value}. Expected ISO string or Date object.`);
+    throw new Error(`Invalid maxSnapshotTimeGenerated type: ${typeof value}. Expected ISO string or Date object.`);
 }
 
 /**
@@ -172,10 +173,10 @@ export function validateBatchOrchestratorInput(obj: any): RecoveryBatch {
       if (typeof obj.targetResourceGroup !== 'string' || obj.targetResourceGroup.length === 0) {
         errors.push('targetResourceGroup must be a non-empty string');
       }
-      if (obj.maxTimeGenerated === undefined || obj.maxTimeGenerated === null) {
-        errors.push('maxTimeGenerated is required');
-      } else if (typeof obj.maxTimeGenerated !== 'string') {
-        errors.push('maxTimeGenerated must be an ISO string');
+      if (obj.maxSnapshotTimeGenerated === undefined || obj.maxSnapshotTimeGenerated === null) {
+        errors.push('maxSnapshotTimeGenerated is required');
+      } else if (typeof obj.maxSnapshotTimeGenerated !== 'string') {
+        errors.push('maxSnapshotTimeGenerated must be an ISO string');
       }
       
       if (obj.useOriginalIpAddress === undefined || obj.useOriginalIpAddress === null) {
@@ -196,8 +197,12 @@ export function validateBatchOrchestratorInput(obj: any): RecoveryBatch {
         errors.push('appendUniqueStringToVmName must be a boolean (true or false)');
       }
 
-      if (obj.vmFilter !== undefined && !Array.isArray(obj.vmFilter)) {
-        errors.push('vmFilter must be an array if provided');
+      if (obj.sourceVmFilter !== undefined && !Array.isArray(obj.sourceVmFilter)) {
+        errors.push('sourceVmFilter must be an array if provided');
+      }
+
+      if (obj.sourceSubnetIdFilter !== undefined && !Array.isArray(obj.sourceSubnetIdFilter)) {
+        errors.push('sourceSubnetIdFilter must be an array if provided');
       }
     }
     
@@ -208,11 +213,12 @@ export function validateBatchOrchestratorInput(obj: any): RecoveryBatch {
   const validated: RecoveryBatch = {
     targetSubnetIds: obj.targetSubnetIds,
     targetResourceGroup: obj.targetResourceGroup,
-    maxTimeGenerated: validateMaxTimeGenerated(obj.maxTimeGenerated),
+    maxSnapshotTimeGenerated: validateMaxSnapshotTimeGenerated(obj.maxSnapshotTimeGenerated),
     useOriginalIpAddress: obj.useOriginalIpAddress,
     waitForVmCreationCompletion: obj.waitForVmCreationCompletion,
     appendUniqueStringToVmName: obj.appendUniqueStringToVmName,
-    vmFilter: obj.vmFilter
+    sourceVmFilter: obj.sourceVmFilter,
+    sourceSubnetIdFilter: obj.sourceSubnetIdFilter
   };
   
   return validated;
@@ -282,11 +288,12 @@ export function createDefaultBatchOrchestratorInput(): RecoveryBatch {
   return {
     targetSubnetIds: ['/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/example-rg/providers/Microsoft.Network/virtualNetworks/example-vnet/subnets/example-subnet'],
     targetResourceGroup: 'example-rg',
-    maxTimeGenerated: new Date().toISOString(), // Current datetime as ISO string
+    maxSnapshotTimeGenerated: new Date().toISOString(), // Current datetime as ISO string
     useOriginalIpAddress: false, // Default to false for dynamic IP allocation
     waitForVmCreationCompletion: false,
     appendUniqueStringToVmName: true,
-    vmFilter: ["vm-01", "vm-02"]
+    sourceVmFilter: ["vm-01", "vm-02"],
+    sourceSubnetIdFilter: ["/subscriptions/xxxxxxxxxxxxxxxx/resourceGroups/source-rg/providers/Microsoft.Network/virtualNetworks/source-vnet/subnets/default"]
   };
 }
 
@@ -316,17 +323,17 @@ export function sanitizeBatchOrchestratorInput(input: any): RecoveryBatch {
     throw new Error('Input must be an object');
   }
 
-  // Check if maxTimeGenerated is provided
-  if (input.maxTimeGenerated === undefined || input.maxTimeGenerated === null) {
-    throw new Error('maxTimeGenerated is required');
+  // Check if maxSnapshotTimeGenerated is provided
+  if (input.maxSnapshotTimeGenerated === undefined || input.maxSnapshotTimeGenerated === null) {
+    throw new Error('maxSnapshotTimeGenerated is required');
   }
   
-  // Validate maxTimeGenerated
+  // Validate maxSnapshotTimeGenerated
   let validatedMaxTime: string;
   try {
-    validatedMaxTime = validateMaxTimeGenerated(input.maxTimeGenerated);
+    validatedMaxTime = validateMaxSnapshotTimeGenerated(input.maxSnapshotTimeGenerated);
   } catch (error) {
-    throw new Error(`Invalid maxTimeGenerated: ${error.message}`);
+    throw new Error(`Invalid maxSnapshotTimeGenerated: ${error.message}`);
   }
 
   const sanitized: RecoveryBatch = {
@@ -336,15 +343,20 @@ export function sanitizeBatchOrchestratorInput(input: any): RecoveryBatch {
         ? input.targetSubnetId.map((id: string) => String(id || '').trim())
         : [String(input.targetSubnetId || input.targetSubnetIds || '').trim()], // Handle both old and new property names
     targetResourceGroup: String(input.targetResourceGroup || '').trim(),
-    maxTimeGenerated: validatedMaxTime,
+    maxSnapshotTimeGenerated: validatedMaxTime,
     useOriginalIpAddress: Boolean(input.useOriginalIpAddress), // Convert to boolean
     waitForVmCreationCompletion: Boolean(input.waitForVmCreationCompletion), // Convert to boolean
     appendUniqueStringToVmName: Boolean(input.appendUniqueStringToVmName) // Convert to boolean
   };
 
-  // Only include vmFilter if it's a valid array
-  if (input.vmFilter && Array.isArray(input.vmFilter)) {
-    sanitized.vmFilter = input.vmFilter;
+  // Only include sourceVmFilter if it's a valid array
+  if (input.sourceVmFilter && Array.isArray(input.sourceVmFilter)) {
+    sanitized.sourceVmFilter = input.sourceVmFilter;
+  }
+
+   // Only include sourceSubnetIdFilter if it's a valid array
+  if (input.sourceSubnetIdFilter && Array.isArray(input.sourceSubnetIdFilter)) {
+    sanitized.sourceSubnetIdFilter = input.sourceSubnetIdFilter;
   }
 
   // Validate the sanitized input

@@ -156,6 +156,6 @@ export async function shrRecoverMessages(request: HttpRequest, context: Invocati
 
 app.http('shrRecoverMessages', {
     methods: ['POST'],
-    authLevel: 'function', // Changed from anonymous for security
+    authLevel: 'function',
     handler: shrRecoverMessages
 });

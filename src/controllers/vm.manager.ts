@@ -220,7 +220,8 @@ export class VmManager {
                     }
                 },
                 tags: { ...allTags,
-                    "smcp-recovery": JSON.stringify(tracking)
+                    "smcp-recovery": JSON.stringify(tracking),
+                    "smcp-backup": "on"
                 }
             };
 
@@ -304,7 +305,8 @@ export class VmManager {
                     }
                 },
                 tags: { 
-                    "smcp-recovery": JSON.stringify(tracking)
+                    "smcp-recovery": JSON.stringify(tracking),
+                    "smcp-backup": "on"
                 }
             };
 

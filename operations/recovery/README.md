@@ -16,7 +16,7 @@ This repository provides a Bash script (`recovery-cli/recover-cli.sh`) to recove
 - Azure CLI (`az`)
 - `jq` (for JSON processing)
 - Bash (Linux/macOS)
-- Sufficient Azure permissions to manage VMs, disks, and snapshots in the right subscription and resource group(s).
+- The user or service principal running the recovery-cli sript need to have sufficient Azure permissions to manage VMs, disks, and snapshots in the right subscription and resource group(s). Additionally, it needs `Storage Queue Data Contributor` role on the storage account used to trigger the recovery process.
 
 ## Setup
 
@@ -73,11 +73,12 @@ The recovery JSON data file used to trigger a recovery process for single, multi
 
 - `targetSubnetIds`: The list of target subnets where the recovered VMs will be created.
 - `targetResourceGroup`: The target resource group where the recovered VMs will be created.
-- `maxTimeGenerated`: The maximum time for the snapshots to be considered for recovery.
+- `maxSnapshotTimeGenerated`: The maximum time for the snapshots to be considered for recovery.
 - `useOriginalIpAddress`: Value `true` or `false` depending if you want the restored VM to keep the original IP address.
 - `waitForVmCreationCompletion`: Value `true` or `false` depending if you want the script to wait for the VM creation to complete before proceeding.
 - `appendUniqueStringToVmName`: Value `true` or `false` depending if you want to append a unique string to the VM name during recovery.
-- `vmFilter`: Optional filter to specify which VMs to recover. This can be a list of VM names. If omitted, all VMs for which there is a snapshot will be recovered.
+- `sourceVmFilter`: Optional filter to specify which VMs to recover. This can be a list of VM names. If omitted, all VMs for which there is a snapshot will be recovered if not filtered by subnet Id.
+- `sourceSubnetIdFilter`: List of subnet resource IDs to filter the snapshots by their original subnet. If omitted, all VMs for which there is a snapshot will be recovered if not filtered by VM name.
 
 This is an example of the json data file that contains the configuration details for the recovery process:
 
@@ -87,14 +88,15 @@ This is an example of the json data file that contains the configuration details
         "/subscriptions/xxx-xxx-xxx-xxx/resourceGroups/recovery-rg/providers/Microsoft.Network/virtualNetworks/recovery-vnet/subnets/default"
     ],
     "targetResourceGroup": "recovery-snap-rg",
-    "maxTimeGenerated": "2025-09-27T10:30:00.000Z",
+    "maxSnapshotTimeGenerated": "2025-09-27T10:30:00.000Z",
     "useOriginalIpAddress": true,
     "waitForVmCreationCompletion": false,
     "appendUniqueStringToVmName": false,
-    "vmFilter": [
+    "sourceVmFilter": [
         "vm-01",
         "vm-02"
-    ]
+    ],
+    "sourceSubnetIdFilter": ["/subscriptions/xxxxxxxxxxxxxxxx/resourceGroups/source-rg/providers/Microsoft.Network/virtualNetworks/source-vnet/subnets/default"]
 }
 ```
 

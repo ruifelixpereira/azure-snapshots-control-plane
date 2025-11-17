@@ -1,13 +1,16 @@
 {
   "name": "snap-mng-function-app",
-  "version": "1.0.3",
+  "version": "1.0.5",
   "description": "SMCP - Snapshot Management Control Plane Function App",
   "main": "dist/src/functions/*.js",
   "scripts": {
     "build": "tsc",
+    "build:patch": "npm version patch --no-git-tag-version && npm run build",
+    "build:minor": "npm version minor --no-git-tag-version && npm run build",
+    "build:major": "npm version major --no-git-tag-version && npm run build",
     "watch": "tsc -w",
     "clean": "rimraf dist",
-    "prestart": "npm run clean && npm run build",
+    "prestart": "npm run clean && npm run build:patch",
     "start": "func start",
     "start-verbose": "func start --verbose",
     "test": "echo \"No tests yet...\""

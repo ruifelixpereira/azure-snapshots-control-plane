@@ -34,10 +34,10 @@ export class ResourceGraphManager {
                         resources
                         | where type =~ 'microsoft.network/networkinterfaces'
                         | mv-expand ipconfig=properties.ipConfigurations
-                        | project nicId = tolower(id), ipAddress = tostring(ipconfig.properties.privateIPAddress)
+                        | project nicId = tolower(id), ipAddress = tostring(ipconfig.properties.privateIPAddress), subnetId = tolower(tostring(ipconfig.properties.subnet.id))
                         ) on nicId
                     | extend diskProfile = iff(tolower(diskId) == tolower(osDiskId), 'os-disk', 'data-disk')
-                    | project subscriptionId, resourceGroup, location, vmId, vmName, vmSize, diskId, diskName, diskSizeGB, diskSku, diskProfile, ipAddress, securityType`
+                    | project subscriptionId, resourceGroup, location, vmId, vmName, vmSize, diskId, diskName, diskSizeGB, diskSku, diskProfile, ipAddress, subnetId, securityType`
                 },
                 { resultFormat: "table" }
             );
@@ -92,22 +92,27 @@ export class ResourceGraphManager {
 
 
     // Get the most recent snapshots in a certain region for all VMs
-    public async getMostRecentSnapshotsInRegions(regions: string[], maxTimeGenerated: Date, vmFilter?: string[]): Promise<Array<RecoverySnapshot>> {
+    public async getMostRecentSnapshotsInRegions(regions: string[], maxSnapshotTimeGenerated: Date, vmFilter?: string[], subnetIdFilter?: string[]): Promise<Array<RecoverySnapshot>> {
 
         try {
 
             const filterForVms = vmFilter && vmFilter.length > 0 
-                ? `| where vmName in (${vmFilter.map(vm => `'${vm}'`).join(", ")})`
+                ? `| where tolower(vmName) in (${vmFilter.map(vm => `'${vm.toLowerCase()}'`).join(", ")})`
+                : "";
+
+            const filterForSubnet = subnetIdFilter && subnetIdFilter.length > 0 
+                ? `| where tolower(subnetId) in (${subnetIdFilter.map(subnet => `'${subnet.toLowerCase()}'`).join(", ")})`
                 : "";
 
             const query = `resources
                     | where type == 'microsoft.compute/snapshots'
                     | where location in (${regions.map(region => `'${region}'`).join(", ")})
                     | extend timeCreated = todatetime(properties.timeCreated)
-                    | where timeCreated <= todatetime('${maxTimeGenerated.toISOString()}')
+                    | where timeCreated <= todatetime('${maxSnapshotTimeGenerated.toISOString()}')
                     | where tags['smcp-recovery-info'] != ''
                     | extend smcpRecoveryInfo = tostring(tags['smcp-recovery-info'])
                     | extend vmName = extract('vmName\\\":\\\"([^\\\"]+)', 1, smcpRecoveryInfo) ${filterForVms}
+                    | extend subnetId = tags['smcp-src-subnet'] ${filterForSubnet}
                     | project snapshotName = name, vmName, timeCreated
                     | summarize latestSnapshotTime = max(timeCreated) by vmName
                     | join kind=inner (

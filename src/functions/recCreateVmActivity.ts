@@ -41,7 +41,7 @@ const recCreateVmActivity: ActivityHandler = async (input: NewVmDetails, context
         // Generate unique suffix for VM name if needed
         let uniqueSuffix = "";
         if (input.appendUniqueStringToVmName) {
-            uniqueSuffix = `-${generateUniqueString(5)}-`;
+            uniqueSuffix = `-${generateUniqueString(5)}`;
         }
 
         // Log start

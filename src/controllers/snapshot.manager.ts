@@ -5,7 +5,7 @@ import { ResourceGraphManager } from "./graph.manager";
 import { DefaultAzureCredential } from "@azure/identity";
 import { SnapshotError, _getString } from "../common/apperror";
 import { TAG_SMCP_LOCATION_TYPE, TAG_SMCP_SOURCE_DISK_ID } from "../common/constants";
-import { SnapshotSource, Snapshot, VmRecoveryInfo } from "../common/interfaces";
+import { SnapshotSource, Snapshot, VmRecoveryInfo, SnapshotCopyOptions } from "../common/interfaces";
 import { formatDateYYYYMMDDTHHMM } from "../common/utils";
 import { getSubscriptionAndResourceGroups } from '../common/azure-resource-utils';
 
@@ -57,6 +57,7 @@ export class SnapshotManager {
                 tags: { ...allTags,
                     "smcp-location-type": "primary",
                     "smcp-source-disk-id": source.diskId,
+                    "smcp-src-subnet": source.subnetId, 
                     "smcp-recovery-info": JSON.stringify(recoveryInfo)
                 }
             };
@@ -92,11 +93,11 @@ export class SnapshotManager {
     }
 
 
-    public async startCopySnapshotToAnotherRegion(sourceDiskId: string, sourceSnapshot: Snapshot, targetLocation: string, vmRecoveryInfo: VmRecoveryInfo): Promise<Snapshot> {
+    public async startCopySnapshotToAnotherRegion(options: SnapshotCopyOptions): Promise<Snapshot> {
 
         try {
             const credential = new DefaultAzureCredential();
-            const computeClient = new ComputeManagementClient(credential, sourceSnapshot.subscriptionId);
+            const computeClient = new ComputeManagementClient(credential, options.sourceSnapshot.subscriptionId);
 
             // Get the source snapshot
             //const source = await computeClient.snapshots.get(sourceSnapshot.resourceGroup, sourceSnapshot.name);
@@ -112,38 +113,39 @@ export class SnapshotManager {
 
             // Create the snapshot in the target region
             const targetSnapshotParams = {
-                location: targetLocation,
+                location: options.targetLocation,
                 sku: {
                     name: "Standard_LRS"
                 },
                 creationData: {
                     createOption: "CopyStart",
-                    sourceResourceId: sourceSnapshot.id // source.id // Use the source snapshot ID
+                    sourceResourceId: options.sourceSnapshot.id // source.id // Use the source snapshot ID
                 },
                 incremental: true, // Set to true for incremental snapshot
                 tags: { ...allTags,
                     "smcp-location-type": "secondary",
-                    "smcp-source-disk-id": sourceDiskId,
-                    "smcp-recovery-info": JSON.stringify(vmRecoveryInfo)
+                    "smcp-source-disk-id": options.sourceDiskId,
+                    "smcp-src-subnet": options.sourceSubnetId, 
+                    "smcp-recovery-info": JSON.stringify(options.vmRecoveryInfo)
                 }
             };
 
             const result = await computeClient.snapshots.beginCreateOrUpdate(
-                sourceSnapshot.resourceGroup,
-                `${sourceSnapshot.name}-sec`,
+                options.sourceSnapshot.resourceGroup,
+                `${options.sourceSnapshot.name}-sec`,
                 targetSnapshotParams
             );
 
             return {
-                id: `${sourceSnapshot.id}-sec`,
-                name: `${sourceSnapshot.name}-sec`,
-                location: targetLocation,
-                resourceGroup: sourceSnapshot.resourceGroup,
-                subscriptionId: sourceSnapshot.subscriptionId
+                id: `${options.sourceSnapshot.id}-sec`,
+                name: `${options.sourceSnapshot.name}-sec`,
+                location: options.targetLocation,
+                resourceGroup: options.sourceSnapshot.resourceGroup,
+                subscriptionId: options.sourceSnapshot.subscriptionId
             };
 
         } catch (error) {
-            const message = `Unable to start copying snapshot '${sourceSnapshot.name}' to another region '${targetLocation}' with error: ${_getString(error)}`;
+            const message = `Unable to start copying snapshot '${options.sourceSnapshot.name}' to another region '${options.targetLocation}' with error: ${_getString(error)}`;
             this.logger.error(message);
             throw new SnapshotError(message);
         }

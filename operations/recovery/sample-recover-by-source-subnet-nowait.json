@@ -5,7 +5,7 @@
     "targetResourceGroup": "recovery-snap-rg",
     "maxSnapshotTimeGenerated": "2025-09-27T10:30:00.000Z",
     "useOriginalIpAddress": true,
-    "waitForVmCreationCompletion": true,
+    "waitForVmCreationCompletion": false,
     "appendUniqueStringToVmName": false,
-    "sourceVmFilter": ["vm-01"]
+    "sourceSubnetIdFilter": ["/subscriptions/xxxxxxxxxxxxxxxx/resourceGroups/source-rg/providers/Microsoft.Network/virtualNetworks/source-vnet/subnets/default"]
 }

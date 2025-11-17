@@ -23,11 +23,12 @@ const recRecoveryOrchestrator: OrchestrationHandler = function* (context: Orches
             targetSubnetIds: input.targetSubnetIds,
             subnetCount: input.targetSubnetIds.length,
             targetResourceGroup: input.targetResourceGroup,
-            maxTimeGenerated: input.maxTimeGenerated,
+            maxSnapshotTimeGenerated: input.maxSnapshotTimeGenerated,
             useOriginalIpAddress: input.useOriginalIpAddress,
             waitForVmCreationCompletion: input.waitForVmCreationCompletion,
             appendUniqueStringToVmName: input.appendUniqueStringToVmName,
-            vmFilterCount: input.vmFilter?.length || 0,
+            sourceVmFilterCount: input.sourceVmFilter?.length || 0,
+            sourceSubnetIdFilterCount: input.sourceSubnetIdFilter?.length || 0,
             batchId: input.batchId
         });
 

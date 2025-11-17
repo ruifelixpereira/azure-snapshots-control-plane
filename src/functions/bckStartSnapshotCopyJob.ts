@@ -20,7 +20,12 @@ export async function bckStartSnapshotCopyJob(queueItem: SnapshotCopy, context: 
         // A. Start snapshot copy to secondary region
         const snapshotManager = new SnapshotManager(logger, queueItem.primarySnapshot.subscriptionId);
 
-        const secondarySnapshot = await snapshotManager.startCopySnapshotToAnotherRegion(queueItem.sourceDiskId, queueItem.primarySnapshot, queueItem.secondaryLocation, queueItem.vmRecoveryInfo);
+        const secondarySnapshot = await snapshotManager.startCopySnapshotToAnotherRegion( {
+            sourceDiskId: queueItem.sourceDiskId, 
+            sourceSnapshot: queueItem.primarySnapshot,
+            sourceSubnetId: queueItem.sourceSubnetId,
+            targetLocation: queueItem.secondaryLocation, 
+            vmRecoveryInfo: queueItem.vmRecoveryInfo } );
 
         const msgStartCopy = `Started snapshot copy ${queueItem.primarySnapshot.id} to location ${queueItem.secondaryLocation}`;
         logger.info(msgStartCopy);

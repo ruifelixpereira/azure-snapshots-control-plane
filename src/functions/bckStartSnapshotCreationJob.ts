@@ -2,7 +2,7 @@ import { app, InvocationContext, output } from "@azure/functions";
 
 import { AzureLogger } from '../common/logger';
 import { SnapshotSource, SnapshotCopy, BackupJobLogEntry, SnapshotControl, VmRecoveryInfo } from "../common/interfaces";
-import { generateGuid, extractVmNameFromResourceId } from "../common/utils";
+import { generateGuid } from "../common/utils";
 import { SnapshotManager } from "../controllers/snapshot.manager";
 import { BackupLogManager } from "../controllers/log.manager";
 import { _getString } from "../common/apperror";
@@ -111,6 +111,7 @@ export async function bckStartSnapshotCreationJob(queueItem: SnapshotSource, con
                 jobId: jobId,
                 sourceVmId: queueItem.vmId,
                 sourceDiskId: queueItem.diskId,
+                sourceSubnetId: queueItem.subnetId,
                 primarySnapshot: primarySnapshot,
                 secondaryLocation: process.env.SMCP_BCK_SECONDARY_LOCATION || '',
                 vmRecoveryInfo: recoveryInfo,

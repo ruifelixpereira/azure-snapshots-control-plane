@@ -13,6 +13,7 @@ export interface SnapshotSource {
     diskSku: string;
     diskProfile: 'os-disk' | 'data-disk';
     ipAddress: string;
+    subnetId: string;
     securityType: string;
 }
 
@@ -48,6 +49,7 @@ export interface SnapshotCopy {
     jobId: string;
     sourceVmId: string;
     sourceDiskId: string;
+    sourceSubnetId: string;
     primarySnapshot: Snapshot;
     secondaryLocation: string;
     vmRecoveryInfo: VmRecoveryInfo
@@ -97,11 +99,12 @@ export interface BackupJobLogEntry {
 export interface RecoveryBatch {
     targetSubnetIds: string[]; // Array of subnet IDs
     targetResourceGroup: string;
-    maxTimeGenerated: string; // ISO datetime string
+    maxSnapshotTimeGenerated: string; // ISO datetime string
     useOriginalIpAddress: boolean; // Whether to preserve original IP addresses
     waitForVmCreationCompletion: boolean; // Whether to wait for VM creation to complete
     appendUniqueStringToVmName: boolean; // Whether to append a unique string to the VM and NIC name
-    vmFilter?: string[];
+    sourceVmFilter?: string[];
+    sourceSubnetIdFilter?: string[];
     batchId?: string;
 }
 
@@ -196,4 +199,13 @@ export interface RecoveryInfo {
 export interface TrackingInfo {
     batchId: string;
     jobId: string;
+}
+
+
+export interface SnapshotCopyOptions {
+    sourceDiskId: string;
+    sourceSnapshot: Snapshot;
+    sourceSubnetId: string;
+    targetLocation: string;
+    vmRecoveryInfo: VmRecoveryInfo;
 }

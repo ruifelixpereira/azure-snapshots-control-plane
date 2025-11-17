@@ -5,9 +5,9 @@ import { InvocationContext } from '@azure/functions';
 import { GET_MOST_RECENT_SNAPSHOTS_ACTIVITY } from '../common/constants';
 import { AzureLogger } from "../common/logger";
 import { ResourceGraphManager } from "../controllers/graph.manager";
-import { RecoveryBatch, RecoveryInfo, RecoverySnapshot, SubnetLocation } from '../common/interfaces';
+import { RecoveryBatch, RecoveryInfo, SubnetLocation } from '../common/interfaces';
 import { AzureLocationResolver } from '../common/azure-location-resolver';
-import { PermanentError, TransientError, BusinessError, AzureError, classifyError } from '../common/errors';
+import { PermanentError, TransientError, BusinessError, classifyError } from '../common/errors';
 
 // Activity functions receive context as the second parameter
 const recGetSnapshotsActivity: ActivityHandler = async (input: RecoveryBatch, context: InvocationContext): Promise<RecoveryInfo> => {
@@ -26,17 +26,17 @@ const recGetSnapshotsActivity: ActivityHandler = async (input: RecoveryBatch, co
         if (input.targetSubnetIds.length === 0) {
             throw new PermanentError('At least one target subnet ID is required');
         }
-        if (!input.maxTimeGenerated) {
-            throw new PermanentError('maxTimeGenerated is required');
+        if (!input.maxSnapshotTimeGenerated) {
+            throw new PermanentError('maxSnapshotTimeGenerated is required');
         }
 
         // Validate date format
-        const maxTimeDate = new Date(input.maxTimeGenerated);
+        const maxTimeDate = new Date(input.maxSnapshotTimeGenerated);
         if (isNaN(maxTimeDate.getTime())) {
-            throw new PermanentError(`Invalid date format for maxTimeGenerated: ${input.maxTimeGenerated}`);
+            throw new PermanentError(`Invalid date format for maxSnapshotTimeGenerated: ${input.maxSnapshotTimeGenerated}`);
         }
 
-        logger.info(`Processing request for snapshots targeting ${input.targetSubnetIds.length} subnets, max time: ${input.maxTimeGenerated}`);
+        logger.info(`Processing request for snapshots targeting ${input.targetSubnetIds.length} subnets, max time: ${input.maxSnapshotTimeGenerated}`);
 
         // Get the locations for all subnet IDs using the new resolver
         let subnetLocations: SubnetLocation[];
@@ -60,7 +60,7 @@ const recGetSnapshotsActivity: ActivityHandler = async (input: RecoveryBatch, co
         let snapshots;
         try {
             const graphManager = new ResourceGraphManager(logger);
-            snapshots = await graphManager.getMostRecentSnapshotsInRegions(uniqueLocations, maxTimeDate, input.vmFilter);
+            snapshots = await graphManager.getMostRecentSnapshotsInRegions(uniqueLocations, maxTimeDate, input.sourceVmFilter, input.sourceSubnetIdFilter);
             
             if (!snapshots) {
                 snapshots = [];
@@ -80,7 +80,7 @@ const recGetSnapshotsActivity: ActivityHandler = async (input: RecoveryBatch, co
             error: error.message,
             errorType: error.constructor.name,
             targetSubnetCount: input?.targetSubnetIds?.length || 0,
-            maxTimeGenerated: input?.maxTimeGenerated
+            maxSnapshotTimeGenerated: input?.maxSnapshotTimeGenerated
         });
         
         // Ensure error is properly classified

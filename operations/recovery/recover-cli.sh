@@ -182,11 +182,12 @@ create_sample_data_file() {
         "/subscriptions/xxx-xxx-xxx-xxx/resourceGroups/recovery-rg/providers/Microsoft.Network/virtualNetworks/recovery-vnet/subnets/default"
     ],
     "targetResourceGroup": "recovery-rg",
-    "maxTimeGenerated": "2025-09-27T10:30:00.000Z",
+    "maxSnapshotTimeGenerated": "2025-09-27T10:30:00.000Z",
     "useOriginalIpAddress": false,
     "waitForVmCreationCompletion": false,
     "appendUniqueStringToVmName": false,
-    "vmFilter": ["vm-001","vm-002"]
+    "sourceVmFilter": ["vm-001","vm-002"],
+    "sourceSubnetIdFilter": ["/subscriptions/xxxxxxxxxxxxxxxx/resourceGroups/source-rg/providers/Microsoft.Network/virtualNetworks/source-vnet/subnets/default"]
     }'
 
     echo $MESSAGE_CONTENT
