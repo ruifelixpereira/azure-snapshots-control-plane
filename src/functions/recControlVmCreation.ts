@@ -92,14 +92,7 @@ export async function recControlVmCreation(queueItem: unknown, context: Invocati
                 const delay = Math.min(baseDelay * Math.pow(1.5, Math.min(retryCount, 5)), maxDelay);
                 
                 // Schedule retry with delay
-                setTimeout(async () => {
-                    try {
-                        await queueManager.scheduleVmPollRetry(result.pollerMessage!, delay);
-                    } catch (error) {
-                        logger.error(`Failed to schedule retry for ${pollMessage.vmName}:`, error);
-                    }
-                }, delay * 1000);
-                
+                await queueManager.scheduleVmPollRetry(result.pollerMessage!, delay);
                 logger.info(`Scheduled retry for ${pollMessage.vmName} in ${delay} seconds`);
                 
             } else {

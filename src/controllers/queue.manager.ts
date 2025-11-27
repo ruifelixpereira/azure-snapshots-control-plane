@@ -63,7 +63,7 @@ export class QueueManager {
             
             // Send message - delay will be handled by the polling function
             const queueClient = await this.queueServiceClient.getQueueClient(this.queueName);
-            await queueClient.sendMessage(encodedMessage);
+            await queueClient.sendMessage(encodedMessage, { visibilityTimeout: delaySeconds });
             
             this.logger.info(`Scheduled VM poll retry for: ${message.vmName}, retry count: ${retryMessage.retryCount}`);
             
