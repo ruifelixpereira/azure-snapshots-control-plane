@@ -16,7 +16,8 @@ This repository provides a Bash script (`recovery-cli/recover-cli.sh`) to recove
 - Azure CLI (`az`)
 - `jq` (for JSON processing)
 - Bash (Linux/macOS)
-- The user or service principal running the recovery-cli sript need to have sufficient Azure permissions to manage VMs, disks, and snapshots in the right subscription and resource group(s). Additionally, it needs `Storage Queue Data Contributor` role on the storage account used to trigger the recovery process.
+- The user or service principal running the recovery-cli script needd to have sufficient Azure permissions to manage VMs, disks, and snapshots in the right subscription and resource group(s), namely:
+    - At least Reader in the respource group of the source Snapshots res. Additionally, it needs `Storage Queue Data Contributor` role on the storage account used to trigger the recovery process.
 
 ## Setup
 

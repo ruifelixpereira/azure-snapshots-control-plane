@@ -1,6 +1,6 @@
 {
   "name": "snap-mng-function-app",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "description": "SMCP - Snapshot Management Control Plane Function App",
   "main": "dist/src/functions/*.js",
   "scripts": {

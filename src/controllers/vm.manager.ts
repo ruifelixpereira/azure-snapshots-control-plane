@@ -237,7 +237,13 @@ export class VmManager {
                 //this.logger.info(`Adding TrustedLaunch security profile to VM: ${source.sourceSnapshot.vmName}`);
             }
 
-            const result = await this.computeClient.virtualMachines.beginCreateOrUpdateAndWait(source.targetResourceGroup, `${source.sourceSnapshot.vmName}${uniqueSuffix}`, vmConfig);
+            // Create VM. Use ifNoneMatch: "*" to fail if VM already exists
+            const result = await this.computeClient.virtualMachines.beginCreateOrUpdateAndWait(
+                source.targetResourceGroup, 
+                `${source.sourceSnapshot.vmName}${uniqueSuffix}`, 
+                vmConfig,
+                process.env.SMCP_REC_ALLOW_UPDATE_VM === "true" ? {} : { ifNoneMatch: "*" }
+            );
 
             newVm = {
                 id: result.id,
@@ -322,8 +328,13 @@ export class VmManager {
                 //this.logger.info(`Adding TrustedLaunch security profile to VM: ${source.sourceSnapshot.vmName}`);
             }
 
-            // Start the async VM creation operation
-            const poller = await this.computeClient.virtualMachines.beginCreateOrUpdate(source.targetResourceGroup, `${source.sourceSnapshot.vmName}${uniqueSuffix}`, vmConfig);
+            // Start the async VM creation operation. Use ifNoneMatch: "*" to fail if VM already exists
+            const poller = await this.computeClient.virtualMachines.beginCreateOrUpdate(
+                source.targetResourceGroup, 
+                `${source.sourceSnapshot.vmName}${uniqueSuffix}`, 
+                vmConfig,
+                process.env.SMCP_REC_ALLOW_UPDATE_VM === "true" ? {} : { ifNoneMatch: "*" }
+            );
             const operationState = poller.getOperationState();
             
             // Generate a unique operation ID for tracking

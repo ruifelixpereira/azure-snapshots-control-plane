@@ -586,6 +586,7 @@ resource appSettings 'Microsoft.Web/sites/config@2022-03-01' = {
     SMCP_REC_VM_POLL_MAX_RETRIES: '30'
     SMCP_REC_VM_POLL_DELAY_SECONDS: '60'
     SMCP_REC_VM_POLL_MAX_DELAY_SECONDS: '600'
+    SMCP_REC_ALLOW_UPDATE_VM: 'true'
     SMCP_MANDATORY_TAGS: '[{"key":"app","value":"xpto"},{"key":"owner","value":"zzzzz"}]'
   }
 }
