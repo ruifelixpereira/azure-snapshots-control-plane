@@ -73,7 +73,12 @@ resource scheduledqueryrules_Failed_snapshots_name_resource 'microsoft.insights/
         actionGroups_post_webhook_resource.id
       ]
       customProperties: {
-        AlertReason: '\${data.alertContext.condition.allOf[0].metricMeasureColumn} \${data.alertContext.condition.allOf[0].operator} \${data.alertContext.condition.allOf[0].threshold} \${data.essentials.monitorCondition}. The value is \${data.alertContext.condition.allOf[0].metricValue}'
+        Name: 'Servers daily snapshosts failed'
+        Team: 'INFRA CORE Cloud & DC'
+        metricName: '\${data.alertContext.condition.allOf[0].metricMeasureColumn}'
+        metricValue: '\${data.alertContext.condition.allOf[0].metricValue}'
+        severity: '2'
+        threshold: '8*5'
       }
       actionProperties: {}
     }

@@ -58,10 +58,9 @@ Azure Monitor allows you to customize additional properties in the payload using
     - **Severity** = 1 - Error.
     - **Alert rule description** = e.g., Snapshots creation failed.
 
-2. Expand **Advanced options** and add these **Custom properties**:
+2. Expand **Advanced options** and add your **Custom properties**. Example:
 
     - **AlertReason** = `${data.alertContext.condition.allOf[0].metricMeasureColumn} ${data.alertContext.condition.allOf[0].operator} ${data.alertContext.condition.allOf[0].threshold} ${data.essentials.monitorCondition}. The value is ${data.alertContext.condition.allOf[0].metricValue}.`
-
 
 
 ## ✅ Step 5: Review and Create
@@ -84,5 +83,5 @@ Instead of creating the Action group and Alert rule resources manually, like des
 ## Alerts functions customization
 
 Two functions are provided to help creating a webhook endpoint to receive and process the alerts:
-- **alerts.ts**: An Azure Function that serves as the webhook endpoint to receive alerts. It uses jsonpath to map the Azure Alerts common Schema to a custom schema. In the provided example the schema mapping specification is provided in `src/alerts/mapping-type-01.json` but it can be customized.
+- **alerts.ts**: An Azure Function that serves as the webhook endpoint to receive alerts. It uses jsonpath to map the Azure Alerts common Schema to a custom schema. In the provided example the schema mapping specification is provided in `src/alerts/mapping-type-01.json` but it can be customized. Besides the mapping logic the schema mapping specification, it also adds to the resulting payload all the custom properties defined in the alert rule.
 - **dump.ts**: A helper function that only dumps the posted JSON payload.

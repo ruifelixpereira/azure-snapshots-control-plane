@@ -30,6 +30,7 @@ interface CommonAlertSchema {
             alertContextVersion: string;
         };
         alertContext: any;
+        customProperties?: Record<string, any>;
     };
 }
 
@@ -81,7 +82,14 @@ export async function alert(request: HttpRequest, context: InvocationContext): P
         }
 
         // Optional: Transform or enrich the alert payload before forwarding
-        const enrichedPayload = mapSourceToTarget(alert, spec);
+        const part1EnrichedPayload = mapSourceToTarget(alert, spec);
+
+        // Add all properties from customProperties to enrichedPayload
+        const enrichedPayload = {
+            ...part1EnrichedPayload,
+            ...(alert.data.customProperties || {})
+        };
+
         logger.info(`Transformed alert: ${JSON.stringify(enrichedPayload)}`);
 
         // Forward alert to external webhook
