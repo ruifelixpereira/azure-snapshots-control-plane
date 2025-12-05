@@ -74,3 +74,15 @@ Azure Monitor allows you to customize additional properties in the payload using
 
 - Trigger the alert by adjusting the query or threshold.
 - Check your webhook endpoint logs to confirm the POST request and payload.
+
+
+## Deploy using Bicep
+
+Instead of creating the Action group and Alert rule resources manually, like described before, you can use the Bicep template provided in the `operations/alerts` folder to automate the deployment of these resources. Copy the file `template.env` to `operations/alerts/.env` and customize the variables as needed. Then, run the deployment script `operations/alerts/create-alerts.sh` to deploy the resources to your Azure subscription.
+
+
+## Alerts functions customization
+
+Two functions are provided to help creating a webhook endpoint to receive and process the alerts:
+- **alerts.ts**: An Azure Function that serves as the webhook endpoint to receive alerts. It uses jsonpath to map the Azure Alerts common Schema to a custom schema. In the provided example the schema mapping specification is provided in `src/alerts/mapping-type-01.json` but it can be customized.
+- **dump.ts**: A helper function that only dumps the posted JSON payload.

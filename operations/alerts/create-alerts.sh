@@ -10,8 +10,9 @@ set -a && source .env && set +a
 
 # Required variables
 required_vars=(
-    "prefix"
-    "resourceGroupName" 
+    "resourceGroupName"
+    "actionGroups_post_webhook_url"
+    "logAnalyticsWorkspace_resource_id"
 )
 
 # Set the current directory to where the script lives
@@ -57,11 +58,9 @@ DEPLOYMENT_OUTPUT=$(az deployment group create \
     --resource-group "$resourceGroupName" \
     --template-file alert-setup.bicep \
     --parameters \
-        prefix="$prefix" \
-        servicePrincipalObjectId="$SP_OBJECT_ID" \
-        servicePrincipalClientId="$CLIENT_ID" \
-        servicePrincipalDisplayName="$SP_NAME" \
-    --query "properties.outputs" \
+        actionGroups_post_webhook_url="$actionGroups_post_webhook_url" \
+        logAnalyticsWorkspace_resource_id="$logAnalyticsWorkspace_resource_id" \
+      --query "properties.outputs" \
     --output json)
 
 echo "✅ Bicep deployment completed successfully!"
