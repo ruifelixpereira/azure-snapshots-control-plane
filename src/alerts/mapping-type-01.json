@@ -1,0 +1,54 @@
+{
+  "$schema": "https://example.com/schemas/mapping.schema.json",
+  "version": "1.0.0",
+  "mappings": [
+    {
+      "literal": "Servers daily snapshosts failed",
+      "to": "Name"
+    },
+    {
+      "literal": "INFRA CORE Cloud & DC",
+      "to": "Team"
+    },
+    {
+      "description": "Simple field copy metricMeasureColumn",
+      "from": "$.data.alertContext.condition.allOf[0].metricMeasureColumn",
+      "to": "metricName"
+    },
+    {
+      "description": "Simple field copy metricValue",
+      "from": "$.data.alertContext.condition.allOf[0].metricValue",
+      "to": "metricValue"
+    },
+    {
+      "literal": "Equals",
+      "to": "operator"
+    },
+    {
+      "description": "Simple field copy targetResourceGroup",
+      "from": "$.data.essentials.targetResourceGroup",
+      "to": "resourceGroupName"
+    },
+    {
+      "literal": "SMCP_BCK_WORKBOOK_RESOURCE_ID",
+      "to": "resourceId",
+      "transform": "getEnvironmentVariable"
+    },
+    {
+      "literal": "Snapshot Insights Workbook",
+      "to": "resourceName"
+    },
+    {
+      "literal": "Azure Monitor Workbook",
+      "to": "resourceType"
+    },
+    {
+      "literal": "2",
+      "to": "severity"
+    },
+    {
+      "literal": "8*5",
+      "to": "threshold"
+    }
+  ]
+}

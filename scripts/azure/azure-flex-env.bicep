@@ -588,6 +588,9 @@ resource appSettings 'Microsoft.Web/sites/config@2022-03-01' = {
     SMCP_REC_VM_POLL_MAX_DELAY_SECONDS: '600'
     SMCP_REC_ALLOW_UPDATE_VM: 'true'
     SMCP_MANDATORY_TAGS: '[{"key":"app","value":"xpto"},{"key":"owner","value":"zzzzz"}]'
+    SMCP_BCK_WORKBOOK_RESOURCE_ID: backupWorkbook.id
+    SMCP_BCK_ALERT_WEBHOOK_URL: 'https://your-webhook-endpoint.com/alerts'
+    SMCP_BCK_ALERT_WEBHOOK_TIMEOUT_MS: '10000'
   }
 }
 
@@ -626,3 +629,5 @@ output logAnalyticsWorkspaceName string = logAnalytics.name
 output applicationInsightsName string = applicationInsights.name
 output applicationInsightsInstrumentationKey string = applicationInsights.properties.InstrumentationKey
 output applicationInsightsConnectionString string = applicationInsights.properties.ConnectionString
+output backupWorkbookId string = backupWorkbook.id
+output recoveryWorkbookId string = recoveryWorkbook.id

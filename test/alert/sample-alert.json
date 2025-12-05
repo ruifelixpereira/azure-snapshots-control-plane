@@ -1,0 +1,63 @@
+{
+    "schemaId": "azureMonitorCommonAlertSchema",
+    "data": {
+        "essentials": {
+            "alertId": "/subscriptions/1111-11111-1111-1111/providers/Microsoft.AlertsManagement/alerts/1111-11111-1111-1111",
+            "alertRule": "Failed snapshots",
+            "targetResourceType": "microsoft.operationalinsights/workspaces",
+            "alertRuleID": "/subscriptions/1111-11111-1111-1111/resourceGroups/snapshots-mng/providers/microsoft.insights/scheduledqueryrules/Failed snapshots",
+            "severity": "Sev1",
+            "signalType": "Log",
+            "monitorCondition": "Fired",
+            "targetResourceGroup": "snapshots-mng",
+            "monitoringService": "Log Alerts V2",
+            "alertTargetIDs": [
+                "/subscriptions/1111-11111-1111-1111/resourcegroups/snapshots-mng/providers/microsoft.operationalinsights/workspaces/smcpsnapmng-law01"
+            ],
+            "configurationItems": [
+                "/subscriptions/1111-11111-1111-1111/resourceGroups/snapshots-mng/providers/Microsoft.OperationalInsights/workspaces/smcpsnapmng-law01"
+            ],
+            "originAlertId": "1111-11111-1111-1111",
+            "firedDateTime": "2025-12-04T20:21:51.1724723Z",
+            "description": "Snapshots creation failed",
+            "essentialsVersion": "1.0",
+            "alertContextVersion": "1.0",
+            "investigationLink": "https://portal.azure.com/#view/Microsoft_Azure_Monitoring_Alerts/Issue.ReactView/alertId/%2fsubscriptions%2f1111-11111-1111-1111%2fresourceGroups%2fsnapshots-mng%2fproviders%2fMicrosoft.AlertsManagement%2falerts%2fc1e05bfa-1739-8bf2-6d67-e20660d70033"
+        },
+        "alertContext": {
+            "properties": {
+                "AlertReason": "SnapshotsFailedCount GreaterThan 1 Fired. The value is 2"
+            },
+            "conditionType": "LogQueryCriteria",
+            "condition": {
+                "windowSize": "PT5M",
+                "allOf": [
+                    {
+                        "searchQuery": "SnapshotsOperations_CL\n| where jobType == \"Snapshot\"\n| extend resourceGroup = extract(@\"/resourcegroups/([^/]+)\", 1, tolower(sourceVmId))\n| where resourceGroup in~ ('snapshots-mng', 'scmp-snapshots', 'scale-test-rg')\n| where TimeGenerated > ago(250m)\n| summarize Operations = make_set(jobStatus) by jobId\n| extend IsFailed = Operations has \"Snapshot Failed\" and not(Operations has \"Snapshot Completed\")\n| summarize SnapshotsFailedCount = countif(IsFailed)\n\n",
+                        "metricMeasureColumn": "SnapshotsFailedCount",
+                        "targetResourceTypes": "['Microsoft.OperationalInsights/workspaces']",
+                        "operator": "GreaterThan",
+                        "threshold": "1",
+                        "timeAggregation": "Total",
+                        "dimensions": [],
+                        "metricValue": 2,
+                        "failingPeriods": {
+                            "numberOfEvaluationPeriods": 1,
+                            "minFailingPeriodsToAlert": 1
+                        },
+                        "linkToSearchResultsUI": "https://portal.azure.com#@71834302-da70-4741-ba0b-c3b9404e38a6/blade/Microsoft_Azure_Monitoring_Logs/LogsBlade/source/Alerts.EmailLinks/scope/%7B%22resources%22%3A%5B%7B%22resourceId%22%3A%22%2Fsubscriptions%2F1111-11111-1111-1111%2FresourceGroups%2Fsnapshots-mng%2Fproviders%2FMicrosoft.OperationalInsights%2Fworkspaces%2Fsmcpsnapmng-law01%22%7D%5D%7D/q/eJx1klFLwzAUhd%2F9FZe%2BNMXWtcW9DCbKwDEQfNjYg6Ila%2B%2B6aJOUJGWbiL%2FdxG6rxdmXlHtP7jn3a%2BeC1nojjX6sUVHDpNDZ5OHiE7YbVAhvcrXY1wjjMXjzg9SzXdwZFAUo1LJROU6VbGoYu7KiuSG33uDYKl1LD8jz6%2BDlMvBCSEIwspJbVKRVLPmsCIKTZX8mE19AfH1MGXFR%2BiH4Oud1dKq2FVphZFCbSJV%2BN27BOE5RuOWwgBsghX0xtkjSOB1GSRrF14s0HqXJKBlexe3zFEAE6TDmbo5uOKeKfSB0jOyunL5jptEQy2huqGl0AKu9IzYrOkIzfU9ZZZ3Hv29vqO54QqvwgFq9kIb8K5xIXldo9%2FD6uY6Cg9dENsJYw9ydbE2OGYJTqj4Up6waLjK2xh3TRhO%2FJ7B4%2F0JLz0CzBl2ou7JUWLr7S1o19hdyPXIu6g%2B3FRMZNaRnHMKQn%2FM%2B98GCbw%3D%3D/prettify/1/timespan/2025-12-02T20%3a21%3a15.0000000Z%2f2025-12-04T20%3a21%3a15.0000000Z",
+                        "linkToFilteredSearchResultsUI": "https://portal.azure.com#@71834302-da70-4741-ba0b-c3b9404e38a6/blade/Microsoft_Azure_Monitoring_Logs/LogsBlade/source/Alerts.EmailLinks/scope/%7B%22resources%22%3A%5B%7B%22resourceId%22%3A%22%2Fsubscriptions%2F1111-11111-1111-1111%2FresourceGroups%2Fsnapshots-mng%2Fproviders%2FMicrosoft.OperationalInsights%2Fworkspaces%2Fsmcpsnapmng-law01%22%7D%5D%7D/q/eJx1klFPgzAUhd%2F9FTe8UOJwQORlyYxmicsSEx%2B2%2BKDRpYM7VqUtaUu2GeNvt5UxRCcvkHtP7zn3K3NBK72RRt9XqKhhUujl5O7sA7YbVAivcrXYVwjjMXjzg9SzXdwZFDko1LJWGU6VrCsYu7KimSHX3rBtFa6lh%2BTpZfh8HngDiAdgZCm3qEijeOCzPAiOlv2ZTHwC8XWbMuSi8Afg64xX4bHaVGiJoUFtQlX43bgF4zhF4ZbDHK6A5PbD2CJJoiQN4ySMLhdJNEriUZxeRM3zGEAISRpxN0fXnFPF3hE6RnZXTt9wqdEQy2huqKl1AKu9IzbLO0IzfUtZaZ3HP09vqO54QqPwgFq9kIb8K5xIXpVo9%2FD6uVrBwWsia2GsYebebE3aDMExVR%2BKU5Y1F0u2xh3TRhO%2FJ7B4%2F0JLTkCzBl2om6JQWLjzD7Ss7S%2FkeuRU1G9uKyaW1JCe8QBSfsr71IVZ7%2BbCjcxlvSqR%2FAoQ2MuPvwA%3D/prettify/1/timespan/2025-12-02T20%3a21%3a15.0000000Z%2f2025-12-04T20%3a21%3a15.0000000Z",
+                        "linkToSearchResultsAPI": "https://api.loganalytics.io/v1/workspaces/634cf4b2-1f0a-4d1c-a52c-543c11a4ebf2/query?query=SnapshotsOperations_CL%0A%7C%20where%20jobType%20%3D%3D%20%22Snapshot%22%0A%7C%20extend%20resourceGroup%20%3D%20extract%28%40%22%2Fresourcegroups%2F%28%5B%5E%2F%5D%2B%29%22%2C%201%2C%20tolower%28sourceVmId%29%29%0A%7C%20where%20resourceGroup%20in~%20%28%27snapshots-mng%27%2C%20%27scmp-snapshots%27%2C%20%27scale-test-rg%27%29%0A%7C%20where%20TimeGenerated%20%3E%20%28datetime%282025-12-04T20%3A21%3A15.0000000Z%29%20-%20250m%29%0A%7C%20summarize%20Operations%20%3D%20make_set%28jobStatus%29%20by%20jobId%0A%7C%20extend%20IsFailed%20%3D%20Operations%20has%20%22Snapshot%20Failed%22%20and%20not%28Operations%20has%20%22Snapshot%20Completed%22%29%0A%7C%20summarize%20SnapshotsFailedCount%20%3D%20countif%28IsFailed%29%7C%20extend%20TimeGenerated%20%3D%20column_ifexists%28%27TimeGenerated%27%2C%20datetime%282025-12-02T20%3A21%3A15.0000000Z%29%29%7C%20summarize%20AggregatedValue%20%3D%20sum%28SnapshotsFailedCount%29%20by%20bin_at%28TimeGenerated%2C%205m%2C%20datetime%282025-12-04T20%3A21%3A15.0000000Z%29%29&timespan=2025-12-02T20%3a21%3a15.0000000Z%2f2025-12-04T20%3a21%3a15.0000000Z",
+                        "linkToFilteredSearchResultsAPI": "https://api.loganalytics.io/v1/workspaces/634cf4b2-1f0a-4d1c-a52c-543c11a4ebf2/query?query=SnapshotsOperations_CL%0A%7C%20where%20jobType%20%3D%3D%20%22Snapshot%22%0A%7C%20extend%20resourceGroup%20%3D%20extract%28%40%22%2Fresourcegroups%2F%28%5B%5E%2F%5D%2B%29%22%2C%201%2C%20tolower%28sourceVmId%29%29%0A%7C%20where%20resourceGroup%20in~%20%28%27snapshots-mng%27%2C%20%27scmp-snapshots%27%2C%20%27scale-test-rg%27%29%0A%7C%20where%20TimeGenerated%20%3E%20%28datetime%282025-12-04T20%3A21%3A15.0000000Z%29%20-%20250m%29%0A%7C%20summarize%20Operations%20%3D%20make_set%28jobStatus%29%20by%20jobId%0A%7C%20extend%20IsFailed%20%3D%20Operations%20has%20%22Snapshot%20Failed%22%20and%20not%28Operations%20has%20%22Snapshot%20Completed%22%29%0A%7C%20summarize%20SnapshotsFailedCount%20%3D%20countif%28IsFailed%29%7C%20extend%20TimeGenerated%20%3D%20column_ifexists%28%27TimeGenerated%27%2C%20datetime%282025-12-02T20%3A21%3A15.0000000Z%29%29%7C%20summarize%20AggregatedValue%20%3D%20sum%28SnapshotsFailedCount%29%20by%20bin_at%28TimeGenerated%2C%205m%2C%20datetime%282025-12-04T20%3A21%3A15.0000000Z%29%29%7C%20where%20todouble%28AggregatedValue%29%20%3E%201&timespan=2025-12-02T20%3a21%3a15.0000000Z%2f2025-12-04T20%3a21%3a15.0000000Z",
+                        "event": null
+                    }
+                ],
+                "windowStartTime": "2025-12-02T20:21:15Z",
+                "windowEndTime": "2025-12-04T20:21:15Z"
+            }
+        },
+        "customProperties": {
+            "AlertReason": "SnapshotsFailedCount GreaterThan 1 Fired. The value is 2"
+        }
+    }
+}

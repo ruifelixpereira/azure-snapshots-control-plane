@@ -149,6 +149,9 @@ output localSettingsJson object = {
     SMCP_REC_VM_POLL_MAX_DELAY_SECONDS: '600'
     SMCP_REC_ALLOW_UPDATE_VM: 'true'
     SMCP_MANDATORY_TAGS: '[{"key":"app","value":"xpto"},{"key":"owner","value":"zzzzz"}]'
+    SMCP_BCK_WORKBOOK_RESOURCE_ID: 'replace-it'
+    SMCP_BCK_ALERT_WEBHOOK_URL: 'http://localhost:7071/api/dump'
+    SMCP_BCK_ALERT_WEBHOOK_TIMEOUT_MS: '10000'
   }
 }
 

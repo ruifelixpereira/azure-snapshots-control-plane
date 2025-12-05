@@ -1,0 +1,50 @@
+{
+  "$schema": "https://example.com/schemas/mapping.schema.json",
+  "version": "1.0.0",
+  "mappings": [
+    {
+      "description": "Simple field copy",
+      "from": "$.customer.id",
+      "to": "account.customerId"
+    },
+    {
+      "description": "Rename with default",
+      "from": "$.customer.name",
+      "to": "account.displayName",
+      "default": "Unknown"
+    },
+    {
+      "description": "ISO date → epoch millis",
+      "from": "$.order.submittedAt",
+      "to": "orderMeta.submittedAtEpoch",
+      "transform": "isoDateToEpoch"
+    },
+    {
+      "description": "Concatenate strings",
+      "from": "$.customer",
+      "to": "account.fullLabel",
+      "transform": "concatFields",
+      "args": ["name", "id"], 
+      "separator": " | "
+    },
+    {
+      "description": "Guard: only map if order total > 0",
+      "from": "$.order.total",
+      "to": "orderMeta.total",
+      "condition": {
+        "operator": ">",
+        "value": 0
+      }
+    },
+    {
+      "description": "Array map: items -> lines[]",
+      "from": "$.order.items[*]",
+      "to": "lines[]",
+      "itemMap": [
+        { "from": "$.sku", "to": "product.sku" },
+        { "from": "$.qty", "to": "quantity", "transform": "toInt" },
+        { "from": "$.price", "to": "unitPrice", "transform": "toNumber" }
+      ]
+    }
+  ]
+}

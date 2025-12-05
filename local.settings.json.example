@@ -20,12 +20,15 @@
     "SMCP_REC_LOGS_INGESTION_ENDPOINT": "https://bbbbbbbbbbb.ingest.monitor.azure.com",
     "SMCP_REC_LOGS_INGESTION_RULE_ID": "aaaaaaaaaa",
     "SMCP_REC_LOGS_INGESTION_STREAM_NAME": "Custom-SnapshotsRecoveryJobs_CL-source",
-    "SMCP_REC_BATCH_SIZE": "95",
+    "SMCP_REC_BATCH_SIZE": "30",
     "SMCP_REC_DELAY_BETWEEN_BATCHES": "10",
-    "SMCP_MANDATORY_TAGS": "[{\"key\":\"app\",\"value\":\"xpto\"},{\"key\":\"owner\",\"value\":\"who\"}]",
     "SMCP_REC_VM_POLL_MAX_RETRIES": "30",
     "SMCP_REC_VM_POLL_DELAY_SECONDS": "60",
-    "SMCP_REC_VM_POLL_MAX_DELAY_SECONDS": "600"
-    "SMCP_MANDATORY_TAGS": "[{\"key\":\"app\",\"value\":\"xpto\"},{\"key\":\"owner\",\"value\":\"xxxx\"}]"
+    "SMCP_REC_VM_POLL_MAX_DELAY_SECONDS": "600",
+    "SMCP_REC_ALLOW_UPDATE_VM": "true",
+    "SMCP_MANDATORY_TAGS": "[{\"key\":\"app\",\"value\":\"xpto\"},{\"key\":\"owner\",\"value\":\"who\"}]",
+    "SMCP_BCK_WORKBOOK_RESOURCE_ID": "/subscriptions/1111111/resourceGroups/xxxxxxx/providers/Microsoft.Insights/workbooks/xxxxxxxx",
+    "SMCP_BCK_ALERT_WEBHOOK_URL": "http://localhost:7071/api/dump",
+    "SMCP_BCK_ALERT_WEBHOOK_TIMEOUT_MS": "10000"
   }
 }
