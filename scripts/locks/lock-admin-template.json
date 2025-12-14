@@ -1,0 +1,14 @@
+{
+  "Name": "Resource Lock Administrator",
+  "IsCustom": true,
+  "Description": "Can create, read, and delete management locks at the assigned scope.",
+  "Actions": [
+    "Microsoft.Authorization/locks/*"
+  ],
+  "NotActions": [],
+  "DataActions": [],
+  "NotDataActions": [],
+  "AssignableScopes": [
+    "/subscriptions/<subId>/resourceGroups/<rg-name>"
+  ]
+}

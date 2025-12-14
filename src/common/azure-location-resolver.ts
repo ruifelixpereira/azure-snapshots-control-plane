@@ -4,9 +4,6 @@ import { parseSubnetId, getSubscriptionAndResourceGroups } from './azure-resourc
 import { ILogger } from './logger';
 import { SubnetLocation } from './interfaces';
 
-// Note: You'll need to install these packages:
-// npm install @azure/arm-network @azure/arm-resources
-
 export class AzureLocationResolver {
   private logger: ILogger;
 

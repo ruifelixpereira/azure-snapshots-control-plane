@@ -9,6 +9,8 @@ import { SnapshotSource, Snapshot, VmRecoveryInfo, SnapshotCopyOptions } from ".
 import { formatDateYYYYMMDDTHHMM } from "../common/utils";
 import { getSubscriptionAndResourceGroups } from '../common/azure-resource-utils';
 
+import { ManagementLockClient } from '@azure/arm-locks';
+
  
 export class SnapshotManager {
 
@@ -340,6 +342,79 @@ export class SnapshotManager {
     }
 
     /**
+     * Remove all locks from a snapshot resource
+     */
+    private async removeSnapshotLocks(
+        subscriptionId: string,
+        resourceGroupName: string,
+        snapshotName: string
+    ): Promise<number> {
+        try {
+            const credential = new DefaultAzureCredential();
+            const lockClient = new ManagementLockClient(credential, subscriptionId);
+            
+            // Get the snapshot to build the resource ID
+            const snapshot = await this.computeClient.snapshots.get(resourceGroupName, snapshotName);
+            
+            /*
+            // List all locks on the snapshot resource
+            const locks: any[] = [];
+            for await (const lock of lockClient.managementLocks.listAtResourceLevel(
+                resourceGroupName,
+                'Microsoft.Compute',
+                '',
+                'snapshots',
+                snapshotName
+            )) {
+                locks.push(lock);
+            }
+            */
+
+            // Also check for inherited locks from resource group level
+            const rgLocks: any[] = [];
+            for await (const lock of lockClient.managementLocks.listAtResourceGroupLevel(resourceGroupName)) {
+                rgLocks.push(lock);
+            }
+
+            //this.logger.info(`Found ${locks.length} locks on snapshot '${snapshotName}' and ${rgLocks.length} locks on resource group '${resourceGroupName}'`);
+            this.logger.info(`Found ${rgLocks.length} locks on resource group '${resourceGroupName}'`);
+
+            /*
+            // Delete locks at resource level
+            for (const lock of locks) {
+                const lockName = lock.name.split('/').pop(); // Get just the lock name
+                this.logger.info(`Removing lock '${lockName}' from snapshot '${snapshotName}'`);
+                await lockClient.managementLocks.deleteAtResourceLevel(
+                    resourceGroupName,
+                    'Microsoft.Compute',
+                    '',
+                    'snapshots',
+                    snapshotName,
+                    lockName
+                );
+            }
+            */
+
+            // Delete locks at resource group level that may affect the snapshot
+            for (const lock of rgLocks) {
+                const lockName = lock.name.split('/').pop();
+                this.logger.info(`Removing resource group lock '${lockName}' from '${resourceGroupName}'`);
+                await lockClient.managementLocks.deleteAtResourceGroupLevel(
+                    resourceGroupName,
+                    lockName
+                );
+            }
+
+            //const totalLocksRemoved = locks.length + rgLocks.length;
+            const totalLocksRemoved = rgLocks.length;
+            return totalLocksRemoved;
+        } catch (error) {
+            this.logger.warn(`Failed to remove locks from snapshot '${snapshotName}': ${_getString(error)}`);
+            throw error;
+        }
+    }
+
+    /**
      * Purge individual snapshots for a certain diskId tag.
      */
     public async purgeSnapshot(
@@ -354,7 +429,38 @@ export class SnapshotManager {
 
             return snapshotName;
         } catch (error) {
-            const message = `Unable to purge snapshot '${snapshotName}' in resource group '${resourceGroupName}' in all locations with error: ${_getString(error)}`;
+            const errorMsg = _getString(error);
+            
+            // Check if error is lock-related
+            const isLockError = /ScopeLocked|resource is locked|CanNotDelete|remove the lock/i.test(errorMsg);
+            
+            if (isLockError) {
+                this.logger.warn(`Snapshot '${snapshotName}' is locked. Attempting to remove locks and retry deletion...`);
+                
+                try {
+                    // Get subscription ID from the compute client
+                    const subscriptionId = this.computeClient.subscriptionId;
+                    
+                    // Remove all locks
+                    const locksRemoved = await this.removeSnapshotLocks(subscriptionId, resourceGroupName, snapshotName);
+                    this.logger.info(`Removed ${locksRemoved} lock(s) from snapshot '${snapshotName}'`);
+                    
+                    // Retry deletion
+                    this.logger.info(`Retrying deletion of snapshot '${snapshotName}' after lock removal...`);
+                    const retryResult = await this.computeClient.snapshots.beginDelete(resourceGroupName, snapshotName);
+                    
+                    this.logger.info(`Successfully deleted snapshot: ${snapshotName} after removing locks`);
+                    return snapshotName;
+                    
+                } catch (lockRemovalError) {
+                    const lockErrorMsg = `Failed to remove locks or delete snapshot '${snapshotName}' after lock removal: ${_getString(lockRemovalError)}`;
+                    this.logger.error(lockErrorMsg);
+                    throw new SnapshotError(lockErrorMsg);
+                }
+            }
+            
+            // If not a lock error, throw original error
+            const message = `Unable to purge snapshot '${snapshotName}' in resource group '${resourceGroupName}' with error: ${errorMsg}`;
             this.logger.error(message);
             throw new SnapshotError(message);
         }
