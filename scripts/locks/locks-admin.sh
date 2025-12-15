@@ -49,7 +49,7 @@ ROLE_DEFINITION=$(cat ./lock-admin-template.json | \
     sed "s|<rg-name>|${snapshotsTargetResourceGroupName}|g")
 
 # Check if role already exists
-ROLE_NAME="Resource Lock Administrator"
+ROLE_NAME="Resource Lock Administrator Snapshots"
 EXISTING_ROLE=$(az role definition list --query "[?roleName=='$ROLE_NAME']" -o tsv)
 if [[ -n "$EXISTING_ROLE" ]]; then
     echo "⚠️ Role $ROLE_NAME already exists."

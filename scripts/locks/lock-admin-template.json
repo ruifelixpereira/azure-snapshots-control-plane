@@ -1,5 +1,5 @@
 {
-  "Name": "Resource Lock Administrator",
+  "Name": "Resource Lock Administrator Snapshots",
   "IsCustom": true,
   "Description": "Can create, read, and delete management locks at the assigned scope.",
   "Actions": [
