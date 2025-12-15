@@ -83,5 +83,5 @@ Instead of creating the Action group and Alert rule resources manually, like des
 ## Alerts functions customization
 
 Two functions are provided to help creating a webhook endpoint to receive and process the alerts:
-- **alerts.ts**: An Azure Function that serves as the webhook endpoint to receive alerts. It uses jsonpath to map the Azure Alerts common Schema to a custom schema. In the provided example the schema mapping specification is provided in `src/alerts/mapping-type-01.json` but it can be customized. Besides the mapping logic the schema mapping specification, it also adds to the resulting payload all the custom properties defined in the alert rule.
+- **alerts.ts**: An Azure Function that serves as the webhook endpoint to receive alerts. It uses jsonpath to map the Azure Alerts common Schema to a custom schema. In the provided example the schema mapping specification is provided in `src/alerts/mapping-type-01.json` but it can be customized. Besides the mapping logic in the schema mapping specification, it also adds to the resulting payload all the custom properties defined in the alert rule.
 - **dump.ts**: A helper function that only dumps the posted JSON payload.
