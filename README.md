@@ -17,7 +17,7 @@ Older snapshots are automatically purged to optimize storage costs and comply wi
 
 - **Virtual Machines Restore and Failover**: Supports restoration of individual VMs or bulk failover of all VMs from snapshots. Restoration can be performed using snapshots stored in the secondary region.
 
-- **Monitoring and Observability**: Tracks backups (snapshot creation, retention, and deletion events) and recovery (VM restoration operations). Logs errors and provides visibility into the health and status of the backup and recovery processes.
+- **Monitoring and Observability**: Tracks backups (snapshot creation, retention, and deletion events) and recovery (VM restoration operations). Logs errors and provides visibility into the health and status of the backup and recovery processes. Alert rules are also provided for failed backups.
 
 
 ## Solution architecture
@@ -191,6 +191,7 @@ Function app system assigned identity needs to have the following roles to be ab
 | Storage Table Data Contributor | Storage Account              | For tables |
 | Monitoring Metrics Publisher   | Data Collection Rule or Resource Group/Subscription level | To ingest logs into the Data Collection Rule endpoint |
 | Contributor                    | Subscription level or resource group | Assign the `Contributor` role to the created Function App Managed Identity in all the **source resource groups** that might contain Virtual Machines to backup (tagged for backup using snapshots), snapshots to be restored, as well as, in all **target resource groups** to where the backup snapshots will be created and the virtual machines will be restored. |
+| Custom Role "Resource Lock Administrator" | Resource group | Assign the `Resource Lock Administrator` custom role to the created Function App Managed Identity in the **resource groups** where snapshots are created and deleted. |
 
 
 ## Step 4. Configure Function App environment settings
@@ -201,16 +202,20 @@ Adjust these settings in your Function app environment:
 | ------------------------------------------------ | --------------------------------------------- | -------------------------------------------------------------- |
 | AzureWebJobsStorage                              | Storage Account connection string             | Used by the Function App to store data and use queues.         |
 | AzureWebJobsStorage__accountname                 | Storage Account name                          | Used by the Function App wirh Entra ID authentication.         |
+| SMCP_BCK_ALERT_WEBHOOK_TIMEOUT_MS                | Numeric value in miliseconds (e.g., 10000)    | Timeout to invoke the Alerting webhook.                        |
+| SMCP_BCK_ALERT_WEBHOOK_URL                       | URL (e.g., https://xxxx)                      | Webhook URL to be invoked by the `alert` function to post a JSON with the alert details. |
+| SMCP_BCK_BACKUP_TRIGGER_TAG                      | Tag name and value in JSON format {"key":"tag-name","value":"tag-value"} (e.g., {"key":"smcp-backup","value":"on"}) | Backup trigger tag (name and value) to identify VMs for backup. |
+| SMCP_BCK_LOG_ANALYTICS_WORKSPACE_ID              | Workspace ID (guid)                           | Log Analytics workspace ID.                                    |
 | SMCP_BCK_LOGS_INGESTION_ENDPOINT                 | Data collection rule endpoint                 | Used to ingest backup logs into the log analytics workspace.   |
 | SMCP_BCK_LOGS_INGESTION_RULE_ID                  | Immutable ID for Data collection rule         | Used to ingest backup logs into the log analytics workspace.   |
 | SMCP_BCK_LOGS_INGESTION_STREAM_NAME              | Name of the stream to be used for ingestion   | Used to ingest backup logs into the log analytics workspace.   |
-| SMCP_BCK_SECONDARY_LOCATION                      | Azure region name                             | Snapshots copy destination as a secondary region for BCDR.     |
-| SMCP_BCK_TARGET_RESOURCE_GROUP                   | Resource group name                           | Name of the resource group where the snapshots are created.    |
-| SMCP_BCK_RETRY_CONTROL_COPY_MINUTES              | Numeric value in minutes (e.g., 15)           | Delay to check if a snapshot copy is completed.                |
-| SMCP_BCK_RETRY_CONTROL_PURGE_MINUTES             | Numeric value in minutes (e.g., 15)           | Delay to check if a snapshot purge is completed.               |
 | SMCP_BCK_PURGE_PRIMARY_LOCATION_NUMBER_OF_DAYS   | Numeric value in days (e.g., 1)               | Snapshot retention period to consider in the primary region.   |
 | SMCP_BCK_PURGE_SECONDARY_LOCATION_NUMBER_OF_DAYS | Numeric value in days (e.g., 30)              | Snapshot retention period to consider in the secondary region. |
-| SMCP_BCK_BACKUP_TRIGGER_TAG                      | Tag name and value in JSON format {"key":"tag-name","value":"tag-value"} (e.g., {"key":"smcp-backup","value":"on"}) | Backup trigger tag (name and value) to identify VMs for backup. |
+| SMCP_BCK_RETRY_CONTROL_COPY_MINUTES              | Numeric value in minutes (e.g., 15)           | Delay to check if a snapshot copy is completed.                |
+| SMCP_BCK_RETRY_CONTROL_PURGE_MINUTES             | Numeric value in minutes (e.g., 15)           | Delay to check if a snapshot purge is completed.               |
+| SMCP_BCK_SECONDARY_LOCATION                      | Azure region name                             | Snapshots copy destination as a secondary region for BCDR.     |
+| SMCP_BCK_TARGET_RESOURCE_GROUP                   | Resource group name                           | Name of the resource group where the snapshots are created.    |
+| SMCP_BCK_WORKBOOK_RESOURCE_ID                    | Resource id (e.g. /subscriptions/xxxx/resourceGroups/yyyyy/providers/Microsoft.Insights/workbooks/wwwww) | Resource id of the snapshots backup workbook. |
 | SMCP_MANDATORY_TAGS                          | Array of tag elements in JSON format [{"key":"tag_name","value":"tag_value"},...] (e.g., [{"key":"app","value":"xpto"},{"key":"cost-center","value":"CC1234"}]) | List of tags to add to the new snapshot resources. |
 | SMCP_REC_LOGS_INGESTION_ENDPOINT                 | Data collection rule endpoint                 | Used to ingest recovery logs into the log analytics workspace. |
 | SMCP_REC_LOGS_INGESTION_RULE_ID                  | Immutable ID for Data collection rule         | Used to ingest recovery logs into the log analytics workspace. |
@@ -243,6 +248,11 @@ To monitor the control plane operations and help managing snapshots, an Azure Mo
 You can check the monitoring guidelines at [MONITORING](docs/monitoring.md).
 
 
+## Control Plane Alert Rules
+
+Alert rules are provided for failed snapshots creation. The alerting process is detailed at [ALERTING](operations/alerts/README.md).
+
+
 ## Recovery of Virtual Machines using Snapshots
 
 For virtual machine recovery at scale, based on the snapshots managed by this solution, please refer to the [Snapshot Recovery Solution](https://github.com/ruifelixpereira/azure-snapshots-recovery) that provides a recovery CLI for automation scenarios. This CLI is designed for sysadmins and DevOps engineers who need to automate VM recovery, snapshot management, and batch operations in Azure.
@@ -266,5 +276,4 @@ Check all the details on how to use this CLI at [NEW VM](new-vm/README.md)
 What happens if I have multiple incremental snapshots and delete one of them?
 
 Deleting one of your incremental snapshots doesn't affect subsequent incremental snapshots. The system merges the data occupied by the first snapshot with the next snapshot under the hood to ensure that the subsequent snapshots aren't impacted due to the deletion of the first snapshot.
-
 

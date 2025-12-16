@@ -10,7 +10,6 @@ set -a && source .env && set +a
 
 # Required variables
 required_vars=(
-    "prefix"
     "snapshotsTargetResourceGroupName"
     "snapshotsTargetSubscriptionId"
     "funcAppName"
